@@ -201,11 +201,13 @@ DATA  →  GENERATE  →  FORMAT  →  PUBLISH
 
 ### 4.2 Component Breakdown
 
-#### scraper.js (new — self-contained)
+#### scraper.js (self-contained)
 
-- Scrapes RunJapan directly — no dependency on marathon-hub-race-scraper
-- Saves structured race data to `races.json`
-- Built from scratch to understand the scraping logic end-to-end
+- Two-pass scrape: fetch listing page → extract race links → fetch each detail page
+- Pass 1: GET `runjapan.jp` homepage, use cheerio to find all race card links (each contains a `raceId` param e.g. `raceId=E335908`)
+- Pass 2: For each race link, GET the detail page and extract structured data via regex
+- Writes output to `data/races.json`
+- Controlled via `.env`: `RUNJAPAN_BASE_URL`, `RUNJAPAN_TIMEOUT`, `RUNJAPAN_RACES_LIMIT`
 
 #### rednote-post-generator.js (core)
 
@@ -386,7 +388,7 @@ POST https://api.anthropic.com/v1/messages
       "prefecture": "東京都",
       "distance": "42.195km",
       "entry_fee": "¥15,700",
-      "url": "https://runjapan.com/...",
+      "url": "https://runjapan.jp/...",
       "description": "..."
     }
   ],
