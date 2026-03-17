@@ -263,6 +263,8 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |Post scheduling|Node-cron / shell cron|n8n, Zapier|Keeps infra local; consistent with race-updater cron pattern; no external dependency|
 |Data source|races.json (file read)|Direct DB query, live scrape|Lowest coupling — race-updater owns data; generator is a pure consumer|
 |Language|Node.js / JavaScript|Python|Consistent with rest of stack; no context switching|
+|HTTP requests (scraper)|axios|node-fetch, native fetch|More reliable for scraping; better error handling and timeout support|
+|HTML parsing (scraper)|cheerio|jsdom, regex|Lightweight jQuery-style API; purpose-built for server-side HTML parsing|
 
 ---
 

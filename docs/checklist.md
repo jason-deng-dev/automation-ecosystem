@@ -1,7 +1,9 @@
 - [x]  Setup
     - [x]  Initialize repo
     - [x]  Set up Node.js project (npm init)
-    - [x]  Install dependencies (node-cron, playwright, @anthropic-ai/sdk)
+    - [x]  Install dependencies (node-cron, playwright)
+    - [ ]  Install scraper dependencies (axios, cheerio)
+    - [ ]  Install @anthropic-ai/sdk
     - [x]  Set up .env (Anthropic API key)
     - [x]  Set up .gitignore
 - [ ]  Build scraper.js (self-contained RunJapan scraper)

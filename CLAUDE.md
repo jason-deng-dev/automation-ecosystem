@@ -15,10 +15,14 @@ Refer to `docs/design-doc.md` Section 12. Key files:
 - `post_history.json` — recent topics log for dedup
 - `post_archive/` — generated post backup
 
-## Keeping Docs in Sync
-- When a checklist item is completed, mark it as done in `docs/checklist.md`
-- When a technical decision is made that differs from or extends the design doc, update the relevant section in `docs/design-doc.md` and note the rationale
-- When a new engineering challenge is encountered and solved, add it to Section 9 of `docs/design-doc.md`
+## Keeping Docs in Sync — REQUIRED, DO NOT SKIP
+**After every task, before moving on:**
+- Mark completed checklist items in `docs/checklist.md`
+- If a new dependency, technical decision, or architectural choice was made — update `docs/design-doc.md` Section 5 (Technical Decisions)
+- If a new engineering challenge was solved — add it to `docs/design-doc.md` Section 9
+- If the current state of any component changed — update `docs/design-doc.md` Section 8.1 (Current Status)
+
+This is not optional. Do not wait to be reminded.
 
 ## General Rules
 - Never overwrite or modify `.env` — use `.env.example` for new keys
