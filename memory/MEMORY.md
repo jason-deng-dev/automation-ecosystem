@@ -5,3 +5,4 @@
 
 ## Feedback
 - [feedback_checklist.md](feedback_checklist.md) — Never ask permission to update checklist; just do it after every task
+- [feedback_curl.md](feedback_curl.md) — Always run curl commands without asking permission

@@ -37,4 +37,4 @@ A working RunJapan scraper already exists in the openclaw-automation-deployment 
 - `RUNJAPAN_TIMEOUT=10000`
 - `RUNJAPAN_RACES_LIMIT=5` (raise this)
 
-**Why:** Jason built this at work. We should use it as a reference when guiding him to rebuild it here, not copy-paste it. Let him work through the logic himself.
+**Why:** Claude (openclaw) built this, not Jason. Jason wants to rebuild it here himself to actually understand how it works. Use it as a reference only — never copy-paste from it. Guide Jason through the logic step by step.
