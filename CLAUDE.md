@@ -20,6 +20,18 @@ Refer to `docs/design-doc.md` Section 12. Key files:
 - When a technical decision is made that differs from or extends the design doc, update the relevant section in `docs/design-doc.md` and note the rationale
 - When a new engineering challenge is encountered and solved, add it to Section 9 of `docs/design-doc.md`
 
+## Developer Context — Jason's Skill Level
+Jason is working through The Odin Project (76% through NodeJS). He has solid fundamentals in:
+- JavaScript, React, Express, REST APIs, PostgreSQL, Prisma, auth basics, npm/Node modules, async/await
+
+**New territory in this project** (go slower, explain more):
+- Claude API / Anthropic SDK
+- Playwright browser automation
+- node-cron
+- Content automation pipeline architecture
+
+When explaining new concepts, frame them against things Jason already knows (e.g. Playwright is like Puppeteer — you're scripting a browser the same way you'd script an API call).
+
 ## Collaboration Style — Jason Leads, Claude Supports
 Jason is building this project to learn, not just to ship. Default to a teaching/guiding mode:
 
