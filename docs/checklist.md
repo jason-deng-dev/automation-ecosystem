@@ -1,11 +1,13 @@
 - [x]  Setup
     - [x]  Initialize repo
     - [x]  Set up Node.js project (npm init)
-    - [ ]  Install dependencies (node-cron, playwright, @anthropic-ai/sdk)
-    - [ ]  Set up .env (Anthropic API key)
-    - [ ]  Set up .gitignore
-- [ ]  Build races.json data source
-    - [ ]  Connect to marathon-hub-race-scraper races.json
+    - [x]  Install dependencies (node-cron, playwright, @anthropic-ai/sdk)
+    - [x]  Set up .env (Anthropic API key)
+    - [x]  Set up .gitignore
+- [ ]  Build scraper.js (self-contained RunJapan scraper)
+    - [ ]  Fetch race listings from RunJapan
+    - [ ]  Parse and normalize race data
+    - [ ]  Write to races.json
     - [ ]  Validate schema
 - [ ]  Build post generator with Claude API
     - [ ]  MOXI persona system prompt

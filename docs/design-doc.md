@@ -201,13 +201,13 @@ DATA  →  GENERATE  →  FORMAT  →  PUBLISH
 
 ### 4.2 Component Breakdown
 
-#### race-updater (upstream dependency)
+#### scraper.js (new — self-contained)
 
-- Scrapes RunJapan daily via cron
+- Scrapes RunJapan directly — no dependency on marathon-hub-race-scraper
 - Saves structured race data to `races.json`
-- Content generator reads from `races.json` — does not call the scraper directly
+- Built from scratch to understand the scraping logic end-to-end
 
-#### content-generator/rednote-post-generator.js (core — full rebuild required)
+#### rednote-post-generator.js (core)
 
 - Loads `races.json` to inject live race context into prompts
 - Selects post type based on data-weighted rotation schedule
@@ -237,7 +237,7 @@ DATA  →  GENERATE  →  FORMAT  →  PUBLISH
 ```
 RunJapan website
     ↓  (HTTP scrape, daily cron)
-race-updater/scraper.js
+scraper.js
     ↓  (writes)
 races.json
     ↓  (reads)
@@ -525,12 +525,13 @@ As the community grows, pull in user race reports or PB submissions and generate
 
 ```
 rednote-content-automation/
-    ├── rednote-post-generator.js   # Core — Claude API integration (rebuild)
+    ├── scraper.js                  # Self-contained RunJapan scraper (new)
+    ├── races.json                  # Scraped race data output
+    ├── rednote-post-generator.js   # Core — Claude API integration
     ├── formatter.js                # XHS format validation + CTA injection (new)
     ├── publisher.js                # Playwright browser automation (new)
     ├── post_history.json           # Recent topics log for dedup (new)
-    ├── post_archive/               # Generated post backup (new)
-    └── blog-generator/             # Trend notes, performance analysis
+    └── post_archive/               # Generated post backup (new)
 ```
 
 ---
