@@ -2,8 +2,8 @@
     - [x]  Initialize repo
     - [x]  Set up Node.js project (npm init)
     - [x]  Install dependencies (node-cron, playwright)
-    - [ ]  Install scraper dependencies (axios, cheerio)
-    - [ ]  Install @anthropic-ai/sdk
+    - [x]  Install scraper dependencies (axios, cheerio)
+    - [x]  Install @anthropic-ai/sdk
     - [x]  Set up .env (Anthropic API key)
     - [x]  Set up .gitignore
 - [ ]  Build scraper.js (self-contained RunJapan scraper)
@@ -26,5 +26,9 @@
 - [ ]  Wire post_history.json dedup
 - [ ]  Wire full daily cron
 - [ ]  Deploy
+- [ ]  Build demo page
+    - [ ]  Generate one post per category and save to demo/posts/
+    - [ ]  Build demo/index.html with XHS-style post previews
+    - [ ]  Deploy demo page
 
 ---

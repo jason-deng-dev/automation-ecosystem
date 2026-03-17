@@ -446,6 +446,13 @@ POST https://api.anthropic.com/v1/messages
 2. Add `post_history.json` to track recent topics — inject as "do not repeat" context
 3. Validate end-to-end manually before leaving on autopilot
 
+### 8.5 Phase 4 — Portfolio Demo Page
+
+1. Run pipeline once per content category to generate one high-quality post each (Race Guide, Training Science, Nutrition, Health & Recovery)
+2. Save outputs as static JSON to `demo/posts/`
+3. Build `demo/index.html` — XHS-style post preview, one card per category
+4. Deploy as standalone static page for portfolio showcase
+
 ---
 
 ## 9. Engineering Challenges & Solutions
@@ -528,13 +535,29 @@ As the community grows, pull in user race reports or PB submissions and generate
 
 ```
 rednote-content-automation/
-    ├── scraper.js                  # Self-contained RunJapan scraper (new)
-    ├── races.json                  # Scraped race data output
-    ├── rednote-post-generator.js   # Core — Claude API integration
-    ├── formatter.js                # XHS format validation + CTA injection (new)
-    ├── publisher.js                # Playwright browser automation (new)
-    ├── post_history.json           # Recent topics log for dedup (new)
-    └── post_archive/               # Generated post backup (new)
+    ├── src/
+    │   ├── scraper.js                  # Self-contained RunJapan scraper
+    │   ├── rednote-post-generator.js   # Core — Claude API integration
+    │   ├── formatter.js                # XHS format validation + CTA injection
+    │   └── publisher.js                # Playwright browser automation
+    ├── data/
+    │   ├── races.json                  # Scraped race data output
+    │   ├── post_history.json           # Recent topics log for dedup
+    │   └── post_archive/               # Generated post backup
+    ├── demo/
+    │   ├── index.html                  # Portfolio showcase page
+    │   ├── style.css
+    │   └── posts/                      # Pre-generated static posts (one per category)
+    │       ├── race-guide.json
+    │       ├── training.json
+    │       ├── nutrition.json
+    │       └── health.json
+    ├── docs/
+    ├── .env
+    ├── .env.example
+    ├── .gitignore
+    ├── package.json
+    └── README.md
 ```
 
 ---

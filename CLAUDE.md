@@ -9,11 +9,9 @@
 
 ## Repo Structure
 Refer to `docs/design-doc.md` Section 12. Key files:
-- `rednote-post-generator.js` — core Claude API integration
-- `formatter.js` — XHS format validation + CTA injection
-- `publisher.js` — Playwright browser automation
-- `post_history.json` — recent topics log for dedup
-- `post_archive/` — generated post backup
+- `src/` — all pipeline JS files (scraper, generator, formatter, publisher)
+- `data/` — races.json, post_history.json, post_archive/
+- `demo/` — static portfolio showcase page + pre-generated posts
 
 ## Keeping Docs in Sync — REQUIRED, DO NOT SKIP
 **After every task, before moving on:**
