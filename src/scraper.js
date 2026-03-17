@@ -1,5 +1,8 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { writeFile } from 'fs/promises';
+
+
 const timeout = 10000;
 
 async function populateRaces(limit) {
@@ -7,17 +10,21 @@ async function populateRaces(limit) {
 	let pageIndex = 1;
 
 	const baseUrl = 'https://runjapan.jp/entry/runtes/smp/racesearchdetail.do';
-	const firstPage = baseUrl + '?command=search';
-	const incrementUrl = baseUrl + `?command=page&pageIndex=${pageIndex}`;
 
 	while (races.length < limit) {
-		const res = await axios.get(firstPage, {
+		const pageUrl = pageIndex === 1
+			? baseUrl + '?command=search'
+			: baseUrl + `?command=page&pageIndex=${pageIndex}`;
+
+		const res = await axios.get(pageUrl, {
 			timeout,
 		});
 
 		// scrape page for races
 		const $ = cheerio.load(res.data);
-		const cards = [...$('.event-title a')].slice(0, 1);
+		const cards = [...$('.event-title a')];
+
+		if (cards.length === 0) break;
 
 		for (const el of cards) {
 			let date, location, entryPeriod, website;
@@ -47,24 +54,80 @@ async function populateRaces(limit) {
 			if (entryPeriod) {
 				[entryStart, entryEnd] = entryPeriod.replace(/\s+/g, ' ').trim().split(' - ');
 			}
-			races.push({ name, url, date, location, entryStart, entryEnd, website });
+
+			const images = [];
+			$detail('.race_img img').each((_i, img) => {
+				images.push($detail(img).attr('src'));
+			});
+
+			const description = $detail('.race_text').text().trim();
+
+			const info = {};
+			$detail('#raceinfoID dt:not(.info-start dt):not(dd dl dt)').each((_i, dt) => {
+				const label = $detail(dt).find('.lang.en').text().trim();
+				const dd = $detail(dt).next('dd');
+				const nestedDl = dd.find('dl');
+				if (nestedDl.length) {
+					const nested = {};
+					nestedDl.find('dt').each((_j, ndt) => {
+						const nLabel = $detail(ndt).text().trim();
+						const nValue = $detail(ndt).next('dd').text().replace(/\s+/g, ' ').trim();
+						if (nLabel) nested[nLabel] = nValue;
+					});
+					if (label) info[label] = nested;
+				} else {
+					const value = dd.text().replace(/\s+/g, ' ').trim();
+					if (label) info[label] = value;
+				}
+			});
+
+			const notice = [];
+			function collectText(el) {
+				$detail(el)
+					.contents()
+					.each((_j, node) => {
+						if (node.type === 'text') {
+							const text = node.data.replace(/\s+/g, ' ').trim();
+							if (text) notice.push(text);
+						} else if (node.name !== 'br' && node.name !== 'font') {
+							collectText(node);
+						}
+					});
+			}
+			$detail('.event-info-bttom_list2 ul li').each((_i, li) => collectText(li));
+
+			let registrationOpen = false;
+			let registrationUrl = null;
+			const entryBtn = $detail('.event-info-btn');
+			if (!entryBtn.find('.close-btn').length) {
+				const onclick = entryBtn.find('a').attr('onclick') || '';
+				const match = onclick.match(/location\.href='([^']+)'/);
+				if (match) registrationUrl = 'https://runjapan.jp' + match[1];
+				registrationOpen = true;
+			}
+
+			races.push({
+				name,
+				url,
+				date,
+				location,
+				entryStart,
+				entryEnd,
+				website,
+				images,
+				description,
+				info,
+				notice,
+				registrationOpen,
+				registrationUrl,
+			});
 		}
 
-		break;
-
-		/*
-        if res contains zero race cards => break
-
-        for each race card on page:
-            fetch detail page information
-            extract info:
-            push to races[]
-            if race.length === limit => stop
-        pageIndex++
-        */
+		pageIndex++;
 	}
 
-	console.log(races);
+	const output = { last_updated: new Date().toISOString(), races };
+	await writeFile('data/races.json', JSON.stringify(output, null, 2));
+	return races;
 }
 
-populateRaces(1);
