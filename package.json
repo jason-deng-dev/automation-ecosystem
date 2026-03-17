@@ -1,0 +1,29 @@
+{
+  "name": "rednote-content-automation",
+  "version": "1.0.0",
+  "description": "A fully automated pipeline that generates daily Chinese-language marketing posts for Xiaohongshu (Rednote) using the Claude API, then auto-publishes them to the MOXI爱跑步 account via Playwright browser automation.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jason-deng-dev/rednote-content-automation.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/jason-deng-dev/rednote-content-automation/issues"
+  },
+  "homepage": "https://github.com/jason-deng-dev/rednote-content-automation#readme",
+  "dependencies": {
+    "node-cron": "^4.2.1",
+    "playwright": "^1.58.2"
+  }
+}

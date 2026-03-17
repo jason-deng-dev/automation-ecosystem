@@ -1,7 +1,7 @@
-- [ ]  Setup
-    - [ ]  Initialize repo
-    - [ ]  Set up Node.js project (npm init)
-    - [ ]  Install dependencies (axios, node-cron, playwright, @anthropic-ai/sdk)
+- [x]  Setup
+    - [x]  Initialize repo
+    - [x]  Set up Node.js project (npm init)
+    - [ ]  Install dependencies (node-cron, playwright, @anthropic-ai/sdk)
     - [ ]  Set up .env (Anthropic API key)
     - [ ]  Set up .gitignore
 - [ ]  Build races.json data source
