@@ -301,7 +301,7 @@ FORMAT RULES:
 - NO markdown headers (no #, ##, bold **)
 - Short lines — max 20 characters per line
 - End with: '链接在评论区👇'
-- Include 5-8 relevant hashtags at the end
+- Do NOT include hashtags in the body
 
 TITLE RULES (derived from performance data):
 - Use comparison format when possible: X vs Y vs Z
@@ -334,27 +334,47 @@ Based on data-derived content weighting:
 
 ### 6.4 Race Context Injection
 
-For Race Guide and Nutrition posts:
+#### Race Guide Posts
 
 ```
 Post type: Race Guide
-Target race: {{race.name}} on {{race.date}} in {{race.location}}
-Distance: {{race.distance}}
-Entry fee: {{race.entry_fee}}
+Race name: {{race.name}}
+Date: {{race.date}}
+Location: {{race.location}}
+Entry period: {{race.entryStart}} – {{race.entryEnd}}
+Registration open: {{race.registrationOpen}}
+Registration URL: {{race.registrationUrl}}
+Race website: {{race.website}}
+Description: {{race.description}}
 
 Write a complete XHS post that helps a Chinese runner in China understand
 whether this race is worth travelling to Japan for, and how to plan for it.
 ```
 
-For Training Science posts:
+#### Nutrition / Supplement Posts
+
+```
+Post type: Nutrition / Supplement
+Current month: {{month}}
+
+Write a nutrition or supplement tip post for marathon runners. Topic should be
+broadly useful (not Japan-specific) to maximise discovery. Optionally add a soft
+Japan tie-in at the end (e.g. "especially useful if you're prepping for a Japan race").
+Use a counterintuitive hook or X vs Y comparison format in the title.
+CTA should direct readers to the store at /shop/.
+```
+
+#### Training Science Posts
 
 ```
 Post type: Training Science
 Current month: {{month}}
-Upcoming major races: {{next_3_races_from_json}}
 
-Write a training tip post that ties into preparation for upcoming Japanese marathons.
+Write a training tip post for marathon runners. Topic should be broadly useful
+(not Japan-specific) to maximise discovery. Optionally add a soft Japan tie-in
+at the end (e.g. "great prep if you have a Japan race on the calendar").
 Use a counterintuitive hook or X vs Y comparison format in the title.
+CTA should direct readers to /mara-prep-tools/.
 ```
 
 ---
