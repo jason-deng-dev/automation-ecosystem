@@ -43,13 +43,16 @@ async function generatePosts(amount, type) {
 
 async function chooseRace() {
 	const races = JSON.parse(fs.readFileSync('./data/races.json', 'utf-8'));
+	let raceStr = '';
+	for (const race of races.races) {
+		
+		raceStr += race.name + '|||'
+	}
+	console.log(raceStr)
+
 	// const post_history = JSON.parse(fs.readFileSync('./data/post_history.json', 'utf-8'));
 	// filter races that are in post_history
 
-	// get all the race titles into a single str seperate by |||
-	// tell api to choose which of the races to choose
-	// add prompt to prompts.json as systemRaceSelectionPrompt
-	// add context to prompts.json as contextRaceSelection
 	let systemRaceSelectionPrompt = prompts.systemRaceSelectionPrompt;
 	let contextChooseRace = prompts.contextRaceSelection;
 
