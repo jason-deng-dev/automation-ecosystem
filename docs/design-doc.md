@@ -333,10 +333,10 @@ CTA destinations are not in the prompts — they are injected at runtime per pos
 
 |Day|Post Type|Weight Rationale|CTA Destination|
 |---|---|---|---|
-|Mon|Race Guide|Highest traffic driver|Race listings|
+|Mon|Race Guide|Highest traffic driver|/racehub/|
 |Tue|Nutrition / Supplement|Underpublished, highest CTR|/shop/|
 |Wed|Training Science|2nd highest avg views|/mara-prep-tools/|
-|Thu|Race Guide|40% target weight|Race listings|
+|Thu|Race Guide|40% target weight|/racehub/|
 |Fri|Nutrition / Supplement|20% target, weekend browse|/shop/|
 |Sat|Training Science|Weekend training research|/mara-prep-tools/|
 |Sun|Health & Recovery|Rest day content|/community/|
