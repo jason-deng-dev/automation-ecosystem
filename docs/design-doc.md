@@ -367,6 +367,7 @@ This keeps posts timely without requiring manual intervention — the same promp
 ```
 Post type: Race Guide
 Current month: {{month}}
+Current season: {{season}}
 Race name: {{race.name}}
 Date: {{race.date}}
 Location: {{race.location}}
@@ -378,14 +379,15 @@ Description: {{race.description}}
 
 Write a complete XHS post that helps a Chinese runner in China understand
 whether this race is worth travelling to Japan for, and how to plan for it.
-Use the current month for seasonal context where relevant (e.g. training window,
-weather at race time, how far out the race is).
+Use the current month and season for context where relevant (e.g. how far out
+the race is, whether it falls in peak training season, weather conditions at
+race time, what gear to prepare given the season).
 CTA should direct readers to the race's dedicated page on our marathon hub
 (currently: general race listings page — will be updated to deep link to the
 specific marathon's hub page once the hub is live).
 ```
 
-> **CTA upgrade path:** Currently links to the general race listings page (`/races/`). Once the Marathon Hub (race scraper + React SPA) is deployed, each Race Guide post will deep link to that marathon's dedicated hub page — giving readers direct access to full race details, registration links, and entry timelines without leaving the platform. The `races.json` schema already includes the `registrationUrl` and `website` fields needed to build these deep links.
+> **CTA upgrade path:** Currently links to `/racehub/`. Once the Marathon Hub (race scraper + React SPA) is deployed, each Race Guide post will deep link to that marathon's dedicated hub page — giving readers direct access to full race details, registration links, and entry timelines without leaving the platform. The `races.json` schema already includes the `registrationUrl` and `website` fields needed to build these deep links.
 
 #### Nutrition / Supplement Posts
 
@@ -416,7 +418,13 @@ at the end (e.g. "great prep if you have a Japan race on the calendar").
 Use seasonal context: winter posts can address cold-weather motivation and indoor
 training; summer posts can cover heat adaptation and pacing in humidity.
 Use a counterintuitive hook or X vs Y comparison format in the title.
-CTA should direct readers to /mara-prep-tools/.
+CTA should direct readers to our marathon preparation toolkit — a free suite of
+tools that helps runners answer: "What marathon time am I realistically capable
+of right now?", "What pace does my goal actually require?", and "Given where I
+am and how much time I have, is my goal realistic?". The toolkit also includes a
+progress trendline for tracking improvement over a training build. Frame the CTA
+as a natural next step after reading the post — e.g. after a training tip about
+pacing, suggest checking their goal pace with the tool.
 ```
 
 #### Wearables / Equipment Posts
