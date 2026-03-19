@@ -25,8 +25,8 @@
     - [x] Populate comments with real URLs for all post types (race, training, nutrition)
     - [x] Training comments expanded to 3 (mara-prep-tools, progress-trendline, community)
     - [x] Add season field to race guide prompt template
-    - [ ] Add current month injection to all post type prompts at runtime
-    - [ ] Add current season injection to race guide prompt at runtime
+    - [x] Add current month injection to all post type prompts at runtime
+    - [x] Add current season injection to all post type prompts at runtime
     - [x] Add seasonal content guidance to training/nutrition post type prompts
     - [x] Add wearables/equipment post type context prompt to prompts.json
     - [ ] Define hardcoded hashtags per post type (including wearables)
@@ -45,7 +45,7 @@
   - [ ] Install Vitest
   - [ ] Create tests/ folder structure (fixtures/, scraper.test.js, context-builder.test.js, generator.test.js)
   - [ ] Create sample-races.json and mock-api-response.json fixtures
-  - [ ] Refactor generatePosts() — extract buildContext() as pure testable function
+  - [x] Refactor generatePosts() — extract getContextPrompts() as separate async function
   - [ ] scraper.test.js — validate output shape, required fields, minimum race count
   - [ ] context-builder.test.js — test each post type builds correct context
   - [ ] generator.test.js — mock Anthropic client, verify API called correctly
