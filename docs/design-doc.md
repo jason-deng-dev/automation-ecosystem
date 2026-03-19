@@ -272,6 +272,7 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |HTTP requests (scraper)|axios|node-fetch, native fetch|More reliable for scraping; better error handling and timeout support|
 |HTML parsing (scraper)|cheerio|jsdom, regex|Lightweight jQuery-style API; purpose-built for server-side HTML parsing|
 |Prompt storage|`config/prompts.json`|Hardcoded in JS, `.env`|Separates tunable content (persona, templates) from pipeline logic; employer can adjust prompts without touching code|
+|CTA injection|Runtime code injection per post type|Hardcoded in system prompt|System prompt is sent on every API call — putting CTA targets there wastes tokens on context irrelevant to the current post type. Injecting a natural-language CTA description per type in `generatePosts()` keeps the system prompt lean and makes each call's context more precise. Claude also doesn't need to know actual URLs — those are hardcoded in the pipeline and injected after parsing.|
 |Deployment / handoff|Docker + docker-compose|Manual server setup, PM2|Ensures consistent runtime environment across machines; Playwright browser binaries are notoriously environment-sensitive; allows non-technical handoff with a single `docker-compose up`|
 
 ---
@@ -317,23 +318,18 @@ TITLE RULES (derived from performance data):
 - Never use series framing (第1集, EP1, etc.)
 - Never use vague titles with no specific hook
 
-CTA TARGETS:
-- Race guide posts → race listings page
-- Nutrition posts → /shop/
-- Training posts → /mara-prep-tools/
-- Community posts → /community/
-
 OUTPUT FORMAT (critical):
 Return ONLY a valid JSON object with no extra text, explanation, or markdown code blocks.
-The JSON must have exactly these three fields:
+The JSON must have exactly these two fields:
 - "body": the full XHS post text, ending with '链接在评论区👇'. No hashtags.
 - "description": a short 1-2 sentence caption summarising the post. No hashtags.
-- "comment": a CTA message directing readers to the relevant destination. No URL — the URL will be injected at runtime.
 ```
 
 ### 6.3 Post Type Rotation
 
-Based on data-derived content weighting:
+Based on data-derived content weighting. Wearables / Equipment will be added to the rotation once the Rakuten store has sufficient product coverage — planned to replace one Health & Recovery slot.
+
+CTA destinations are not in the prompts — they are injected at runtime per post type in `generatePosts()`. See Section 5 (Technical Decisions) for rationale.
 
 |Day|Post Type|Weight Rationale|CTA Destination|
 |---|---|---|---|
@@ -345,12 +341,32 @@ Based on data-derived content weighting:
 |Sat|Training Science|Weekend training research|/mara-prep-tools/|
 |Sun|Health & Recovery|Rest day content|/community/|
 
-### 6.4 Race Context Injection
+### 6.4 Runtime Context Injection
+
+All user-turn prompts are dynamic. The pipeline injects the following fields at runtime before each API call:
+
+| Field | Source | Used in |
+|---|---|---|
+| `{{race.*}}` | `races.json` via `chooseRace()` | Race Guide only |
+| `{{month}}` | `new Date()` | All post types |
+| `{{season}}` | Derived from month | All post types |
+
+**Seasonal content guidance (applies to all post types):**
+
+The season is injected so Claude can tailor content to what's relevant for the reader right now:
+
+- **Winter (Dec–Feb):** Cold-weather training motivation, layering gear, indoor alternatives, warm-up routines
+- **Spring (Mar–May):** Race season buildup, peak training, lightweight gear, race-day prep
+- **Summer (Jun–Aug):** Heat management, hydration, early morning training, sweat-resistant gear
+- **Autumn (Sep–Nov):** Marathon season peak, recovery between races, race selection for the season
+
+This keeps posts timely without requiring manual intervention — the same prompt produces seasonally-aware content year-round.
 
 #### Race Guide Posts
 
 ```
 Post type: Race Guide
+Current month: {{month}}
 Race name: {{race.name}}
 Date: {{race.date}}
 Location: {{race.location}}
@@ -362,17 +378,27 @@ Description: {{race.description}}
 
 Write a complete XHS post that helps a Chinese runner in China understand
 whether this race is worth travelling to Japan for, and how to plan for it.
+Use the current month for seasonal context where relevant (e.g. training window,
+weather at race time, how far out the race is).
+CTA should direct readers to the race's dedicated page on our marathon hub
+(currently: general race listings page — will be updated to deep link to the
+specific marathon's hub page once the hub is live).
 ```
+
+> **CTA upgrade path:** Currently links to the general race listings page (`/races/`). Once the Marathon Hub (race scraper + React SPA) is deployed, each Race Guide post will deep link to that marathon's dedicated hub page — giving readers direct access to full race details, registration links, and entry timelines without leaving the platform. The `races.json` schema already includes the `registrationUrl` and `website` fields needed to build these deep links.
 
 #### Nutrition / Supplement Posts
 
 ```
 Post type: Nutrition / Supplement
 Current month: {{month}}
+Current season: {{season}}
 
 Write a nutrition or supplement tip post for marathon runners. Topic should be
 broadly useful (not Japan-specific) to maximise discovery. Optionally add a soft
 Japan tie-in at the end (e.g. "especially useful if you're prepping for a Japan race").
+Use seasonal context to make the topic timely: summer posts can focus on hydration
+and electrolytes; winter posts on cold-weather nutrition and immune support.
 Use a counterintuitive hook or X vs Y comparison format in the title.
 CTA should direct readers to the store at /shop/.
 ```
@@ -382,13 +408,40 @@ CTA should direct readers to the store at /shop/.
 ```
 Post type: Training Science
 Current month: {{month}}
+Current season: {{season}}
 
 Write a training tip post for marathon runners. Topic should be broadly useful
 (not Japan-specific) to maximise discovery. Optionally add a soft Japan tie-in
 at the end (e.g. "great prep if you have a Japan race on the calendar").
+Use seasonal context: winter posts can address cold-weather motivation and indoor
+training; summer posts can cover heat adaptation and pacing in humidity.
 Use a counterintuitive hook or X vs Y comparison format in the title.
 CTA should direct readers to /mara-prep-tools/.
 ```
+
+#### Wearables / Equipment Posts
+
+```
+Post type: Wearables / Equipment
+Current month: {{month}}
+Current season: {{season}}
+
+Write a post reviewing, comparing, or recommending running gear or equipment for
+marathon runners. Focus on Japanese brands or products available through Japanese
+retailers — frame them as premium, authentic, and worth importing.
+
+Topics can include: running shoes, GPS watches, apparel, compression gear,
+hydration vests, race-day accessories, cold-weather layers, or summer breathability gear.
+
+Use seasonal context: summer posts can focus on lightweight and breathable gear,
+heat management tools, and UV protection; winter posts can cover thermal layers,
+wind resistance, and cold-weather accessories.
+
+Use a counterintuitive hook or X vs Y vs Z comparison format in the title.
+CTA should direct readers to the store at /shop/.
+```
+
+> **Ecosystem note:** The Wearables / Equipment post type is directly tied to the Rakuten-WooCommerce aggregator pipeline — a separate project that pulls Japanese running products from Rakuten Ichiba, translates them via DeepL, applies auto-pricing logic, and syncs them to the WooCommerce store. Content generation and product supply are two halves of the same flywheel: the aggregator keeps the store stocked, and this pipeline drives traffic to it.
 
 ### 6.5 Race Selection — Two-Stage API Call
 
@@ -495,15 +548,26 @@ POST https://api.anthropic.com/v1/messages
 
 ### 7.3 Generated Post Object
 
-Claude returns a structured JSON object with three fields. The pipeline then appends hashtags and injects the CTA URL before publishing.
+Claude returns a structured JSON object. The pipeline appends hashtags and injects CTA URLs before publishing.
 
-**Claude raw output:**
+> **Testing note:** During development, responses are in English. Live production will be in Chinese. The 300-character comment limit is enforced in the prompt for production readiness — Chinese characters are denser so this matters more in production than in testing.
+
+**Claude raw output (body + description only):**
 ```json
 {
   "body": "...(full XHS post text ending with 链接在评论区👇)...",
-  "description": "一句话简介这篇帖子的内容，吸引读者点击",
-  "comment": "想了解更多？点这里👇 {{CTA_URL}}"
+  "description": "一句话简介这篇帖子的内容，吸引读者点击"
 }
+```
+
+**Comments are static, defined per post type in `generatePosts()` switch cases — not generated by Claude.** Each post type has two hardcoded comments with `{{CTA_URL}}` and `{{COMMUNITY_URL}}` placeholders:
+
+```js
+// race case
+comments = [
+  '想了解更多关于这场比赛的详细信息和报名攻略？👇 {{CTA_URL}}',
+  '加入我们的跑步社区，和其他计划去日本跑马的小伙伴一起交流👇 {{COMMUNITY_URL}}',
+];
 ```
 
 **After pipeline processing (published object):**
@@ -512,12 +576,15 @@ Claude returns a structured JSON object with three fields. The pipeline then app
   "post_type": "race_guide",
   "body": "...(XHS formatted Chinese text)...",
   "description": "一句话简介 #日本马拉松 #富士山 #中国跑者 #海外马拉松 #moxi爱跑步",
-  "comment": "想了解更多？点这里👇 running.moximoxi.net/races/",
+  "comments": [
+    "想了解更多关于这场比赛的详细信息和报名攻略？👇 running.moximoxi.net/races/",
+    "加入我们的跑步社区👇 running.moximoxi.net/community/"
+  ],
   "generated_at": "2026-03-17T06:00:00Z"
 }
 ```
 
-Hashtags are hardcoded per post type and appended to `description` after parsing. The `{{CTA_URL}}` placeholder in `comment` is replaced at runtime with the correct destination (`/shop/`, `/mara-prep-tools/`, `/races/`, etc.).
+Hashtags are hardcoded per post type and appended to `description` after parsing. `{{CTA_URL}}` and `{{COMMUNITY_URL}}` placeholders are replaced at runtime. Each comment is posted sequentially by `publisher.js` — primary CTA first, community second.
 
 ---
 
@@ -612,9 +679,15 @@ Hashtags are hardcoded per post type and appended to `description` after parsing
 
 - `body` — the full XHS post text, ending with `链接在评论区👇` to signal the link is below
 - `description` — a short caption summary; hashtags (hardcoded per post type) are appended here after parsing
-- `comment` — a CTA message with a placeholder for the destination URL, which is injected at runtime before publishing
+- `comments` — an array of comment strings, each with a single purpose and under 300 characters
 
-`publisher.js` executes two sequential Playwright actions: post the body + description, then immediately post the first comment with the destination URL. First-comment placement is standard XHS creator practice — the audience expects it and the algorithm treats it as part of the post.
+**Comment structure:** Each post gets at least two comments, posted sequentially by `publisher.js`:
+1. **Primary CTA** — links to the relevant destination (race hub page, `/shop/`, `/mara-prep-tools/`)
+2. **Community CTA** — links to `/community/`, present on every post to drive community growth regardless of post type
+
+XHS enforces a **300-character limit per comment**. This is enforced in the prompt so Claude generates comments that fit in production. During development, responses are in English (which runs longer); the limit matters most in Chinese production where character density is higher.
+
+`publisher.js` posts each comment in the array sequentially after publishing the body. First-comment placement is standard XHS creator practice — the audience expects it and the algorithm treats it as part of the post.
 
 **Hashtag strategy:** Tags are hardcoded per post type in the pipeline (not generated by Claude) and appended to `description` after parsing the Claude response. This avoids hallucinated or off-brand tags and keeps the tag set consistent and controlled.
 
@@ -647,6 +720,14 @@ The formatter and generator are platform-agnostic. The same pipeline could targe
 ### 10.5 User-Generated Content Integration
 
 As the community grows, pull in user race reports or PB submissions and generate celebratory posts featuring real community members — increasing authenticity with zero additional research effort.
+
+### 10.6 Marathon Hub Deep Linking (Planned)
+
+Currently, Race Guide posts CTA to the general race listings page (`/races/`). Once the Marathon Hub project is deployed — a separate pipeline that scrapes RunJapan, normalises race data, and serves it through a React SPA — each Race Guide post will deep link to that specific marathon's dedicated hub page.
+
+This upgrade closes the full funnel: a reader sees a post about 富士山 trail run → clicks the comment link → lands directly on the hub page for that race with full details, registration timeline, and a direct link to sign up. No extra navigation required.
+
+The data to build these deep links already exists in `races.json` (`registrationUrl`, `website`, `name`). The CTA URL injection in `publisher.js` will be updated to pass the specific hub URL once the hub is live — no changes needed to the generator itself.
 
 ---
 
