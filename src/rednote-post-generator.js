@@ -10,6 +10,20 @@ const client = new Anthropic({
 
 async function generatePosts(type) {
 	const systemPrompt = prompts.systemPrompt;
+	const { comments, contextToUse } = await getContextPrompts(type);
+
+	const message = await client.messages.create({
+		max_tokens: 1024,
+		system: systemPrompt,
+		messages: [{ role: 'user', content: contextToUse }],
+		model: 'claude-sonnet-4-6',
+	});
+
+	console.log(message);
+	return message;
+}
+
+async function getContextPrompts(type) {
 	let contextToUse;
 	let comments;
 	let ctaDescription;
@@ -72,25 +86,35 @@ async function generatePosts(type) {
 				'正品日本跑步装备、营养品、运动服饰，日本本地直采👇 https://running.moximoxi.net/',
 				'加入我们的跑步社区，和其他计划去日本跑马的小伙伴一起交流👇 https://running.moximoxi.net/community/',
 			];
-			break
+			break;
 		}
 		default:
 			throw new Error('Incorrect type used');
 	}
 
-	// inject month/season context
-
 	contextToUse += `\n\nCTA: Direct readers to ${ctaDescription}. Tell them the link is in the comments.`;
 
-	const message = await client.messages.create({
-		max_tokens: 1024,
-		system: systemPrompt,
-		messages: [{ role: 'user', content: contextToUse }],
-		model: 'claude-sonnet-4-6',
-	});
+	const month = new Date().toLocaleString('en-US', { month: 'long' });
+	const monthToSeason = {
+		December: 'Winter',
+		January: 'Winter',
+		February: 'Winter',
+		March: 'Spring',
+		April: 'Spring',
+		May: 'Spring',
+		June: 'Summer',
+		July: 'Summer',
+		August: 'Summer',
+		September: 'Autumn',
+		October: 'Autumn',
+		November: 'Autumn',
+	};
+	const season = monthToSeason[month];
 
-	console.log(message);
-	return message;
+	contextToUse = contextToUse.replace(': month', `: ${month}`).replace(': season', `: ${season}`);
+
+
+	return { comments, contextToUse };
 }
 
 async function chooseRace() {
@@ -112,8 +136,11 @@ async function chooseRace() {
 	return raceSelection.content[0].text;
 }
 
-function chooseRaceMock() {
+async function chooseRaceMock() {
 	return "The 5th Mt. Fuji Sanroku Women's Trail Run";
 }
 
-// generatePosts('race');
+
+// (async () => {
+// 	console.log(await getContextPrompts('race'));
+// })();
