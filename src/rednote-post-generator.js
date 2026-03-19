@@ -43,24 +43,30 @@ async function generatePosts(amount, type) {
 
 async function chooseRace() {
 	const races = JSON.parse(fs.readFileSync('./data/races.json', 'utf-8'));
-	const post_history = JSON.parse(fs.readFileSync('./data/post_history.json', 'utf-8'));
+	// const post_history = JSON.parse(fs.readFileSync('./data/post_history.json', 'utf-8'));
 	// filter races that are in post_history
-	// get all the race titles into a single str seperate by something like ###
+
+	// get all the race titles into a single str seperate by |||
 	// tell api to choose which of the races to choose
-	// add prompt to prompts.json as systemRacePrompt
-	// add context to prompts.json as contextChooseRace
-	let systemRacePrompt = prompts.systemRacePrompt;
-	let contextChooseRace = prompts.contextChooseRace;
+	// add prompt to prompts.json as systemRaceSelectionPrompt
+	// add context to prompts.json as contextRaceSelection
+	let systemRaceSelectionPrompt = prompts.systemRaceSelectionPrompt;
+	let contextChooseRace = prompts.contextRaceSelection;
 
-	const raceSelection = await client.messages.create({
-		max_tokens: 1024,
-		system: systemRacePrompt,
-		messages: [{ role: 'user', content: contextChooseRace }],
-		model: 'claude-sonnet-4-6',
-	});
+	console.log('System Prompt: '+ systemRaceSelectionPrompt)
+	console.log('Race Context: ' + contextChooseRace)
 
-	const raceChosen = raceSelection.content[0].text;
+	// const raceSelection = await client.messages.create({
+	// 	max_tokens: 1024,
+	// 	system: systemRacePrompt,
+	// 	messages: [{ role: 'user', content: contextChooseRace }],
+	// 	model: 'claude-sonnet-4-6',
+	// });
 
-	return races.find((race) => race.name === raceChosen);
+	// const raceChosen = raceSelection.content[0].text;
+
+	// return races.find((race) => race.name === raceChosen);
 }
-generatePosts(1, 'race');
+
+chooseRace()
+
