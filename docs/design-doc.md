@@ -215,6 +215,7 @@ DATA  →  GENERATE  →  FORMAT  →  PUBLISH
 
 - Loads `races.json` to inject live race context into prompts
 - Selects post type based on data-weighted rotation schedule
+- If race post type, calls Claude API to choose a race
 - Calls Claude API with system prompt + structured user prompt
 - Passes generated post to formatter
 
@@ -442,14 +443,15 @@ POST https://api.anthropic.com/v1/messages
 
 |Component|Status|Notes|
 |---|---|---|
-|scraper.js|✅ Complete|Two-pass scrape (listing → detail pages); writes to data/races.json|
+|Manually written posts|✅ Done|115 posts — performance data extracted and analyzed|
+|Node.js project setup|✅ Done|npm init, node-cron + playwright installed, .gitignore + .env.example in place|
+|scraper.js|✅ Done|Two-pass scrape (listing → detail pages); writes to data/races.json|
 |races.json|✅ Populated|Full schema: name, url, date, location, entryStart/End, website, images, description, info, notice, registrationOpen, registrationUrl|
-|rednote-post-generator.js|❌ Not started|File does not exist yet|
+|rednote-post-generator.js|🔄 In progress|File does not exist yet|
 |formatter.js|❌ Not started|File does not exist yet|
 |publisher.js|❌ Not started|File does not exist yet|
 |Cron orchestration|❌ Not started|End-to-end pipeline not wired|
-|Node.js project setup|✅ Done|npm init, node-cron + playwright installed, .gitignore + .env.example in place|
-|Manually written posts|✅ Baseline complete|115 posts — performance data extracted and analyzed|
+
 
 ### 8.2 Phase 1 — Core Generator (Priority: Ship before May 20)
 
