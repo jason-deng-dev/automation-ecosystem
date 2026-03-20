@@ -121,11 +121,20 @@ async function getContextPrompts(type) {
 
 async function chooseRace() {
 	let raceStr = "";
+	
+
 	for (const race of races.races) {
 		raceStr += race.name + "|||";
 	}
-	// const post_history = JSON.parse(fs.readFileSync('./data/post_history.json', 'utf-8'));
+
 	// filter races that are in post_history
+	const postedRaces = fs.existsSync("data/post_history.json")
+		? JSON.parse(fs.readFileSync("data/post_history.json", "utf-8"))
+		: [];
+
+	postedRaces.forEach((postedRace) => {
+		raceStr = raceStr.replaceAll(`${postedRace}|||`, "");
+	});
 
 	let systemRaceSelectionPrompt = prompts.systemRaceSelectionPrompt;
 	let contextChooseRace = prompts.contextRaceSelection + raceStr;
@@ -135,6 +144,12 @@ async function chooseRace() {
 		messages: [{ role: "user", content: contextChooseRace }],
 		model: "claude-sonnet-4-6",
 	});
+
+	/*
+	add the marathon name to post_history.json
+	*/
+	postedRaces.push(raceSelection.content[0].text)
+	fs.writeFileSync("data/post_history.json", JSON.stringify(postedRaces, null, 2))
 	return raceSelection.content[0].text;
 }
 
