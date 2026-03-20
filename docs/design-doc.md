@@ -191,12 +191,12 @@ Only **7 Nutrition posts** have been published vs **48 Race Guide posts**. Yet N
 ### 4.1 High-Level Overview
 
 ```
-DATA  →  GENERATE  →  FORMAT  →  PUBLISH
+DATA  →  SCHEDULE  →  GENERATE  →  PUBLISH
 ```
 
 - **Stage 1 — DATA:** Race scraper pulls all upcoming Japanese marathon data into `races.json` weekly via cron
-- **Stage 2 — GENERATE:** Claude API receives race context + system prompt → produces complete XHS post in Chinese
-- **Stage 3 — FORMAT:** Formatter applies XHS rules: multi-page structure, emoji density, CTA, comment link
+- **Stage 2 — SCHEDULE:** Scheduler determines today's post type from the 7-day rotation and calls the generator
+- **Stage 3 — GENERATE:** Claude API receives race context + system prompt → produces paste-ready structured post
 - **Stage 4 — PUBLISH:** Browser automation posts to MOXI爱跑步 XHS account
 
 ### 4.2 Component Breakdown
@@ -219,18 +219,23 @@ DATA  →  GENERATE  →  FORMAT  →  PUBLISH
 - Calls Claude API with system prompt + structured user prompt
 - Returns structured post object `{ title, hook, contents[], cta, description, hashtags, comments }` directly to publisher
 
-#### content-generator/publisher.js (new)
+#### scheduler.js (new)
 
-- Playwright browser automation targeting XHS web client
-- Posts title + body, then adds comment with destination URL
-- Handles retry logic and session persistence
-
-#### Cron orchestrator
-
-- Weekly cron: scrape → update `races.json`
-- Daily cron: generate → format → publish
+- Determines today's post type from the 7-day data-weighted rotation schedule
+- Calls `generatePosts(type)` with the correct post type
+- Passes the result to `publisher.js`
+- Weekly cron: trigger scraper → update `races.json`
+- Daily cron: determine type → generate → publish
 - Logs each stage to `pipeline.log`
 - Flags failures for manual review
+
+#### publisher.js (new)
+
+- Playwright browser automation targeting XHS web client
+- Applies H1 to title, H2 to each content page subtitle, pastes body fields as plain text
+- Appends hashtags to description
+- Posts comments array sequentially (primary CTA first, community second)
+- Handles retry logic and session persistence
 
 ### 4.3 Data Flow
 
@@ -241,6 +246,8 @@ scraper.js
     ↓  (writes)
 races.json
     ↓  (reads)
+scheduler.js  ←  7-day rotation logic (determines post type)
+    ↓  (calls generatePosts(type))
 rednote-post-generator.js
     ↓  (POST /v1/messages)
 Claude API  ←  system prompt + race context + performance-informed instructions
@@ -648,6 +655,7 @@ Hashtags are hardcoded per post type and appended to `description` after parsing
 |races.json|✅ Populated|Full schema: name, url, date, location, entryStart/End, website, images, description, info, notice, registrationOpen, registrationUrl|
 |rednote-post-generator.js|🔄 In progress|Race selection API call working; prompts wired from prompts.json; post generation and return logic still in progress|
 |formatter.js|🚫 Removed|Formatting is enforced via prompt structure — separate formatter step not needed|
+|scheduler.js|❌ Not started|Rotation logic + cron orchestration — calls generator with correct post type daily|
 |publisher.js|❌ Not started|File does not exist yet|
 |Cron orchestration|❌ Not started|End-to-end pipeline not wired|
 
@@ -857,6 +865,7 @@ rednote-content-automation/
     ├── src/
     │   ├── scraper.js                  # Self-contained RunJapan scraper
     │   ├── rednote-post-generator.js   # Core — Claude API integration
+    │   ├── scheduler.js                # Rotation logic + cron orchestration
     │   └── publisher.js                # Playwright browser automation
     ├── config/
     │   └── prompts.json                # System prompt, post-type context templates — tunable without touching code

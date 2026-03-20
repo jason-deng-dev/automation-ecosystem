@@ -12,7 +12,7 @@
   - [x] Write to races.json
 - [ ] Build post generator with Claude API
   - [x] system prompt/context prompt template setup
-  - [x] Specify JSON output format in system prompt (body + description only)
+  - [x] Specify JSON output format in system prompt (title, hook, contents[], cta, description)
   - [x] Make api call with context and get response
   - [x] chooseRace() working — race selection API call complete, returns race name
   - [x] Add chooseRaceMock() for testing without burning API calls
@@ -30,11 +30,9 @@
     - [x] Add seasonal content guidance to training/nutrition post type prompts
     - [x] Add wearables/equipment post type context prompt to prompts.json
     - [x] Define hardcoded hashtags per post type (including wearables)
-    - [ ] Update system prompt with new structured output format (title, hook, contents[], cta, description)
-    - [ ] Update system prompt with new format rules (line limits, page budgets, subtitle rules, CTA rules)
-    - [ ] getHashtags() wired — append to response before returning from generatePosts()
-    - [ ] Post type rotation logic (7-day schedule)
-    - [ ] Add wearables/equipment to post type rotation (7-day schedule)
+    - [x] Update system prompt with new structured output format (title, hook, contents[], cta, description)
+    - [x] Update system prompt with new format rules (line limits, page budgets, subtitle rules, CTA rules)
+    - [x] getHashtags() wired — append to response before returning from generatePosts()
     - [ ] When a marathon is used it is added to post_history.json
     - [ ] When selecting a marathon filter out marathons in post_history.json
 - [ ] Setup tests (Vitest)
@@ -53,8 +51,12 @@
   - [ ] Paste cta as plain text
   - [ ] Append hashtags to description field
   - [ ] Post comments array sequentially (primary CTA first, community second)
+- [ ] Build scheduler.js (orchestrator)
+  - [ ] Post type rotation logic (7-day schedule)
+  - [ ] Add wearables/equipment to rotation schedule
+  - [ ] Simulate 7-day schedule and verify correct post types fire in order
+  - [ ] Wire full daily cron (scraper weekly, generate → publish daily)
 - [ ] Wire post_history.json dedup
-- [ ] Wire full daily cron
 - [ ] Deploy
   - [ ] Write Dockerfile
   - [ ] Write docker-compose.yml
