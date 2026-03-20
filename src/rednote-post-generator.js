@@ -32,7 +32,7 @@ async function getContextPrompts(type) {
 	switch (type) {
 		case "race": {
 			let raceContext = prompts.postTypes.raceGuide;
-			const raceChosen = await chooseRaceMock();
+			const raceChosen = await chooseRace();
 			const race = races.races.find((item) => item.name === raceChosen);
 			const fields = [
 				"name",
@@ -153,10 +153,6 @@ async function chooseRace() {
 	return raceSelection.content[0].text;
 }
 
-async function chooseRaceMock() {
-	return "The 5th Mt. Fuji Sanroku Women's Trail Run";
-}
-
 function getHashtags(type) {
 	switch (type) {
 		case "race":
@@ -216,8 +212,6 @@ function getHashtags(type) {
 	}
 }
 
-export {generatePosts, getContextPrompts, chooseRace, chooseRaceMock, getHashtags}
+export {generatePosts, getContextPrompts, chooseRace, getHashtags}
 
-// (async () => {
-// 	console.log(await getContextPrompts('race'));
-// })();
+
