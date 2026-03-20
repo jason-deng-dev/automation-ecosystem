@@ -7,10 +7,13 @@ const races = JSON.parse(fs.readFileSync("./data/races.json", "utf-8"));
 const client = new Anthropic({
 	apiKey: process.env["ANTHROPIC_API_KEY"],
 });
+const postedRaces = fs.existsSync("data/post_history.json")
+	? JSON.parse(fs.readFileSync("data/post_history.json", "utf-8"))
+	: [];
 
 async function generatePosts(type) {
 	const systemPrompt = prompts.systemPrompt;
-	const { comments, contextToUse } = await getContextPrompts(type);
+	const { comments, contextToUse, raceChosen} = await getContextPrompts(type);
 
 	const message = await client.messages.create({
 		max_tokens: 1024,
@@ -19,20 +22,34 @@ async function generatePosts(type) {
 		model: "claude-sonnet-4-6",
 	});
 
+	// if message is successful add the race to post_history
+
+	/*
+	add the marathon name to post_history.json
+	*/
+	if (type == "race") {
+		postedRaces.push(raceChosen);
+		fs.writeFileSync(
+			"data/post_history.json",
+			JSON.stringify(postedRaces, null, 2),
+		);
+	}
+
 	const hashtags = getHashtags(type);
 
-	return { message, hashtags };
+	return { message, hashtags, comments};
 }
 
 async function getContextPrompts(type) {
 	let contextToUse;
 	let comments;
 	let ctaDescription;
+	let raceChosen = '';
 
 	switch (type) {
 		case "race": {
 			let raceContext = prompts.postTypes.raceGuide;
-			const raceChosen = await chooseRace();
+			raceChosen = await chooseRace();
 			const race = races.races.find((item) => item.name === raceChosen);
 			const fields = [
 				"name",
@@ -116,21 +133,16 @@ async function getContextPrompts(type) {
 		.replace(": month", `: ${month}`)
 		.replace(": season", `: ${season}`);
 
-	return { comments, contextToUse };
+	
+	return { comments, contextToUse, raceChosen};
 }
 
 async function chooseRace() {
 	let raceStr = "";
-	
 
 	for (const race of races.races) {
 		raceStr += race.name + "|||";
 	}
-
-	// filter races that are in post_history
-	const postedRaces = fs.existsSync("data/post_history.json")
-		? JSON.parse(fs.readFileSync("data/post_history.json", "utf-8"))
-		: [];
 
 	postedRaces.forEach((postedRace) => {
 		raceStr = raceStr.replaceAll(`${postedRace}|||`, "");
@@ -145,11 +157,6 @@ async function chooseRace() {
 		model: "claude-sonnet-4-6",
 	});
 
-	/*
-	add the marathon name to post_history.json
-	*/
-	postedRaces.push(raceSelection.content[0].text)
-	fs.writeFileSync("data/post_history.json", JSON.stringify(postedRaces, null, 2))
 	return raceSelection.content[0].text;
 }
 
@@ -212,6 +219,4 @@ function getHashtags(type) {
 	}
 }
 
-export {generatePosts, getContextPrompts, chooseRace, getHashtags}
-
-
+export { generatePosts, getContextPrompts, chooseRace, getHashtags };
