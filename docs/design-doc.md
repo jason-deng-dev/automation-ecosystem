@@ -665,7 +665,7 @@ Hashtags are hardcoded per post type and appended to `description` after parsing
 |Node.js project setup|✅ Done|npm init, node-cron + playwright installed, .gitignore + .env.example in place|
 |scraper.js|✅ Done|Two-pass scrape (listing → detail pages); writes to data/races.json|
 |races.json|✅ Populated|Full schema: name, url, date, location, entryStart/End, website, images, description, info, notice, registrationOpen, registrationUrl|
-|rednote-post-generator.js|🔄 In progress|Race selection API call working; prompts wired from prompts.json; post generation and return logic still in progress|
+|rednote-post-generator.js|✅ Done|All post types wired; race selection + dedup via post_history.json; hashtags appended; returns structured post object|
 |formatter.js|🚫 Removed|Formatting is enforced via prompt structure — separate formatter step not needed|
 |scheduler.js|❌ Not started|Rotation logic + cron orchestration — calls generator with correct post type daily|
 |publisher.js|❌ Not started|File does not exist yet|
@@ -782,6 +782,7 @@ tests/
   scraper.test.js
   context-builder.test.js
   generator.test.js
+  scheduler.test.js
 ```
 
 ### 10.4 Test Coverage
@@ -812,6 +813,23 @@ Mocks the Anthropic client. Uses `chooseRaceMock()` so no race selection API cal
 - `generatePosts('race')` calls the API with correct system prompt and context
 - API response is parsed and returned correctly (body + description accessible on the returned object)
 - Mock is called with the correct model and `max_tokens`
+
+#### Scheduler (`scheduler.test.js`)
+
+Publisher does not need to exist for scheduler tests. `publisher.js` is mocked at the import level using `vi.mock()` — the mock records what it was called with but does nothing. This lets us verify scheduler logic in isolation.
+
+- 7-day rotation produces correct post type for each day index (race appears 3x, training 2x, nutrition 1x, wearable 1x)
+- Rotation is deterministic — same day index always returns same post type
+- `generatePosts()` is called with the post type returned by rotation
+- `publish()` is called with the object returned by `generatePosts()`
+- Mocked `publish` receives the correct post type field
+
+```js
+vi.mock('./publisher.js', () => ({
+  publish: vi.fn()
+}));
+// then assert: expect(publish).toHaveBeenCalledWith(expect.objectContaining({ post_type: 'race' }))
+```
 
 ### 10.5 Required Refactor
 
