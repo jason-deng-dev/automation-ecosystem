@@ -22,6 +22,9 @@ Refer to `docs/design-doc.md` Section 12. Key files:
 
 This is not optional. Do not wait to be reminded.
 
+## !! CRITICAL — Never Ask Jason For Code or File Contents !!
+**ALWAYS read files yourself using Read, Glob, or Grep. NEVER ask Jason to share code, paste a file, or describe what's in the repo. Check yourself every time.**
+
 ## General Rules
 - Never overwrite or modify `.env` — use `.env.example` for new keys
 - Always read the relevant section of the design doc before implementing a new component
