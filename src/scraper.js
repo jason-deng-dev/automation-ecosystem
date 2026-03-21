@@ -146,14 +146,19 @@ async function getInfo($, el) {
 	}
 	$detail(".event-info-bttom_list2 ul li").each((_i, li) => collectText(li));
 
-	let registrationOpen = false;
+	// tri-state: true = open, false = closed, null = unknown (button element missing — page structure changed)
+	let registrationOpen = null;
 	let registrationUrl = null;
 	const entryBtn = $detail(".event-info-btn");
-	if (!entryBtn.find(".close-btn").length) {
+	if (!entryBtn.length) {
+		registrationOpen = null;
+	} else if (!entryBtn.find(".close-btn").length) {
 		const onclick = entryBtn.find("a").attr("onclick") || "";
 		const match = onclick.match(/location\.href='([^']+)'/);
 		if (match) registrationUrl = "https://runjapan.jp" + match[1];
 		registrationOpen = true;
+	} else {
+		registrationOpen = false;
 	}
 	return {
 		name: raceName,
