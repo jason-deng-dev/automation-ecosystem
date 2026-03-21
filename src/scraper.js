@@ -1,14 +1,15 @@
+import "dotenv/config";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { writeFile } from "fs/promises";
 
-const timeout = 10000;
+const timeout = parseInt(process.env.RUNJAPAN_TIMEOUT) || 10000;
 
 async function populateRaces(limit) {
 	const races = [];
 	let pageIndex = 1;
 
-	const baseUrl = "https://runjapan.jp/entry/runtes/smp/racesearchdetail.do";
+	const baseUrl = process.env.RUNJAPAN_BASE_URL || "https://runjapan.jp/entry/runtes/smp/racesearchdetail.do";
 	while (races.length < limit) {
 		const pageUrl =
 			pageIndex === 1
