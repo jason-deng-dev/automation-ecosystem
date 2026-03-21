@@ -278,7 +278,7 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |No formatter.js|Prompt-enforced structure|Separate formatter module|Structured output (`{ title, hook, contents[], cta, description }`) with explicit format rules in the prompt eliminates the need for a post-processing validation step — Claude produces paste-ready output directly.|
 |Error handling — generator|Re-throw with specific messages per layer|Return error values; single top-level catch|If generation fails there is nothing to publish — aborting is correct. Specific per-layer messages (race selection, generation, file write) identify exactly which step failed. Errors bubble up to the scheduler which owns the single catch point.|
 |Error handling — scraper|Log and continue per race; scrape still writes output|Abort entire scrape on first failure|One bad detail page (timeout, 404, malformed HTML) should not abort the full run. The inner loop catches `getInfo()` failures, logs them, and continues — partial data is better than no data.|
-|API response parsing|`JSON.parse(message.content[0].text)`|Structured outputs API (tools + schema)|Prompt-level JSON instruction is sufficient; SDK always returns text as a string regardless — `JSON.parse()` is required to deserialize the response into the structured post object.|
+|API response parsing|Strip markdown fences then `JSON.parse()`|Structured outputs API (tools + schema)|Prompt-level JSON instruction alone is not reliable — Claude wraps JSON in ` ```json ` fences even when explicitly told not to. Defense-in-depth: the system prompt instructs raw JSON output AND `generator.js` strips any leading ` ```json ` / trailing ` ``` ` with a regex before calling `JSON.parse()`. This makes parsing robust regardless of model behavior: `text.trim().replace(/^\`\`\`json\s*/, '').replace(/\`\`\`\s*$/, '')`.|
 |Dependency injection (generator)|Optional `{ races, postedRaces, client, prompts }` param with `default*` fallbacks|Module-level globals only; factory function|Tests must inject fixture data and a mock client — without this, every test run hits the real API and uses real data. Optional params keep production calls unchanged (no args = defaults) while letting tests override any dependency. Deps are threaded through the full call chain: `generatePosts` → `getContextPrompts` → `chooseRace`.|
 |Retries — Anthropic SDK|`maxRetries: 3` configured at client creation; 30s timeout|Manual try/catch retry loop|SDK handles exponential backoff on 429 and 5xx automatically — no manual retry logic needed. 3 retries balances resilience vs latency. Timeout reduced from SDK default (10min) to 30s — responses for this use case are short (< 500 tokens), so 10min is excessive and would stall the pipeline on a hung request.|
 |Retries — scraper (axios)|`axios-retry` with 3 retries, exponential backoff, network errors + 5xx only|Manual retry loop; no retries|axios has no built-in retry. `axios-retry` is a one-liner setup that adds exponential backoff (1s → 2s → 4s). Only retries transient failures (network errors, 5xx) — 404s and 400s are not retried since retrying won't fix them. Complements the existing log-and-continue error handling: retries exhaust first, then the outer catch logs and skips the race.|
@@ -344,7 +344,7 @@ TITLE RULES (derived from performance data):
 - Never use vague titles with no specific hook
 
 OUTPUT FORMAT (critical):
-Return ONLY a valid JSON object with no extra text, explanation, or markdown code blocks.
+Return ONLY a raw JSON object. No markdown. No code fences. No ```json. No explanation. The response must start with { and end with }. Any other format will break the parser.
 No trailing whitespace. No \n at the start or end of any field. Every string must be ready to paste directly with no post-processing.
 The JSON must have exactly these fields:
 - "title": the post title. Max 20 characters. No hashtags.
@@ -921,6 +921,8 @@ rednote-content-automation/
     │       ├── training.json
     │       ├── nutrition.json
     │       └── health.json
+    ├── scripts/
+    │   └── test-gen.js                 # Throwaway script — real API calls to verify response shape before saving mock fixture
     ├── tests/
     │   ├── fixtures/
     │   │   ├── sample-races.json           # Pre-scraped race subset for controlled test input
