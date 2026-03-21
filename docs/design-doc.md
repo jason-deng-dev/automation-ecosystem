@@ -276,6 +276,8 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |Test framework|Vitest|Jest|Better ESM support out of the box — project uses native `import` syntax which requires extra config in Jest. Vitest also runs faster and shares config with Vite if needed.|
 |API mocking in tests|Mock `@anthropic-ai/sdk` client|Real API calls in tests|Eliminates token cost on every test run, makes tests deterministic, and allows CI to run without a live API key.|
 |No formatter.js|Prompt-enforced structure|Separate formatter module|Structured output (`{ title, hook, contents[], cta, description }`) with explicit format rules in the prompt eliminates the need for a post-processing validation step — Claude produces paste-ready output directly.|
+|Error handling strategy|Re-throw with specific messages per layer|Return error values; single top-level catch|Specific per-layer messages (race selection, generation, file write) identify exactly which step failed — critical for debugging cron failures. Errors bubble up to the scheduler which owns the single catch point.|
+|API response parsing|`JSON.parse(message.content[0].text)`|Structured outputs API (tools + schema)|Prompt-level JSON instruction is sufficient; SDK always returns text as a string regardless — `JSON.parse()` is required to deserialize the response into the structured post object.|
 
 ---
 
@@ -665,7 +667,7 @@ Hashtags are hardcoded per post type and appended to `description` after parsing
 |Node.js project setup|✅ Done|npm init, node-cron + playwright installed, .gitignore + .env.example in place|
 |scraper.js|✅ Done|Two-pass scrape (listing → detail pages); writes to data/races.json|
 |races.json|✅ Populated|Full schema: name, url, date, location, entryStart/End, website, images, description, info, notice, registrationOpen, registrationUrl|
-|rednote-post-generator.js|✅ Done|All post types wired; race selection + dedup via post_history.json; hashtags appended; returns structured post object|
+|rednote-post-generator.js|⚠️ Working, hardening in progress|All post types wired; race selection + dedup via post_history.json; hashtags appended; returns structured post object. Error handling, module-level side effects, and template substitution robustness still pending.|
 |formatter.js|🚫 Removed|Formatting is enforced via prompt structure — separate formatter step not needed|
 |scheduler.js|❌ Not started|Rotation logic + cron orchestration — calls generator with correct post type daily|
 |publisher.js|❌ Not started|File does not exist yet|

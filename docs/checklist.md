@@ -35,6 +35,24 @@
     - [x] getHashtags() wired — append to response before returning from generatePosts()
     - [x] When a marathon is used it is added to post_history.json
     - [x] When selecting a marathon filter out marathons in post_history.json
+- [ ] Code quality / robustness (generator + scraper)
+  - [x] Add named exports to rednote-post-generator.js and scraper.js
+  - [x] Replace chooseRaceMock() with chooseRace() in production code path
+  - [x] Move post_history.json write to after successful API call
+  - [x] Include comments in generatePosts() return value
+  - [x] Deserialize API response — JSON.parse(message.content[0].text) → structured post object
+  - [ ] Add error handling — re-throw with specific messages per layer (chooseRace, generatePosts, scraper)
+  - [ ] Fix module-level side effects — move fs.readFileSync and new Anthropic() out of module scope (blocks tests)
+  - [ ] Fix template substitution — use replaceAll, validate substitution happened, guard against undefined fields
+  - [ ] Fix dedup — filter races array before building string, not string manipulation after
+  - [ ] Fix trailing ||| delimiter in race list — use Array.join('|||')
+  - [ ] Fix race selection max_tokens: 1024 → 100
+  - [ ] Move systemRaceSelectionPromptTest out of prompts.json → tests/fixtures/
+  - [ ] Fix "dev" script — add target file to node --watch
+  - [ ] Fix registrationOpen false negative — use null for unknown state instead of false
+  - [ ] Fix getInfo() mixed concerns — extract href/raceName in caller, pass as params
+  - [ ] Fix inner scraper loop — break early when races.length >= limit
+  - [ ] Add dotenv import + RUNJAPAN_BASE_URL / RUNJAPAN_TIMEOUT from .env in scraper
 - [ ] Setup tests (Vitest)
   - [ ] Install Vitest
   - [ ] Create tests/ folder structure (fixtures/, scraper.test.js, context-builder.test.js, generator.test.js, scheduler.test.js)
