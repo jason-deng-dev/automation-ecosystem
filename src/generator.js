@@ -11,9 +11,12 @@ const defaultClient = new Anthropic({
 	maxRetries: 3,
 	timeout: 30000,
 });
-const defaultPostedRaces = fs.existsSync("data/post_history.json")
-	? JSON.parse(fs.readFileSync("data/post_history.json", "utf-8"))
-	: [];
+
+// if file exists, postHistoryRaw = file content, empty otherwise
+const postHistoryRaw = fs.existsSync("data/post_history.json")
+	? fs.readFileSync("data/post_history.json", "utf-8").trim()
+	: "";
+const defaultPostedRaces = postHistoryRaw ? JSON.parse(postHistoryRaw) : [];
 
 async function generatePosts(
 	type,
