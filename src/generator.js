@@ -25,6 +25,8 @@ async function generatePosts(
 		postedRaces = defaultPostedRaces,
 		client = defaultClient,
 		prompts = defaultPrompts,
+		writeHistory = (races) =>
+			fs.writeFileSync("data/post_history.json", JSON.stringify(races, null, 2)),
 	} = {},
 ) {
 	const systemPrompt = prompts.systemPrompt;
@@ -58,10 +60,7 @@ async function generatePosts(
 	// if message is successful add the race to post_history
 	if (type == "race") {
 		postedRaces.push(raceName);
-		fs.writeFileSync(
-			"data/post_history.json",
-			JSON.stringify(postedRaces, null, 2),
-		);
+		writeHistory(postedRaces);
 	}
 
 	const hashtags = getHashtags(type);
