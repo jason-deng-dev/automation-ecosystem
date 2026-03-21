@@ -211,7 +211,7 @@ DATA  →  SCHEDULE  →  GENERATE  →  PUBLISH
 - Runs weekly via cron — race listings don't change fast enough to warrant daily scraping
 - Controlled via `.env`: `RUNJAPAN_BASE_URL`, `RUNJAPAN_TIMEOUT`
 
-#### rednote-post-generator.js (core)
+#### generator.js (core)
 
 - Loads `races.json` to inject live race context into prompts
 - Selects post type based on data-weighted rotation schedule
@@ -248,7 +248,7 @@ races.json
     ↓  (reads)
 scheduler.js  ←  7-day rotation logic (determines post type)
     ↓  (calls generatePosts(type))
-rednote-post-generator.js
+generator.js
     ↓  (POST /v1/messages)
 Claude API  ←  system prompt + race context + performance-informed instructions
     ↓  (structured post object — paste-ready, no formatting step needed)
@@ -669,7 +669,7 @@ Hashtags are hardcoded per post type and appended to `description` after parsing
 |Node.js project setup|✅ Done|npm init, node-cron + playwright installed, .gitignore + .env.example in place|
 |scraper.js|✅ Done|Two-pass scrape (listing → detail pages); writes to data/races.json|
 |races.json|✅ Populated|Full schema: name, url, date, location, entryStart/End, website, images, description, info, notice, registrationOpen, registrationUrl|
-|rednote-post-generator.js|⚠️ Working, hardening in progress|All post types wired; race selection + dedup via post_history.json; hashtags appended; returns structured post object. Error handling, module-level side effects, and template substitution robustness still pending.|
+|generator.js|⚠️ Working, hardening in progress|All post types wired; race selection + dedup via post_history.json; hashtags appended; returns structured post object. Error handling, module-level side effects, and template substitution robustness still pending.|
 |formatter.js|🚫 Removed|Formatting is enforced via prompt structure — separate formatter step not needed|
 |scheduler.js|❌ Not started|Rotation logic + cron orchestration — calls generator with correct post type daily|
 |publisher.js|❌ Not started|File does not exist yet|
@@ -679,7 +679,7 @@ Hashtags are hardcoded per post type and appended to `description` after parsing
 ### 8.2 Phase 1 — Core Generator (Priority: Ship before May 20)
 
 1. Fix `races.json`: raise `RUNJAPAN_RACES_LIMIT`, fix broken cron, wire WP sync
-2. Rebuild `rednote-post-generator.js` with Claude API integration
+2. Rebuild `generator.js` with Claude API integration
 3. Implement system prompt with MOXI persona, China-based audience framing, and XHS format rules
 4. Enforce data-derived title patterns in prompt instructions
 5. Test generation across all post types — validate Chinese quality and format compliance
@@ -902,7 +902,7 @@ The data to build these deep links already exists in `races.json` (`registration
 rednote-content-automation/
     ├── src/
     │   ├── scraper.js                  # Self-contained RunJapan scraper
-    │   ├── rednote-post-generator.js   # Core — Claude API integration
+    │   ├── generator.js                # Core — Claude API integration
     │   ├── scheduler.js                # Rotation logic + cron orchestration
     │   └── publisher.js                # Playwright browser automation
     ├── config/

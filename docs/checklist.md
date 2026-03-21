@@ -36,17 +36,17 @@
     - [x] When a marathon is used it is added to post_history.json
     - [x] When selecting a marathon filter out marathons in post_history.json
 - [ ] Code quality / robustness (generator + scraper)
-  - [x] Add named exports to rednote-post-generator.js and scraper.js
+  - [x] Add named exports to generator.js and scraper.js
   - [x] Replace chooseRaceMock() with chooseRace() in production code path
   - [x] Move post_history.json write to after successful API call
   - [x] Include comments in generatePosts() return value
   - [x] Deserialize API response — JSON.parse(message.content[0].text) → structured post object
   - [x] Add error handling — re-throw with specific messages per layer (chooseRace, generatePosts, scraper)
   - [x] Fix module-level side effects — injectable deps with default* fallbacks; threaded through generatePosts → getContextPrompts → chooseRace
-  - [ ] Fix template substitution — use replaceAll, validate substitution happened, guard against undefined fields
-  - [ ] Fix dedup — filter races array before building string, not string manipulation after
-  - [ ] Fix trailing ||| delimiter in race list — use Array.join('|||')
-  - [ ] Fix race selection max_tokens: 1024 → 100
+  - [x] Fix template substitution — use replaceAll, guard against null/undefined fields with "missing from the website" fallback
+  - [x] Fix dedup — filter races array before building string, not string manipulation after
+  - [x] Fix trailing ||| delimiter in race list — use Array.join('|||')
+  - [x] Fix race selection max_tokens: 1024 → 100
   - [ ] Move systemRaceSelectionPromptTest out of prompts.json → tests/fixtures/
   - [ ] Fix "dev" script — add target file to node --watch
   - [ ] Fix registrationOpen false negative — use null for unknown state instead of false
