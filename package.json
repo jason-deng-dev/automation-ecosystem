@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
     "devScraper": "node --watch src/scraper.js",
     "devPostGen": "node --watch src/generator.js"
   },
@@ -31,5 +31,8 @@
     "dotenv": "^17.3.1",
     "node-cron": "^4.2.1",
     "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
   }
 }
