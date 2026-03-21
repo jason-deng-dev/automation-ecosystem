@@ -73,12 +73,36 @@
   - [x] Wire full daily cron (scraper weekly, generate → publish daily)
   - [x] Add run-scheduler.js entry point
 - [ ] Build publisher.js (Playwright)
-  - [ ] Apply H1 formatting to title field
-  - [ ] Paste hook as plain text
-  - [ ] For each contents[] item: apply H2 to subtitle, paste body as plain text
-  - [ ] Paste cta as plain text
-  - [ ] Append hashtags to description field
-  - [ ] Post comments array sequentially (primary CTA first, community second)
+  - [ ] Auth setup (one-time)
+    - [ ] Add auth.json to .gitignore
+    - [ ] Write scripts/xhs-login.js — launch headed browser, navigate to XHS, page.pause() for manual login, save storageState to auth.json
+    - [ ] Run xhs-login.js and verify auth.json is created
+  - [ ] Selector discovery (do before writing publisher.js)
+    - [ ] Open XHS post creation page manually in headed browser with DevTools
+    - [ ] Find and document selector for title input
+    - [ ] Find and document selector for body/content area (likely a rich text editor)
+    - [ ] Find and document selector for description field
+    - [ ] Find and document selector for hashtag input
+    - [ ] Find and document selector for publish/submit button
+    - [ ] Find and document selector for comment input field
+    - [ ] Determine how to input text into the rich text editor (page.fill vs keyboard.type vs clipboard)
+    - [ ] Document all selectors as named constants at the top of publisher.js
+  - [ ] Build publisher.js
+    - [ ] Load auth.json as storageState on context creation
+    - [ ] Navigate to XHS post creation URL
+    - [ ] Wait for editor to be ready
+    - [ ] Fill title field
+    - [ ] Fill content body: hook → each contents[] subtitle + body → cta (in sequence)
+    - [ ] Fill description field with hashtags appended
+    - [ ] Click publish button
+    - [ ] Wait for success confirmation
+    - [ ] Navigate to published post URL
+    - [ ] Post comments sequentially — primary CTA first, community second
+    - [ ] Return true on success
+  - [ ] Error handling
+    - [ ] Catch auth failure (auth.json expired) — log clear message prompting re-login
+    - [ ] Catch publish failure — log error, do not post comments
+    - [ ] Catch comment failure — log which comment failed, continue with remaining
 - [ ] Deploy
   - [ ] Write Dockerfile
   - [ ] Write docker-compose.yml
