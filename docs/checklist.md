@@ -20,7 +20,7 @@
     - [x] If race post, make api call with all marathons and ask which one to use
     - [x] Inject race fields into raceGuide context at runtime
     - [x] update design doc for new prompts / responses / explanation prompt selection
-    - [x] Move CTA out of system prompt — inject per post type as natural language description in generatePosts()
+    - [x] Move CTA out of system prompt — inject per post type as natural language description in generatePost()
     - [x] Add static comments array per post type (primary CTA + community CTA)
     - [x] Populate comments with real URLs for all post types (race, training, nutrition)
     - [x] Training comments expanded to 3 (mara-prep-tools, progress-trendline, community)
@@ -32,17 +32,17 @@
     - [x] Define hardcoded hashtags per post type (including wearables)
     - [x] Update system prompt with new structured output format (title, hook, contents[], cta, description)
     - [x] Update system prompt with new format rules (line limits, page budgets, subtitle rules, CTA rules)
-    - [x] getHashtags() wired — append to response before returning from generatePosts()
+    - [x] getHashtags() wired — append to response before returning from generatePost()
     - [x] When a marathon is used it is added to post_history.json
     - [x] When selecting a marathon filter out marathons in post_history.json
 - [x] Code quality / robustness (generator + scraper)
   - [x] Add named exports to generator.js and scraper.js
   - [x] Replace chooseRaceMock() with chooseRace() in production code path
   - [x] Move post_history.json write to after successful API call
-  - [x] Include comments in generatePosts() return value
+  - [x] Include comments in generatePost() return value
   - [x] Deserialize API response — JSON.parse(message.content[0].text) → structured post object
-  - [x] Add error handling — re-throw with specific messages per layer (chooseRace, generatePosts, scraper)
-  - [x] Fix module-level side effects — injectable deps with default* fallbacks; threaded through generatePosts → getContextPrompts → chooseRace
+  - [x] Add error handling — re-throw with specific messages per layer (chooseRace, generatePost, scraper)
+  - [x] Fix module-level side effects — injectable deps with default* fallbacks; threaded through generatePost → getContextPrompts → chooseRace
   - [x] Fix template substitution — use replaceAll, guard against null/undefined fields with "missing from the website" fallback
   - [x] Fix dedup — filter races array before building string, not string manipulation after
   - [x] Fix trailing ||| delimiter in race list — use Array.join('|||')
@@ -59,7 +59,7 @@
   - [x] Install Vitest
   - [x] Create tests/ folder structure (fixtures/, scraper.test.js, context-builder.test.js, generator.test.js, scheduler.test.js)
   - [x] Create sample-races.json and mock-api-response.json fixtures
-  - [x] Refactor generatePosts() — extract getContextPrompts() as separate async function
+  - [x] Refactor generatePost() — extract getContextPrompts() as separate async function
   - [x] Refactor getContextPrompts() → pure buildContext(type, prompts, races, raceName) — no async, no internal API calls
   - [x] scraper.test.js — validate output shape, required fields, minimum race count
   - [x] context-builder.test.js — test each post type builds correct context

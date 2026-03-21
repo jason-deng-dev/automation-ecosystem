@@ -1,6 +1,6 @@
 // generator.test.js
-// Tests: generatePosts() with mocked Anthropic client — no real API calls
-import { generatePosts } from "../src/generator.js";
+// Tests: generatePost() with mocked Anthropic client — no real API calls
+import { generatePost } from "../src/generator.js";
 import { describe, it, expect, vi, afterAll } from "vitest";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -37,7 +37,7 @@ function makeMockClient(type) {
 	};
 }
 
-// Race type needs two calls: chooseRace() then generatePosts()
+// Race type needs two calls: chooseRace() then generatePost()
 function makeMockClientRace() {
 	return {
 		messages: {
@@ -58,11 +58,11 @@ afterAll(() => {
 	);
 });
 
-describe("generatePosts", () => {
+describe("generatePost", () => {
 	describe("race type", () => {
 		it("returns all required fields", async () => {
 			const client = makeMockClientRace();
-			const result = await generatePosts("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
+			const result = await generatePost("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
 			expect(result.title).toBeDefined();
 			expect(result.hook).toBeDefined();
 			expect(result.contents).toBeInstanceOf(Array);
@@ -74,7 +74,7 @@ describe("generatePosts", () => {
 
 		it("contents items have subtitle and body", async () => {
 			const client = makeMockClientRace();
-			const result = await generatePosts("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
+			const result = await generatePost("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
 			expect(result.contents.length).toBeGreaterThanOrEqual(1);
 			for (const page of result.contents) {
 				expect(page.subtitle).toBeDefined();
@@ -84,19 +84,19 @@ describe("generatePosts", () => {
 
 		it("returns 2 comments", async () => {
 			const client = makeMockClientRace();
-			const result = await generatePosts("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
+			const result = await generatePost("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
 			expect(result.comments).toHaveLength(2);
 		});
 
 		it("calls API twice — once for race selection, once for generation", async () => {
 			const client = makeMockClientRace();
-			await generatePosts("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
+			await generatePost("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
 			expect(client.messages.create).toHaveBeenCalledTimes(2);
 		});
 
 		it("calls generation API with correct model and max_tokens", async () => {
 			const client = makeMockClientRace();
-			await generatePosts("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
+			await generatePost("race", { client, races, prompts, postedRaces: [], writeHistory: noopWriteHistory });
 			expect(client.messages.create).toHaveBeenLastCalledWith(
 				expect.objectContaining({
 					model: "claude-sonnet-4-6",
@@ -108,7 +108,7 @@ describe("generatePosts", () => {
 		it("adds selected race to post history after generation", async () => {
 			const client = makeMockClientRace();
 			const mockWriteHistory = vi.fn();
-			await generatePosts("race", { client, races, prompts, postedRaces: [], writeHistory: mockWriteHistory });
+			await generatePost("race", { client, races, prompts, postedRaces: [], writeHistory: mockWriteHistory });
 			expect(mockWriteHistory).toHaveBeenCalledTimes(1);
 			expect(mockWriteHistory).toHaveBeenCalledWith(
 				expect.arrayContaining([raceName]),
@@ -119,7 +119,7 @@ describe("generatePosts", () => {
 	describe("training type", () => {
 		it("returns all required fields", async () => {
 			const client = makeMockClient("training");
-			const result = await generatePosts("training", { client, races, prompts, postedRaces: [] });
+			const result = await generatePost("training", { client, races, prompts, postedRaces: [] });
 			expect(result.title).toBeDefined();
 			expect(result.hook).toBeDefined();
 			expect(result.contents).toBeInstanceOf(Array);
@@ -131,13 +131,13 @@ describe("generatePosts", () => {
 
 		it("returns 3 comments", async () => {
 			const client = makeMockClient("training");
-			const result = await generatePosts("training", { client, races, prompts, postedRaces: [] });
+			const result = await generatePost("training", { client, races, prompts, postedRaces: [] });
 			expect(result.comments).toHaveLength(3);
 		});
 
 		it("calls API once", async () => {
 			const client = makeMockClient("training");
-			await generatePosts("training", { client, races, prompts, postedRaces: [] });
+			await generatePost("training", { client, races, prompts, postedRaces: [] });
 			expect(client.messages.create).toHaveBeenCalledTimes(1);
 		});
 	});
@@ -145,7 +145,7 @@ describe("generatePosts", () => {
 	describe("nutritionSupplement type", () => {
 		it("returns all required fields", async () => {
 			const client = makeMockClient("nutritionSupplement");
-			const result = await generatePosts("nutritionSupplement", { client, races, prompts, postedRaces: [] });
+			const result = await generatePost("nutritionSupplement", { client, races, prompts, postedRaces: [] });
 			expect(result.title).toBeDefined();
 			expect(result.hook).toBeDefined();
 			expect(result.contents).toBeInstanceOf(Array);
@@ -157,13 +157,13 @@ describe("generatePosts", () => {
 
 		it("returns 2 comments", async () => {
 			const client = makeMockClient("nutritionSupplement");
-			const result = await generatePosts("nutritionSupplement", { client, races, prompts, postedRaces: [] });
+			const result = await generatePost("nutritionSupplement", { client, races, prompts, postedRaces: [] });
 			expect(result.comments).toHaveLength(2);
 		});
 
 		it("calls API once", async () => {
 			const client = makeMockClient("nutritionSupplement");
-			await generatePosts("nutritionSupplement", { client, races, prompts, postedRaces: [] });
+			await generatePost("nutritionSupplement", { client, races, prompts, postedRaces: [] });
 			expect(client.messages.create).toHaveBeenCalledTimes(1);
 		});
 	});
@@ -171,7 +171,7 @@ describe("generatePosts", () => {
 	describe("wearable type", () => {
 		it("returns all required fields", async () => {
 			const client = makeMockClient("wearable");
-			const result = await generatePosts("wearable", { client, races, prompts, postedRaces: [] });
+			const result = await generatePost("wearable", { client, races, prompts, postedRaces: [] });
 			expect(result.title).toBeDefined();
 			expect(result.hook).toBeDefined();
 			expect(result.contents).toBeInstanceOf(Array);
@@ -183,13 +183,13 @@ describe("generatePosts", () => {
 
 		it("returns 2 comments", async () => {
 			const client = makeMockClient("wearable");
-			const result = await generatePosts("wearable", { client, races, prompts, postedRaces: [] });
+			const result = await generatePost("wearable", { client, races, prompts, postedRaces: [] });
 			expect(result.comments).toHaveLength(2);
 		});
 
 		it("calls API once", async () => {
 			const client = makeMockClient("wearable");
-			await generatePosts("wearable", { client, races, prompts, postedRaces: [] });
+			await generatePost("wearable", { client, races, prompts, postedRaces: [] });
 			expect(client.messages.create).toHaveBeenCalledTimes(1);
 		});
 	});
@@ -202,14 +202,14 @@ describe("generatePosts", () => {
 				},
 			};
 			await expect(
-				generatePosts("training", { client, races, prompts, postedRaces: [] }),
+				generatePost("training", { client, races, prompts, postedRaces: [] }),
 			).rejects.toThrow("Post generation failed");
 		});
 
 		it("throws with 'Incorrect type used' for invalid type", async () => {
 			const client = makeMockClient("training");
 			await expect(
-				generatePosts("invalid", { client, races, prompts, postedRaces: [] }),
+				generatePost("invalid", { client, races, prompts, postedRaces: [] }),
 			).rejects.toThrow("Incorrect type used");
 		});
 	});

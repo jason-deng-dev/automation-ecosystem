@@ -18,7 +18,7 @@ const postHistoryRaw = fs.existsSync("data/post_history.json")
 	: "";
 const defaultPostedRaces = postHistoryRaw ? JSON.parse(postHistoryRaw) : [];
 
-async function generatePosts(
+async function generatePost(
 	type,
 	{
 		races = defaultRaces,
@@ -280,7 +280,7 @@ function buildContext(type, prompts, races, raceName) {
 }
 
 export {
-	generatePosts,
+	generatePost,
 	getContextPrompts,
 	chooseRace,
 	getHashtags,

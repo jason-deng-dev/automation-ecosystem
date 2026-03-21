@@ -222,7 +222,7 @@ DATA  →  SCHEDULE  →  GENERATE  →  PUBLISH
 #### scheduler.js (new)
 
 - Determines today's post type from the 7-day data-weighted rotation schedule
-- Calls `generatePosts(type)` with the correct post type
+- Calls `generatePost(type)` with the correct post type
 - Passes the result to `publisher.js`
 - Weekly cron: trigger scraper → update `races.json`
 - Daily cron: determine type → generate → publish
@@ -247,7 +247,7 @@ scraper.js
 races.json
     ↓  (reads)
 scheduler.js  ←  7-day rotation logic (determines post type)
-    ↓  (calls generatePosts(type))
+    ↓  (calls generatePost(type))
 generator.js
     ↓  (POST /v1/messages)
 Claude API  ←  system prompt + race context + performance-informed instructions
@@ -271,7 +271,7 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |HTTP requests (scraper)|axios|node-fetch, native fetch|More reliable for scraping; better error handling and timeout support|
 |HTML parsing (scraper)|cheerio|jsdom, regex|Lightweight jQuery-style API; purpose-built for server-side HTML parsing|
 |Prompt storage|`config/prompts.json`|Hardcoded in JS, `.env`|Separates tunable content (persona, templates) from pipeline logic; employer can adjust prompts without touching code|
-|CTA injection|Runtime code injection per post type|Hardcoded in system prompt|System prompt is sent on every API call — putting CTA targets there wastes tokens on context irrelevant to the current post type. Injecting a natural-language CTA description per type in `generatePosts()` keeps the system prompt lean and makes each call's context more precise. Claude also doesn't need to know actual URLs — those are hardcoded in the pipeline and injected after parsing.|
+|CTA injection|Runtime code injection per post type|Hardcoded in system prompt|System prompt is sent on every API call — putting CTA targets there wastes tokens on context irrelevant to the current post type. Injecting a natural-language CTA description per type in `generatePost()` keeps the system prompt lean and makes each call's context more precise. Claude also doesn't need to know actual URLs — those are hardcoded in the pipeline and injected after parsing.|
 |Deployment / handoff|Docker + docker-compose|Manual server setup, PM2|Ensures consistent runtime environment across machines; Playwright browser binaries are notoriously environment-sensitive; allows non-technical handoff with a single `docker-compose up`|
 |Test framework|Vitest|Jest|Better ESM support out of the box — project uses native `import` syntax which requires extra config in Jest. Vitest also runs faster and shares config with Vite if needed.|
 |API mocking in tests|Mock `@anthropic-ai/sdk` client|Real API calls in tests|Eliminates token cost on every test run, makes tests deterministic, and allows CI to run without a live API key.|
@@ -279,7 +279,7 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |Error handling — generator|Re-throw with specific messages per layer|Return error values; single top-level catch|If generation fails there is nothing to publish — aborting is correct. Specific per-layer messages (race selection, generation, file write) identify exactly which step failed. Errors bubble up to the scheduler which owns the single catch point.|
 |Error handling — scraper|Log and continue per race; scrape still writes output|Abort entire scrape on first failure|One bad detail page (timeout, 404, malformed HTML) should not abort the full run. The inner loop catches `getInfo()` failures, logs them, and continues — partial data is better than no data.|
 |API response parsing|Strip markdown fences then `JSON.parse()`|Structured outputs API (tools + schema)|Prompt-level JSON instruction alone is not reliable — Claude wraps JSON in ` ```json ` fences even when explicitly told not to. Defense-in-depth: the system prompt instructs raw JSON output AND `generator.js` strips any leading ` ```json ` / trailing ` ``` ` with a regex before calling `JSON.parse()`. This makes parsing robust regardless of model behavior: `text.trim().replace(/^\`\`\`json\s*/, '').replace(/\`\`\`\s*$/, '')`.|
-|Dependency injection (generator)|Optional `{ races, postedRaces, client, prompts }` param with `default*` fallbacks|Module-level globals only; factory function|Tests must inject fixture data and a mock client — without this, every test run hits the real API and uses real data. Optional params keep production calls unchanged (no args = defaults) while letting tests override any dependency. Deps are threaded through the full call chain: `generatePosts` → `getContextPrompts` → `chooseRace`.|
+|Dependency injection (generator)|Optional `{ races, postedRaces, client, prompts }` param with `default*` fallbacks|Module-level globals only; factory function|Tests must inject fixture data and a mock client — without this, every test run hits the real API and uses real data. Optional params keep production calls unchanged (no args = defaults) while letting tests override any dependency. Deps are threaded through the full call chain: `generatePost` → `getContextPrompts` → `chooseRace`.|
 |Retries — Anthropic SDK|`maxRetries: 3` configured at client creation; 30s timeout|Manual try/catch retry loop|SDK handles exponential backoff on 429 and 5xx automatically — no manual retry logic needed. 3 retries balances resilience vs latency. Timeout reduced from SDK default (10min) to 30s — responses for this use case are short (< 500 tokens), so 10min is excessive and would stall the pipeline on a hung request.|
 |Retries — scraper (axios)|`axios-retry` with 3 retries, exponential backoff, network errors + 5xx only|Manual retry loop; no retries|axios has no built-in retry. `axios-retry` is a one-liner setup that adds exponential backoff (1s → 2s → 4s). Only retries transient failures (network errors, 5xx) — 404s and 400s are not retried since retrying won't fix them. Complements the existing log-and-continue error handling: retries exhaust first, then the outer catch logs and skips the race.|
 
@@ -376,7 +376,7 @@ The JSON must have exactly these fields:
 
 Based on data-derived content weighting. Wearables / Equipment replaces the Health & Recovery slot — added once wearable post type was wired into the generator.
 
-CTA destinations are not in the prompts — they are injected at runtime per post type in `generatePosts()`. See Section 5 (Technical Decisions) for rationale.
+CTA destinations are not in the prompts — they are injected at runtime per post type in `generatePost()`. See Section 5 (Technical Decisions) for rationale.
 
 |Day|Post Type|Weight Rationale|CTA Destination|
 |---|---|---|---|
@@ -387,6 +387,8 @@ CTA destinations are not in the prompts — they are injected at runtime per pos
 |Fri|race|High-browse going into weekend|/racehub/|
 |Sat|training|Weekend long run day|/mara-prep-tools/|
 |Sun|wearable|Rest day — gear browsing|/shop/|
+
+**Post frequency: 1 post/day.** Posting multiple times per day (e.g. morning/lunch/after-work/night) risks triggering XHS spam detection and suppressing reach. The account has real engagement history from 115 manual posts — preserving organic appearance is more valuable than volume. 1 high-quality post/day is the standard for sustained organic growth on XHS.
 
 ### 6.4 Runtime Context Injection
 
@@ -633,7 +635,7 @@ Claude returns a structured JSON object. The pipeline appends hashtags and injec
 }
 ```
 
-**Comments are static, defined per post type in `generatePosts()` switch cases — not generated by Claude.** Each post type has two hardcoded comments with `{{CTA_URL}}` and `{{COMMUNITY_URL}}` placeholders:
+**Comments are static, defined per post type in `generatePost()` switch cases — not generated by Claude.** Each post type has two hardcoded comments with `{{CTA_URL}}` and `{{COMMUNITY_URL}}` placeholders:
 
 ```js
 // race case
@@ -822,7 +824,7 @@ The scraper is tested against live output — we can't guarantee which races app
 
 #### Context Builder (`context-builder.test.js`)
 
-Requires refactoring `generatePosts()` to extract a pure `buildContext(type, prompts, races, raceName)` function. Once extracted, it can be tested in isolation — no API calls, no mocks needed.
+Requires refactoring `generatePost()` to extract a pure `buildContext(type, prompts, races, raceName)` function. Once extracted, it can be tested in isolation — no API calls, no mocks needed.
 
 - Given `'race'` type + mock race name → all race fields injected, no leftover `race.fieldName` placeholders
 - Given `'training'` type → correct prompt template selected, CTA appended
@@ -834,7 +836,7 @@ Requires refactoring `generatePosts()` to extract a pure `buildContext(type, pro
 
 Mocks the Anthropic client. Uses `chooseRaceMock()` so no race selection API call fires.
 
-- `generatePosts('race')` calls the API with correct system prompt and context
+- `generatePost('race')` calls the API with correct system prompt and context
 - API response is parsed and returned correctly (body + description accessible on the returned object)
 - Mock is called with the correct model and `max_tokens`
 
@@ -844,8 +846,8 @@ Publisher does not need to exist for scheduler tests. `publisher.js` is mocked a
 
 - 7-day rotation produces correct post type for each day index (race appears 3x, training 2x, nutrition 1x, wearable 1x)
 - Rotation is deterministic — same day index always returns same post type
-- `generatePosts()` is called with the post type returned by rotation
-- `publish()` is called with the object returned by `generatePosts()`
+- `generatePost()` is called with the post type returned by rotation
+- `publish()` is called with the object returned by `generatePost()`
 - Mocked `publish` receives the correct post type field
 
 ```js
@@ -862,7 +864,7 @@ Before `context-builder.test.js` is meaningful, `getContextPrompts()` must be sp
 1. `buildContext(type, prompts, races, raceName)` — pure function, returns `contextToUse` string. No async, no side effects. Testable in isolation without any API calls or mocks.
 2. `getContextPrompts(type)` — async orchestrator: calls `chooseRace()` to get a race name, then passes it into `buildContext()` and returns the result.
 
-Call chain: `generatePosts()` → `getContextPrompts()` → `buildContext()`
+Call chain: `generatePost()` → `getContextPrompts()` → `buildContext()`
 
 `buildContext` is used in production via `getContextPrompts` — the testability benefit is a consequence of the clean separation, not the reason for it.
 
@@ -947,7 +949,7 @@ rednote-content-automation/
     │   │   └── mock-api-response.json      # Hardcoded Anthropic response fixture
     │   ├── scraper.test.js                 # Validates scraper output shape and completeness
     │   ├── context-builder.test.js         # Tests buildContext() in isolation (no API calls)
-    │   ├── generator.test.js               # Tests generatePosts() with mocked Anthropic client
+    │   ├── generator.test.js               # Tests generatePost() with mocked Anthropic client
     │   └── scheduler.test.js               # Tests rotation logic with mocked publisher
     ├── docs/
     ├── .env

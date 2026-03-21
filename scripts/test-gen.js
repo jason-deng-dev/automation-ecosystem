@@ -1,4 +1,4 @@
-import { generatePosts } from "../src/generator.js";
+import { generatePost } from "../src/generator.js";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
@@ -9,8 +9,8 @@ async function main() {
 	console.log(`Starting API calls for types: ${types.join(", ")}`);
 	const results = await Promise.all(
 		types.map((type) => {
-			console.log(`  → calling generatePosts("${type}")`);
-			return generatePosts(type);
+			console.log(`  → calling generatePost("${type}")`);
+			return generatePost(type);
 		}),
 	);
 	console.log("All responses received.");
