@@ -4,10 +4,16 @@ import axiosRetry from "axios-retry";
 import * as cheerio from "cheerio";
 import { writeFile } from "fs/promises";
 
-axiosRetry(axios, {
-    retries: 3,
-    retryDelay: axiosRetry.exponentialDelay,
-    retryCondition: axiosRetry.isNetworkOrIdempotentRequestError
+import { wrapper } from "axios-cookiejar-support";
+import { CookieJar } from "tough-cookie";
+
+const jar = new CookieJar();
+const client = wrapper(axios.create({ jar }));
+
+axiosRetry(client, {
+	retries: 3,
+	retryDelay: axiosRetry.exponentialDelay,
+	retryCondition: axiosRetry.isNetworkOrIdempotentRequestError,
 });
 
 const timeout = parseInt(process.env.RUNJAPAN_TIMEOUT) || 10000;
@@ -16,21 +22,26 @@ async function populateRaces(limit) {
 	const races = [];
 	let pageIndex = 1;
 
-	const baseUrl = process.env.RUNJAPAN_BASE_URL || "https://runjapan.jp/entry/runtes/smp/racesearchdetail.do";
+	const baseUrl =
+		process.env.RUNJAPAN_BASE_URL ||
+		"https://runjapan.jp/entry/runtes/smp/racesearchdetail.do";
+	const formBody =
+		"command=search&distanceClass=0&availableFlag=0&distanceUnit1=1&distanceUnit2=1";
 	while (races.length < limit) {
-		const pageUrl =
-			pageIndex === 1
-				? baseUrl + "?command=search"
-				: baseUrl + `?command=page&pageIndex=${pageIndex}`;
 
-		const res = await axios.get(pageUrl, {
-			timeout,
-		});
+		const res =
+			pageIndex === 1
+				? await client.post(baseUrl, formBody, {
+						timeout,
+						headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					})
+				: await client.get(baseUrl + `?command=page&pageIndex=${pageIndex}`, {
+						timeout,
+					});
 
 		// scrape page for races
 		const $ = cheerio.load(res.data);
 		const cards = [...$(".event-title a")];
-
 		if (cards.length === 0) break;
 		for (const el of cards) {
 			const url = "https://runjapan.jp" + $(el).attr("href");
@@ -84,7 +95,7 @@ async function getInfo(url) {
 	let entryEnd = "";
 
 	// scrape details of each race
-	const detailRes = await axios.get(url, {
+	const detailRes = await client.get(url, {
 		timeout,
 	});
 	const $detail = cheerio.load(detailRes.data);
