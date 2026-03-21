@@ -154,12 +154,17 @@ async function chooseRace() {
 
 	let systemRaceSelectionPrompt = prompts.systemRaceSelectionPrompt;
 	let contextChooseRace = prompts.contextRaceSelection + raceStr;
-	const raceSelection = await client.messages.create({
-		max_tokens: 1024,
-		system: systemRaceSelectionPrompt,
-		messages: [{ role: "user", content: contextChooseRace }],
-		model: "claude-sonnet-4-6",
-	});
+	let raceSelection;
+	try {
+		raceSelection = await client.messages.create({
+			max_tokens: 1024,
+			system: systemRaceSelectionPrompt,
+			messages: [{ role: "user", content: contextChooseRace }],
+			model: "claude-sonnet-4-6",
+		});
+	} catch (err) {
+		throw new Error(`Choose race failed: ${err.message}`);
+	}
 
 	return raceSelection.content[0].text;
 }
