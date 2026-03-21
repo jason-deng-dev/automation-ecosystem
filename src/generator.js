@@ -8,8 +8,8 @@ const defaultPrompts = JSON.parse(
 const defaultRaces = JSON.parse(fs.readFileSync("./data/races.json", "utf-8"));
 const defaultClient = new Anthropic({
 	apiKey: process.env["ANTHROPIC_API_KEY"],
-	maxRetries: 3, 
-	timeout: 30000
+	maxRetries: 3,
+	timeout: 30000,
 });
 const defaultPostedRaces = fs.existsSync("data/post_history.json")
 	? JSON.parse(fs.readFileSync("data/post_history.json", "utf-8"))
@@ -25,7 +25,7 @@ async function generatePosts(
 	} = {},
 ) {
 	const systemPrompt = prompts.systemPrompt;
-	const { comments, contextToUse, raceChosen } = await getContextPrompts(type, {
+	const { comments, contextToUse, raceName } = await getContextPrompts(type, {
 		races,
 		postedRaces,
 		client,
@@ -41,7 +41,8 @@ async function generatePosts(
 			messages: [{ role: "user", content: contextToUse }],
 			model: "claude-sonnet-4-6",
 		});
-		messageParsed = JSON.parse(message.content[0].text);
+		const rawText = message.content[0].text.trim().replace(/^```json\s*/,'').replace(/```\s*$/,'');
+		messageParsed = JSON.parse(rawText);
 	} catch (err) {
 		throw new Error(`Post generation failed: ${err.message}`);
 	}
@@ -50,7 +51,7 @@ async function generatePosts(
 
 	// if message is successful add the race to post_history
 	if (type == "race") {
-		postedRaces.push(raceChosen);
+		postedRaces.push(raceName);
 		fs.writeFileSync(
 			"data/post_history.json",
 			JSON.stringify(postedRaces, null, 2),
@@ -71,16 +72,109 @@ async function getContextPrompts(
 		prompts = defaultPrompts,
 	} = {},
 ) {
+	let raceName = '';
+	if (type == 'race') {raceName = await chooseRace({ races, postedRaces, client, prompts });}
+	
+	const {contextToUse, comments} = buildContext(type, prompts, races, raceName);
+
+	return { comments, contextToUse, raceName };
+}
+
+async function chooseRace({
+	races = defaultRaces,
+	postedRaces = defaultPostedRaces,
+	client = defaultClient,
+	prompts = defaultPrompts,
+} = {}) {
+	const availableRaces = races.races.filter(
+		(r) => !postedRaces.includes(r.name),
+	);
+	const raceStr = availableRaces.map((r) => r.name).join("|||");
+
+	let systemRaceSelectionPrompt = prompts.systemRaceSelectionPrompt;
+	let contextChooseRace = prompts.contextRaceSelection + raceStr;
+	let raceSelection;
+	try {
+		raceSelection = await client.messages.create({
+			max_tokens: 100,
+			system: systemRaceSelectionPrompt,
+			messages: [{ role: "user", content: contextChooseRace }],
+			model: "claude-sonnet-4-6",
+		});
+	} catch (err) {
+		throw new Error(`Choose race failed: ${err.message}`);
+	}
+
+	return raceSelection.content[0].text;
+}
+
+function getHashtags(type) {
+	switch (type) {
+		case "race":
+			return [
+				"#日本马拉松",
+				"#马拉松训练",
+				"#我的马拉松备赛日记",
+				"#马拉松跑友请指教",
+				"#跑步爱好者",
+				"#记录跑步",
+				"#人生需要一场马拉松",
+				"#日本队",
+				"#起跑就是马拉松",
+				"#安全完赛就是胜利",
+			];
+		case "training":
+			return [
+				"#马拉松训练",
+				"#跑步训练",
+				"#跑步技巧",
+				"#跑步的力量",
+				"#记录跑步",
+				"#跑步打卡",
+				"#跑出更好的自己",
+				"#跑步爱好者",
+				"#我爱跑步",
+				"#人生需要一场马拉松",
+			];
+		case "nutritionSupplement":
+			return [
+				"#马拉松训练",
+				"#跑步训练",
+				"#跑步技巧",
+				"#跑出更好的自己",
+				"#跑步的力量",
+				"#跑步爱好者",
+				"#我爱跑步",
+				"#记录跑步",
+				"#跑步治百病",
+				"#长跑",
+			];
+		case "wearable":
+			return [
+				"#跑步训练",
+				"#跑步技巧",
+				"#我爱跑步",
+				"#跑步爱好者",
+				"#跑步的力量",
+				"#长跑",
+				"#跑出更好的自己",
+				"#记录跑步",
+				"#马拉松训练",
+				"#sport",
+			];
+		default:
+			throw new Error("Incorrect type used");
+	}
+}
+
+function buildContext(type, prompts, races, raceName) {
 	let contextToUse;
 	let comments;
 	let ctaDescription;
-	let raceChosen = "";
-
 	switch (type) {
 		case "race": {
 			let raceContext = prompts.postTypes.raceGuide;
-			raceChosen = await chooseRace({ races, postedRaces, client, prompts });
-			const race = races.races.find((item) => item.name === raceChosen);
+			const race = races.races.find((item) => item.name === raceName);
 			const fields = [
 				"name",
 				"date",
@@ -170,96 +264,7 @@ async function getContextPrompts(
 		.replace(": month", `: ${month}`)
 		.replace(": season", `: ${season}`);
 
-	return { comments, contextToUse, raceChosen };
+	return {contextToUse, comments};
 }
 
-async function chooseRace({
-	races = defaultRaces,
-	postedRaces = defaultPostedRaces,
-	client = defaultClient,
-	prompts = defaultPrompts,
-} = {}) {
-
-
-	const availableRaces = races.races.filter(
-		(r) => !postedRaces.includes(r.name),
-	);
-	const raceStr = availableRaces.map((r) => r.name).join("|||");
-
-	let systemRaceSelectionPrompt = prompts.systemRaceSelectionPrompt;
-	let contextChooseRace = prompts.contextRaceSelection + raceStr;
-	let raceSelection;
-	try {
-		raceSelection = await client.messages.create({
-			max_tokens: 100,
-			system: systemRaceSelectionPrompt,
-			messages: [{ role: "user", content: contextChooseRace }],
-			model: "claude-sonnet-4-6",
-		});
-	} catch (err) {
-		throw new Error(`Choose race failed: ${err.message}`);
-	}
-
-	return raceSelection.content[0].text;
-}
-
-function getHashtags(type) {
-	switch (type) {
-		case "race":
-			return [
-				"#日本马拉松",
-				"#马拉松训练",
-				"#我的马拉松备赛日记",
-				"#马拉松跑友请指教",
-				"#跑步爱好者",
-				"#记录跑步",
-				"#人生需要一场马拉松",
-				"#日本队",
-				"#起跑就是马拉松",
-				"#安全完赛就是胜利",
-			];
-		case "training":
-			return [
-				"#马拉松训练",
-				"#跑步训练",
-				"#跑步技巧",
-				"#跑步的力量",
-				"#记录跑步",
-				"#跑步打卡",
-				"#跑出更好的自己",
-				"#跑步爱好者",
-				"#我爱跑步",
-				"#人生需要一场马拉松",
-			];
-		case "nutritionSupplement":
-			return [
-				"#马拉松训练",
-				"#跑步训练",
-				"#跑步技巧",
-				"#跑出更好的自己",
-				"#跑步的力量",
-				"#跑步爱好者",
-				"#我爱跑步",
-				"#记录跑步",
-				"#跑步治百病",
-				"#长跑",
-			];
-		case "wearable":
-			return [
-				"#跑步训练",
-				"#跑步技巧",
-				"#我爱跑步",
-				"#跑步爱好者",
-				"#跑步的力量",
-				"#长跑",
-				"#跑出更好的自己",
-				"#记录跑步",
-				"#马拉松训练",
-				"#sport",
-			];
-		default:
-			throw new Error("Incorrect type used");
-	}
-}
-
-export { generatePosts, getContextPrompts, chooseRace, getHashtags };
+export { generatePosts, getContextPrompts, chooseRace, getHashtags, buildContext};
