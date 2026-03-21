@@ -73,10 +73,10 @@
   - [x] Wire full daily cron (scraper weekly, generate → publish daily)
   - [x] Add run-scheduler.js entry point
 - [ ] Build publisher.js (Playwright)
-  - [ ] Auth setup (one-time)
-    - [ ] Add auth.json to .gitignore
-    - [ ] Write scripts/xhs-login.js — launch headed browser, navigate to XHS, page.pause() for manual login, save storageState to auth.json
-    - [ ] Run xhs-login.js and verify auth.json is created
+  - [x] Auth setup (one-time)
+    - [x] Add auth.json to .gitignore
+    - [x] Write scripts/xhs-login.js — launch headed browser, navigate to XHS, page.pause() for manual login, save storageState to auth.json
+    - [x] Run xhs-login.js and verify auth.json is created
   - [ ] Selector discovery (do before writing publisher.js)
     - [ ] Open XHS post creation page manually in headed browser with DevTools
     - [ ] Find and document selector for title input
