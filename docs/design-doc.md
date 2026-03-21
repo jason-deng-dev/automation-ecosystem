@@ -918,27 +918,22 @@ rednote-content-automation/
     │   └── prompts.json                # System prompt, post-type context templates — tunable without touching code
     ├── data/
     │   ├── races.json                  # Scraped race data output
-    │   ├── post_history.json           # Recent topics log for dedup
-    │   └── post_archive/               # Generated post backup
-    ├── demo/
-    │   ├── index.html                  # Portfolio showcase page
-    │   ├── style.css
-    │   └── posts/                      # Pre-generated static posts (one per category)
-    │       ├── race-guide.json
-    │       ├── training.json
-    │       ├── nutrition.json
-    │       └── health.json
+    │   └── post_history.json           # Race names already used — filtered out of future race selection
     ├── scripts/
-    │   └── test-gen.js                 # Throwaway script — real API calls to verify response shape before saving mock fixture
+    │   ├── run-scraper.js              # Entry point — runs populateRaces(25)
+    │   ├── run-scheduler.js            # Entry point — starts cron scheduler
+    │   ├── test-gen.js                 # Dev tool — real API calls to populate mock-api-response.json fixture
+    │   └── xhs-login.js               # One-time auth setup — saves XHS session to auth.json
     ├── tests/
     │   ├── fixtures/
     │   │   ├── sample-races.json           # Pre-scraped race subset for controlled test input
-    │   │   └── mock-api-response.json      # Hardcoded Anthropic response fixture
+    │   │   ├── mock-api-response.json      # Verified API responses for all 4 post types
+    │   │   └── post_history.json           # Fixture for dedup tests
     │   ├── scraper.test.js                 # Validates scraper output shape and completeness
     │   ├── context-builder.test.js         # Tests buildContext() in isolation (no API calls)
-    │   ├── generator.test.js               # Tests generatePost() with mocked Anthropic client
-    │   └── scheduler.test.js               # Skipped — see Section 10.4 for rationale
+    │   └── generator.test.js               # Tests generatePost() with mocked Anthropic client
     ├── docs/
+    ├── auth.json                           # XHS session state (gitignored — credential file)
     ├── .env
     ├── .env.example
     ├── .gitignore
