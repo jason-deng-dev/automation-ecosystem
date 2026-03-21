@@ -55,7 +55,7 @@
   - [x] Add dotenv import + RUNJAPAN_BASE_URL / RUNJAPAN_TIMEOUT from .env in scraper
   - [x] Add retries + timeout to Anthropic client — maxRetries: 3, timeout: 30s
   - [x] Add axios-retry to scraper — 3 retries, exponential backoff, network errors + 5xx only
-- [ ] Setup tests (Vitest)
+- [x] Setup tests (Vitest)
   - [x] Install Vitest
   - [x] Create tests/ folder structure (fixtures/, scraper.test.js, context-builder.test.js, generator.test.js, scheduler.test.js)
   - [x] Create sample-races.json and mock-api-response.json fixtures
@@ -66,11 +66,12 @@
   - [x] generator.test.js — mock Anthropic client, verify API called correctly
   - [x] scheduler.test.js — skipped: getPostType() is a plain lookup table, not worth 7 test cases; cron wiring already covered by individual unit tests
 - [x] Test generation across all post types
-- [ ] Build scheduler.js (orchestrator)
-  - [ ] Post type rotation logic (7-day schedule)
-  - [ ] Add wearables/equipment to rotation schedule
-  - [ ] Simulate 7-day schedule and verify correct post types fire in order
-  - [ ] Wire full daily cron (scraper weekly, generate → publish daily)
+- [x] Build scheduler.js (orchestrator)
+  - [x] Post type rotation logic (7-day schedule)
+  - [x] Add wearables/equipment to rotation schedule
+  - [x] Simulate 7-day schedule and verify correct post types fire in order
+  - [x] Wire full daily cron (scraper weekly, generate → publish daily)
+  - [x] Add run-scheduler.js entry point
 - [ ] Build publisher.js (Playwright)
   - [ ] Apply H1 formatting to title field
   - [ ] Paste hook as plain text

@@ -675,7 +675,7 @@ Hashtags are hardcoded per post type and appended to `description` after parsing
 |races.json|✅ Populated|Full schema: name, url, date, location, entryStart/End, website, images, description, info, notice, registrationOpen, registrationUrl|
 |generator.js|✅ Done|All post types wired; race selection + dedup; structured return; error handling; injectable deps for testing; template substitution guarded; axios-retry + Anthropic retries configured.|
 |formatter.js|🚫 Removed|Formatting is enforced via prompt structure — separate formatter step not needed|
-|scheduler.js|❌ Not started|Rotation logic + cron orchestration — calls generator with correct post type daily|
+|scheduler.js|✅ Done|startScheduler() with weekly scraper cron (Mon 8am CST) and daily post cron (9pm CST); getPostType() 7-day rotation; error handling per cron; run-scheduler.js entry point|
 |publisher.js|❌ Not started|File does not exist yet|
 |Cron orchestration|❌ Not started|End-to-end pipeline not wired|
 
