@@ -41,7 +41,8 @@ async function generatePosts(
 			messages: [{ role: "user", content: contextToUse }],
 			model: "claude-sonnet-4-6",
 		});
-		messageParsed = JSON.parse(message.content[0].text);
+		const rawText = message.content[0].text.trim().replace(/^```json\s*/,'').replace(/```\s*$/,'');
+		messageParsed = JSON.parse(rawText);
 	} catch (err) {
 		throw new Error(`Post generation failed: ${err.message}`);
 	}
