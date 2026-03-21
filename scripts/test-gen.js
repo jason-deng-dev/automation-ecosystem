@@ -3,8 +3,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const types = ["race"]
-// const types = ["race", "training", "nutritionSupplement", "wearable"];
+const types = ["race", "training", "nutritionSupplement", "wearable"];
 
 async function main() {
 	console.log(`Starting API calls for types: ${types.join(", ")}`);

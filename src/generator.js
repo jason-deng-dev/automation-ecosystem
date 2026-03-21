@@ -36,12 +36,15 @@ async function generatePosts(
 	let messageParsed;
 	try {
 		message = await client.messages.create({
-			max_tokens: 1024,
+			max_tokens: 4096,
 			system: systemPrompt,
 			messages: [{ role: "user", content: contextToUse }],
 			model: "claude-sonnet-4-6",
 		});
-		const rawText = message.content[0].text.trim().replace(/^```json\s*/,'').replace(/```\s*$/,'');
+		const rawText = message.content[0].text
+			.trim()
+			.replace(/^```json\s*/, "")
+			.replace(/```\s*$/, "");
 		messageParsed = JSON.parse(rawText);
 	} catch (err) {
 		throw new Error(`Post generation failed: ${err.message}`);
@@ -72,10 +75,17 @@ async function getContextPrompts(
 		prompts = defaultPrompts,
 	} = {},
 ) {
-	let raceName = '';
-	if (type == 'race') {raceName = await chooseRace({ races, postedRaces, client, prompts });}
-	
-	const {contextToUse, comments} = buildContext(type, prompts, races, raceName);
+	let raceName = "";
+	if (type == "race") {
+		raceName = await chooseRace({ races, postedRaces, client, prompts });
+	}
+
+	const { contextToUse, comments } = buildContext(
+		type,
+		prompts,
+		races,
+		raceName,
+	);
 
 	return { comments, contextToUse, raceName };
 }
@@ -264,7 +274,13 @@ function buildContext(type, prompts, races, raceName) {
 		.replace(": month", `: ${month}`)
 		.replace(": season", `: ${season}`);
 
-	return {contextToUse, comments};
+	return { contextToUse, comments };
 }
 
-export { generatePosts, getContextPrompts, chooseRace, getHashtags, buildContext};
+export {
+	generatePosts,
+	getContextPrompts,
+	chooseRace,
+	getHashtags,
+	buildContext,
+};
