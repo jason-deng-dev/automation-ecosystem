@@ -47,8 +47,8 @@
   - [x] Fix dedup — filter races array before building string, not string manipulation after
   - [x] Fix trailing ||| delimiter in race list — use Array.join('|||')
   - [x] Fix race selection max_tokens: 1024 → 100
-  - [ ] Move systemRaceSelectionPromptTest out of prompts.json → tests/fixtures/
-  - [ ] Fix "dev" script — add target file to node --watch
+  - [x] Move systemRaceSelectionPromptTest out of prompts.json → defined inline in generator.test.js
+  - [x] Fix "dev" script — add target file to node --watch
   - [ ] Fix registrationOpen false negative — use null for unknown state instead of false
   - [ ] Fix getInfo() mixed concerns — extract href/raceName in caller, pass as params
   - [ ] Fix inner scraper loop — break early when races.length >= limit
