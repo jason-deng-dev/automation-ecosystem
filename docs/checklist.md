@@ -50,9 +50,11 @@
   - [x] Move systemRaceSelectionPromptTest out of prompts.json → defined inline in generator.test.js
   - [x] Fix "dev" script — add target file to node --watch
   - [x] Fix registrationOpen false negative — use null for unknown state instead of false
-  - [ ] Fix getInfo() mixed concerns — extract href/raceName in caller, pass as params
+  - [x] Fix getInfo() mixed concerns — extract href/name in caller, pass only url to getInfo
   - [ ] Fix inner scraper loop — break early when races.length >= limit
   - [ ] Add dotenv import + RUNJAPAN_BASE_URL / RUNJAPAN_TIMEOUT from .env in scraper
+  - [ ] Add retries + timeout to Anthropic client — maxRetries: 3, timeout: 30s
+  - [ ] Add axios-retry to scraper — 3 retries, exponential backoff, network errors + 5xx only
 - [ ] Setup tests (Vitest)
   - [ ] Install Vitest
   - [ ] Create tests/ folder structure (fixtures/, scraper.test.js, context-builder.test.js, generator.test.js, scheduler.test.js)
