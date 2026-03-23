@@ -104,10 +104,22 @@
     - [ ] Catch publish failure — log error, do not post comments
     - [ ] Catch comment failure — log which comment failed, continue with remaining
 - [ ] Deploy
+  - [ ] Provision Linux VPS (Onamae VPS 2GB or Tencent Cloud new Linux CVM — Tokyo region, 2GB RAM minimum)
+  - [ ] SSH into VPS and verify access
+  - [ ] Install Docker on VPS
+  - [ ] Install Git on VPS
   - [ ] Write Dockerfile
   - [ ] Write docker-compose.yml
   - [ ] Test container locally
-  - [ ] Hand off to employer
+  - [ ] Clone repo onto VPS
+  - [ ] Create .env file on VPS with production API keys (never committed to git)
+  - [ ] Write scripts/refresh-auth.bat — Windows batch file for operator: runs xhs-login.js in headed browser, then SCPs auth.json to VPS automatically
+  - [ ] Set up SSH key on operator's local Windows machine (one-time setup, required for SCP in refresh-auth.bat)
+  - [ ] Test full auth refresh flow: operator double-clicks refresh-auth.bat → browser opens → logs in → auth.json auto-uploaded to VPS
+  - [ ] Transfer auth.json to VPS (initial setup)
+  - [ ] Run docker-compose up on VPS and verify pipeline starts
+  - [ ] Verify first scheduled cron run fires correctly
+  - [ ] Hand off to employer — document two things: (1) docker-compose up to start pipeline, (2) double-click refresh-auth.bat when XHS logs out
 - [ ] Build demo page
   - [ ] Generate one post per category and save to demo/posts/
   - [ ] Build demo/index.html with XHS-style post previews

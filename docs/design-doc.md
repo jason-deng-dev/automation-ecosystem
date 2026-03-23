@@ -38,6 +38,8 @@ Manual content creation is the bottleneck. Writing each post requires:
 
 At current pace, consistent daily publishing is not sustainable alongside product development.
 
+A second constraint shapes the deployment architecture: the operator is based in mainland China. This rules out running the pipeline on a local machine — there is no guarantee a personal computer stays on 24/7 when the cron fires, and all outbound API calls (Anthropic, RunJapan) would pass through the Great Firewall, which intermittently blocks or throttles foreign services. The Anthropic API is not reliably accessible from mainland China. The pipeline therefore requires a Linux VPS hosted outside China — Tokyo is the natural choice given the platform's Japan focus and XHS's accessibility from Japan.
+
 ### 1.3 Why This Pipeline Is Different
 
 Most automated content systems are built on assumptions. This one is built on **115 posts of real performance data** — manually created and published over months — that reveal exactly which content types drive views, saves, and high CTR with this specific audience. The generator's prompt strategy, rotation schedule, and content weighting are all derived from this empirical baseline, not guesswork.
@@ -273,6 +275,7 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |Prompt storage|`config/prompts.json`|Hardcoded in JS, `.env`|Separates tunable content (persona, templates) from pipeline logic; employer can adjust prompts without touching code|
 |CTA injection|Runtime code injection per post type|Hardcoded in system prompt|System prompt is sent on every API call — putting CTA targets there wastes tokens on context irrelevant to the current post type. Injecting a natural-language CTA description per type in `generatePost()` keeps the system prompt lean and makes each call's context more precise. Claude also doesn't need to know actual URLs — those are hardcoded in the pipeline and injected after parsing.|
 |Deployment / handoff|Docker + docker-compose|Manual server setup, PM2|Ensures consistent runtime environment across machines; Playwright browser binaries are notoriously environment-sensitive; allows non-technical handoff with a single `docker-compose up`|
+|Hosting|Linux VPS (Tokyo region)|GitHub Actions, office Windows machine|GitHub Actions blocked by `auth.json` — XHS session requires manual re-login in a headed browser; GH Actions has no display. Existing Tencent Cloud server runs Windows Server 2019, incompatible with Linux Docker images. A Linux VPS outside of China is required: Anthropic API is accessible outside mainland China, XHS is accessible internationally, and `auth.json` persists on disk between runs.|
 |Test framework|Vitest|Jest|Better ESM support out of the box — project uses native `import` syntax which requires extra config in Jest. Vitest also runs faster and shares config with Vite if needed.|
 |API mocking in tests|Mock `@anthropic-ai/sdk` client|Real API calls in tests|Eliminates token cost on every test run, makes tests deterministic, and allows CI to run without a live API key.|
 |No formatter.js|Prompt-enforced structure|Separate formatter module|Structured output (`{ title, hook, contents[], cta, description }`) with explicit format rules in the prompt eliminates the need for a post-processing validation step — Claude produces paste-ready output directly.|
@@ -783,6 +786,19 @@ XHS enforces a **300-character limit per comment**. This is enforced in the prom
 **Discovery:** Network tab inspection of a manual form submission (with "Enterable tournaments only" unchecked) revealed the actual POST payload. Key fields: `command=search`, `distanceClass=0`, `availableFlag=1` (the enterable-only flag).
 
 **Solution:** Change the initial page 1 request from GET to POST with a form-encoded body matching the manual search, setting `availableFlag=0` to include all races regardless of entry status. Subsequent pagination requests (`?command=page&pageIndex=N`) remain GET requests using the session cookie established by the initial POST.
+
+### 9.9 Deployment Constraint: Operator in China + Great Firewall
+
+**Challenge:** The pipeline operator is based in mainland China. Running the Docker container on a local machine introduces two hard problems:
+
+1. **No guaranteed uptime** — there is no assurance a personal computer stays powered on and connected at 9pm CST every night when the daily cron fires. A missed run means no post that day with no alert.
+2. **Great Firewall exposure** — all outbound API calls from a China-hosted machine pass through GFW filtering. The Anthropic API is not officially accessible from mainland China. RunJapan is a Japanese website that may be intermittently slow or blocked. Unreliable network conditions turn a deterministic cron into a flaky pipeline with no visibility into which failures are code bugs vs. network blocks.
+
+**Solution:** Deploy to a Linux VPS in Tokyo. Tokyo eliminates GFW exposure entirely — Anthropic API calls succeed reliably, RunJapan HTTP requests are unblocked, and XHS (a Chinese app with international infrastructure) is accessible from Japan. The VPS runs 24/7 independently of any operator machine. `auth.json` persists on disk between cron runs.
+
+**Auth refresh for non-technical operator:** When the XHS session expires, `xhs-login.js` must be re-run — but the VPS has no display, so a headed browser cannot open on the server. The operator is also non-technical and cannot SSH in. Solution: a Windows batch file (`scripts/refresh-auth.bat`) the operator double-clicks. It runs `xhs-login.js` locally on their Windows machine (headed browser opens, they log in visually, `auth.json` is saved locally), then automatically SCPs the refreshed `auth.json` to the VPS. One double-click, no terminal, no commands. The only one-time technical setup required is installing an SSH key on the operator's machine — done once during handoff by the developer.
+
+**Why 2GB RAM minimum:** The pipeline runs three memory-concurrent processes during each publish cycle: Node.js + cron scheduler (~100MB), the Playwright browser instance (~400MB), and Linux + Docker overhead (~200–300MB). A 1GB instance leaves less than 200MB of headroom for Playwright after the OS and Docker claim their share. On a live publish, the kernel OOM killer terminates the browser process mid-run — the post fails silently because the process is killed before it can write to `pipeline.log`. 2GB provides sufficient headroom for all concurrent processes with margin for browser memory spikes during page load.
 
 ---
 
