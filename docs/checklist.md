@@ -77,28 +77,28 @@
     - [x] Add auth.json to .gitignore
     - [x] Write scripts/xhs-login.js — launch headed browser, navigate to XHS, page.pause() for manual login, save storageState to auth.json
     - [x] Run xhs-login.js and verify auth.json is created
-  - [ ] Selector discovery (do before writing publisher.js)
-    - [ ] Open XHS post creation page manually in headed browser with DevTools
-    - [ ] Find and document selector for title input
-    - [ ] Find and document selector for body/content area (likely a rich text editor)
-    - [ ] Find and document selector for description field
-    - [ ] Find and document selector for hashtag input
-    - [ ] Find and document selector for publish/submit button
-    - [ ] Find and document selector for comment input field
-    - [ ] Determine how to input text into the rich text editor (page.fill vs keyboard.type vs clipboard)
-    - [ ] Document all selectors as named constants at the top of publisher.js
-  - [ ] Build publisher.js
-    - [ ] Load auth.json as storageState on context creation
-    - [ ] Navigate to XHS post creation URL
-    - [ ] Wait for editor to be ready
-    - [ ] Fill title field
-    - [ ] Fill content body: hook → each contents[] subtitle + body → cta (in sequence)
-    - [ ] Fill description field with hashtags appended
-    - [ ] Click publish button
-    - [ ] Wait for success confirmation
-    - [ ] Navigate to published post URL
-    - [ ] Post comments sequentially — primary CTA first, community second
-    - [ ] Return true on success
+  - [x] Selector discovery (do before writing publisher.js)
+    - [x] Open XHS post creation page manually in headed browser with DevTools
+    - [x] Find and document selector for title input
+    - [x] Find and document selector for body/content area (likely a rich text editor)
+    - [x] Find and document selector for description field
+    - [x] Find and document selector for hashtag input
+    - [x] Find and document selector for publish/submit button
+    - [x] Find and document selector for comment input field
+    - [x] Determine how to input text into the rich text editor (page.fill vs keyboard.type vs clipboard)
+    - [x] Document all selectors as named constants at the top of publisher.js
+  - [x] Build publisher.js
+    - [x] Load auth.json as storageState on context creation
+    - [x] Navigate to XHS post creation URL
+    - [x] Wait for editor to be ready
+    - [x] Fill title field
+    - [x] Fill content body: hook → each contents[] subtitle + body → cta (in sequence)
+    - [x] Fill description field with hashtags appended
+    - [x] Click publish button
+    - [x] Wait for success confirmation
+    - [x] Navigate to published post URL
+    - [x] Post comments sequentially — primary CTA first, community second
+    - [x] Return true on success
   - [ ] Error handling
     - [ ] Catch auth failure (auth.json expired) — log clear message prompting re-login
     - [ ] Catch publish failure — log error, do not post comments
@@ -120,6 +120,8 @@
   - [ ] Run docker-compose up on VPS and verify pipeline starts
   - [ ] Verify first scheduled cron run fires correctly
   - [ ] Hand off to employer — document two things: (1) docker-compose up to start pipeline, (2) double-click refresh-auth.bat when XHS logs out
+- [ ] Tune prompt output format for XHS page layout
+  - [ ] Update prompts to produce fewer lines per section, more content per line — allows 一键排版 to split pages at correct section boundaries
 - [ ] Build demo page
   - [ ] Generate one post per category and save to demo/posts/
   - [ ] Build demo/index.html with XHS-style post previews
