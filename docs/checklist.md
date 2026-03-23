@@ -99,10 +99,10 @@
     - [x] Navigate to published post URL
     - [x] Post comments sequentially — primary CTA first, community second
     - [x] Return true on success
-  - [ ] Error handling
-    - [ ] Catch auth failure (auth.json expired) — log clear message prompting re-login
-    - [ ] Catch publish failure — log error, do not post comments
-    - [ ] Catch comment failure — log which comment failed, continue with remaining
+  - [x] Error handling
+    - [x] Catch auth failure (auth.json expired) — log clear message prompting re-login
+    - [x] Catch publish failure — log error, do not post comments
+    - [x] Catch comment failure — log which comment failed, continue with remaining
 - [ ] Deploy
   - [ ] Provision Linux VPS (Onamae VPS 2GB or Tencent Cloud new Linux CVM — Tokyo region, 2GB RAM minimum)
   - [ ] SSH into VPS and verify access
