@@ -72,7 +72,7 @@
   - [x] Simulate 7-day schedule and verify correct post types fire in order
   - [x] Wire full daily cron (scraper weekly, generate → publish daily)
   - [x] Add run-scheduler.js entry point
-- [ ] Build publisher.js (Playwright)
+- [x] Build publisher.js (Playwright)
   - [x] Auth setup (one-time)
     - [x] Add auth.json to .gitignore
     - [x] Write scripts/xhs-login.js — launch headed browser, navigate to XHS, page.pause() for manual login, save storageState to auth.json
