@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS 迁移方案</title>
+  <style>
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+      color: #1a1a1a;
+      max-width: 720px;
+      margin: 60px auto;
+      padding: 0 40px;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #111;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 36px;
+      margin-bottom: 10px;
+      color: #111;
+      border-left: 3px solid #232f3e;
+      padding-left: 10px;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #232f3e;
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f9f9f9;
+    }
+
+    .highlight {
+      background-color: #fff8e1 !important;
+      font-weight: 600;
+    }
+
+    ul {
+      margin: 8px 0 16px;
+      padding-left: 20px;
+      color: #333;
+    }
+
+    ul li {
+      margin-bottom: 6px;
+    }
+
+    .note {
+      background: #f0f7ff;
+      border-left: 3px solid #4a90d9;
+      padding: 12px 16px;
+      margin-top: 32px;
+      font-size: 14px;
+      color: #444;
+      border-radius: 2px;
+    }
+
+    @media print {
+      body { margin: 40px auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>AWS 迁移方案</h1>
+  <div class="subtitle">running.moximoxi.net &nbsp;·&nbsp; 2026年3月</div>
+
+  <p>
+    关于我们的网站和自动化系统服务器解决方案，我做了一些研究，建议迁移到 <strong>AWS（亚马逊云服务）</strong>。
+  </p>
+
+  <h2>为什么选择 AWS？</h2>
+  <p>
+    AWS 是全球最大的云服务提供商，提供稳定可靠的服务。对我而言，AWS 的技术文档全部为英文，这让我能够快速找到问题的解决方案，使部署更加高效便捷。
+  </p>
+
+  <h2>费用对比</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>项目</th>
+        <th>当前</th>
+        <th>迁移后</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>网站托管</td>
+        <td>2,400 日元/月</td>
+        <td>约 750 日元/月</td>
+      </tr>
+      <tr>
+        <td>自动化系统</td>
+        <td>尚未部署</td>
+        <td>约 1,800 日元/月</td>
+      </tr>
+      <tr class="highlight">
+        <td>合计</td>
+        <td>2,400 日元/月</td>
+        <td>约 2,550 日元/月</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    成本基本相同，但迁移后包含了自动化发布系统。此外，AWS 提供前三个月免费，这意味着前三个月可节省约 <strong>7,200 日元</strong>。
+  </p>
+
+  <h2>迁移计划</h2>
+  <p>迁移预计耗时 <strong>3–4 天</strong>，包括：</p>
+  <ul>
+    <li>网站数据和数据库迁移</li>
+    <li>完整保留所有插件、主题和 WooCommerce 设置</li>
+    <li>功能测试（支付、登录、实用模块）</li>
+    <li>DNS 切换和稳定性确认</li>
+  </ul>
+  <p>迁移期间网站将正常运行，不会中断。</p>
+
+  <div class="note">
+    如有任何问题或需要进一步说明，请随时告知。
+  </div>
+
+</body>
+</html>
