@@ -19,15 +19,10 @@ function startScheduler() {
 	);
 
 	// Daily: generate and publish post at 9pm CST (peak XHS engagement window)
-	nodeCron.schedule(
-		'*/30 * * * * *',
-		Run,
-		{ timezone: 'Asia/Shanghai' },
-	);
+	nodeCron.schedule('* * * * *', Run, { timezone: 'Asia/Shanghai' });
 }
 
 let postTypes = ['race', 'nutritionSupplement', 'training', 'race', 'race', 'training', 'wearable'];
-
 function getPostTypeTest() {
 	return postTypes.shift();
 }
@@ -45,15 +40,30 @@ function getPostType() {
 	};
 	return dayTypeMap[dayOfWeek];
 }
- 
-async function Run(){
+
+const jobQueue = [];
+let isRunning = false;
+
+async function Run() {
+	jobQueue.push(1);
+	jobQueue.push(1);
+	jobQueue.push(1);
+	jobQueue.push(1);
+	jobQueue.push(1);
+	jobQueue.push(1);
+	jobQueue.push(1);
+	if (isRunning) return;
+	while (jobQueue.length > 0) {
+		jobQueue.shift();
+		isRunning = true;
+		try {
 			const type = getPostTypeTest();
 			if (type === undefined) {
 				console.error('Ran out of types');
 				return;
 			}
 
-			console.log('Starting Authentication check...')
+			console.log('Starting Authentication check...');
 			try {
 				const authRes = await checkAuth();
 				if (!authRes) {
@@ -68,15 +78,14 @@ async function Run(){
 			}
 			let post;
 
-
-			console.log('Starting XHS article generation...')
+			console.log('Starting XHS article generation...');
 			try {
 				post = await generatePost(type);
 			} catch (err) {
 				console.error(`Generate post failed : ${err.message}`);
 				return;
 			}
-			console.log('XHS generation successful')
+			console.log('XHS generation successful');
 
 			try {
 				const publishRes = await publishPost(post);
@@ -86,11 +95,15 @@ async function Run(){
 				}
 			} catch (err) {
 				console.error(`Publish post failed : ${err.message}`);
-				return
+				return;
 			}
-			console.log('Process complete')
+		} finally {
+			isRunning = false;
+			console.log('Process complete');
 		}
+	}
+}
 
-Run();
+Run()
 
 export { startScheduler };
