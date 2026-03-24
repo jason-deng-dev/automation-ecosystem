@@ -10,7 +10,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	const context = await browser.newContext({ storageState: 'auth.json' });
 	const page = await context.newPage();
 
-	console.log('Starting post publish...')
+	console.log('Starting post publish...');
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
 		await page.getByText('写长文').click();
@@ -50,13 +50,13 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 
 		await page.getByRole('button', { name: '发布' }).click();
 		await page.waitForURL('**/success?source&bind_status=not_bind&__debugger__=&proxy=');
-		console.log('Post published successfully')
+		console.log('Post published successfully');
 
 		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
 		await page.waitForSelector('#userPostedFeeds .note-item');
 		await page.locator('#userPostedFeeds .note-item').first().click();
 
-		console.log('Posting comments...')
+		console.log('Posting comments...');
 		for (const [i, comment] of comments.entries()) {
 			try {
 				await page.locator('.not-active.inner-when-not-active').waitFor();
@@ -69,7 +69,9 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 				console.error(`Comment ${i + 1} failed: ${err.message}`);
 			}
 		}
-		console.log('Comments posted successfully')
+		archivePost(new Date().toISOString(), { title, hook, contents, cta, description, hashtags, comments });
+
+		console.log('Comments posted successfully');
 	} catch (err) {
 		console.error('Publish failed:', err.message);
 		return false;
@@ -103,8 +105,8 @@ async function checkAuth() {
 		if (await page.locator('#login-btn').first().isVisible()) {
 			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
 		}
-		console.log('Authentication successful')
-		return true
+		console.log('Authentication successful');
+		return true;
 	} catch (err) {
 		// console.error('Publish failed:', err.message);
 		if (err.message.includes('Authentication')) {
@@ -114,6 +116,22 @@ async function checkAuth() {
 	} finally {
 		await browser.close();
 	}
+}
+
+function archivePost(dateAndTime, post) {
+	const date = new Date(dateAndTime); // 2026-03-24T21:05:32.000Z
+	const day = date.getDay(); // 0=Sun, 1=Mon...6=Sat
+	const diff = day === 0 ? -6 : 1 - day;
+	date.setDate(date.getDate() + diff);
+	const weekStart = date.toISOString().split('T')[0]; // "2026-03-23"
+	const filePath = `./data/post_archive/${weekStart}.json`;
+	let archive = {};
+
+	if (fs.existsSync(filePath)) {
+		archive = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+	}
+	archive[dateAndTime] = post;
+	fs.writeFileSync(filePath, JSON.stringify(archive, null, 2));
 }
 
 export { publishPost, checkAuth };
