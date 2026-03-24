@@ -1,0 +1,9 @@
+node_modules
+.env
+auth.json
+docs
+tests
+demo
+memory
+.git
+*.md
