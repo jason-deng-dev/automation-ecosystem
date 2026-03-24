@@ -20,45 +20,8 @@ function startScheduler() {
 
 	// Daily: generate and publish post at 9pm CST (peak XHS engagement window)
 	nodeCron.schedule(
-		'*/10 * * * * *',
-		async () => {
-			const type = getPostTypeTest();
-			if (type === undefined) {
-				console.error('Ran out of types');
-				return;
-			}
-
-			try {
-				const authRes = await checkAuth();
-				if (!authRes) {
-					console.error(`XHS authentication failed`);
-					return;
-				}
-			} catch (err) {
-				console.error(`Publish post failed : ${err.message}`);
-				if (err.message.includes('Authentication')) {
-					process.exit(1);
-				}
-			}
-			let post;
-			try {
-				post = await generatePost(type);
-			} catch (err) {
-				console.error(`Generate post failed : ${err.message}`);
-				return;
-			}
-
-			try {
-				const publishRes = await publishPost(post);
-				if (!publishRes) {
-					console.error(`Publish post failed`);
-					return;
-				}
-			} catch (err) {
-				console.error(`Publish post failed : ${err.message}`);
-				return
-			}
-		},
+		'*/30 * * * * *',
+		Run,
 		{ timezone: 'Asia/Shanghai' },
 	);
 }
@@ -82,5 +45,48 @@ function getPostType() {
 	};
 	return dayTypeMap[dayOfWeek];
 }
+ 
+async function Run(){
+			const type = getPostTypeTest();
+			if (type === undefined) {
+				console.error('Ran out of types');
+				return;
+			}
+
+			try {
+				const authRes = await checkAuth();
+				if (!authRes) {
+					console.error(`XHS authentication failed`);
+					return;
+				}
+			} catch (err) {
+				console.error(`Publish post failed : ${err.message}`);
+				if (err.message.includes('Authentication')) {
+					process.exit(1);
+				}
+			}
+			let post;
+			console.log('Starting XHS article generation...')
+			try {
+				post = await generatePost(type);
+			} catch (err) {
+				console.error(`Generate post failed : ${err.message}`);
+				return;
+			}
+			console.log('XHS generation successful')
+
+			try {
+				const publishRes = await publishPost(post);
+				if (!publishRes) {
+					console.error(`Publish post failed`);
+					return;
+				}
+			} catch (err) {
+				console.error(`Publish post failed : ${err.message}`);
+				return
+			}
+		}
+
+Run();
 
 export { startScheduler };
