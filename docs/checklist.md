@@ -45,6 +45,8 @@
   - [x] Fix module-level side effects — injectable deps with default* fallbacks; threaded through generatePost → getContextPrompts → chooseRace
   - [x] Fix template substitution — use replaceAll, guard against null/undefined fields with "missing from the website" fallback
   - [x] Fix dedup — filter races array before building string, not string manipulation after
+  - [x] Add `cleanName()` to strip 【...】 entry tier suffixes from race names before comparison
+  - [x] Fix race dedup — two-way `.some()` substring check so all variant entry tiers of the same race are excluded
   - [x] Fix trailing ||| delimiter in race list — use Array.join('|||')
   - [x] Fix race selection max_tokens: 1024 → 100
   - [x] Move systemRaceSelectionPromptTest out of prompts.json → defined inline in generator.test.js
@@ -104,17 +106,31 @@
     - [x] Catch publish failure — log error, do not post comments
     - [x] Catch comment failure — log which comment failed, continue with remaining
     - [x] Add auth pre-flight check for profile/comment page before starting publish flow
-  - [x] Refactor xhs-login.js — auto-advance on login detection instead of page.pause()
-- [ ] Test 7-day post cycle
-  - [ ] Verify all 7 post types fire in order (scheduler test mode — every 30s)
-  - [ ] Verify race dedup works — no repeat races across cycle
+    - [x] Fix #login-btn strict mode violation — resolves to 2 elements, use .first()
+    - [x] Fix scheduler not stopping on publishPost() returning false — check return value and abort
+    - [x] Fix generator crash: "Cannot read properties of undefined (reading 'name')" — cleanName() receiving undefined race when selected race name didn't match races.json due to 【...】 suffix
+    - [x] Fix JSON parse crash: added system prompt rule banning all double quotation marks inside JSON string values; use 「」or 《》 as alternatives
+    - [x] Fix `checkAuth()` missing `return true` — caused infinite auth-failed loop in scheduler
+    - [x] Fix scheduler — call `process.exit(1)` on auth error to hard-stop cron job
+    - [x] Refactor xhs-login.js — auto-advance on login detection instead of page.pause()
+- [x] Post archive
+  - [x] Write generated post to data/post_archive/ on successful publish (weekly JSON file keyed by ISO timestamp)
+  - [x] archivePost() in publisher.js — computes Monday of current week as filename, merges into existing file
+- [x] Test 7-day post cycle
+  - [x] Verify all 7 post types fire in order (scheduler test mode — queue-based, back-to-back)
+  - [x] Verify race dedup works — no repeat races across cycle
   - [ ] Record OBS demo video of full cycle
+- [ ] Dashboard — schedule configuration
+  - [ ] Define per-day schedule config (day → time + post type) to replace hardcoded dayTypeMap and cron time
+  - [ ] Expose schedule config via dashboard UI
+  - [ ] Wire config changes to update scheduler at runtime
 - [ ] Deploy
   - [ ] Provision AWS Lightsail instance (Linux, $10/mo — IPv6-only, 2 GB RAM, 2 vCPUs, 60 GB SSD, 3 TB transfer, hosted outside mainland China)
   - [ ] SSH into Lightsail instance and verify access
   - [ ] Install Docker on Lightsail instance
   - [ ] Install Git on Lightsail instance
   - [x] Write Dockerfile
+  - [x] Write .dockerignore
   - [ ] Write docker-compose.yml
   - [ ] Test container locally
   - [ ] Clone repo onto Lightsail instance
