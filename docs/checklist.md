@@ -103,12 +103,18 @@
     - [x] Catch auth failure (auth.json expired) — log clear message prompting re-login
     - [x] Catch publish failure — log error, do not post comments
     - [x] Catch comment failure — log which comment failed, continue with remaining
+    - [x] Add auth pre-flight check for profile/comment page before starting publish flow
+  - [x] Refactor xhs-login.js — auto-advance on login detection instead of page.pause()
+- [ ] Test 7-day post cycle
+  - [ ] Verify all 7 post types fire in order (scheduler test mode — every 30s)
+  - [ ] Verify race dedup works — no repeat races across cycle
+  - [ ] Record OBS demo video of full cycle
 - [ ] Deploy
   - [ ] Provision AWS Lightsail instance (Linux, $10/mo — IPv6-only, 2 GB RAM, 2 vCPUs, 60 GB SSD, 3 TB transfer, hosted outside mainland China)
   - [ ] SSH into Lightsail instance and verify access
   - [ ] Install Docker on Lightsail instance
   - [ ] Install Git on Lightsail instance
-  - [ ] Write Dockerfile
+  - [x] Write Dockerfile
   - [ ] Write docker-compose.yml
   - [ ] Test container locally
   - [ ] Clone repo onto Lightsail instance
