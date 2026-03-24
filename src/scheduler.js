@@ -3,6 +3,7 @@ import { generatePost } from "./generator.js";
 import { populateRaces } from "./scraper.js";
 import { publishPost } from "./publisher.js";
 
+
 function startScheduler() {
 	// Weekly: refresh race data every Monday at 8am CST (before daily post fires)
 	nodeCron.schedule(
@@ -20,9 +21,14 @@ function startScheduler() {
 
 	// Daily: generate and publish post at 9pm CST (peak XHS engagement window)
 	nodeCron.schedule(
-		"0 21 * * *",
+		"* * * * *",
 		async () => {
-			const type = getPostType();
+			
+			const type = getPostTypeTest();
+			if (type === undefined){
+				console.error('Ran out of types')
+				return
+			}
 			let post;
 			try {
 				post = await generatePost(type);
@@ -40,6 +46,13 @@ function startScheduler() {
 		},
 		{ timezone: "Asia/Shanghai" },
 	);
+}
+
+let postTypes = ["race", "nutritionSupplement", "training", "race", "race", "training", "wearable",]
+
+function getPostTypeTest() {
+	return postTypes.shift()
+
 }
 
 function getPostType() {
