@@ -11,20 +11,6 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	const page = await context.newPage();
 
 	try {
-		await page.goto('https://creator.xiaohongshu.com/publish/publish');
-
-		// error handling for auth failure on publish page
-		if (page.url().includes('/login')) {
-			throw new Error('Authentication expired — run refresh-auth.bat to re-login')
-		}
-
-		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
-		await page.waitForTimeout(2000)
-		// error handling for auth failure on comment add page
-		if (await page.locator('#login-btn').first().isVisible()) {
-			throw new Error('Authentication expired — run refresh-auth.bat to re-login')
-		}
-
 		await page.getByText('写长文').click();
 
 		await page.getByText('新的创作').click();
@@ -90,4 +76,38 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	return true;
 }
 
-export { publishPost };
+async function checkAuth() {
+	if (!fs.existsSync('auth.json')) {
+		console.error('auth.json not found — run refresh-auth.bat to log in first');
+		return false;
+	}
+	const browser = await chromium.launch({ headless: false });
+	const context = await browser.newContext({ storageState: 'auth.json' });
+	const page = await context.newPage();
+
+	try {
+		await page.goto('https://creator.xiaohongshu.com/publish/publish');
+
+		// error handling for auth failure on publish page
+		if (page.url().includes('/login')) {
+			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
+		}
+
+		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
+		await page.waitForTimeout(2000);
+		// error handling for auth failure on comment add page
+		if (await page.locator('#login-btn').first().isVisible()) {
+			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
+		}
+	} catch (err) {
+		// console.error('Publish failed:', err.message);
+		if (err.message.includes('Authentication')) {
+			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
+		}
+		return false;
+	} finally {
+		await browser.close();
+	}
+}
+
+export { publishPost, checkAuth};
