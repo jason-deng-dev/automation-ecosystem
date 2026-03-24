@@ -46,8 +46,7 @@ async function generatePost(
 		const rawText = message.content[0].text
 			.trim()
 			.replace(/^```json\s*/, '')
-			.replace(/```\s*$/, '')
-			.replace(/[""]/g, '\\"');
+			.replace(/```\s*$/, '');
 		console.log(rawText);
 		messageParsed = JSON.parse(rawText);
 	} catch (err) {
