@@ -114,12 +114,32 @@ The dashboard should surface session state as a status indicator on the RedNote 
 
 ## 6. Pipeline Configuration
 
-The dashboard should allow the operator to configure the RedNote posting schedule without touching code or the server:
+The dashboard should allow the operator to configure the RedNote posting schedule without touching code or the server.
 
-- **Posts per day** — number input (e.g. 1–3 posts/day)
-- **Post times** — time picker(s) for each scheduled post slot
+### Per-Day Schedule Config
 
-Changes update the cron schedule in `scheduler.js` (or equivalent config) at runtime.
+Each day supports multiple post slots — each slot has a time and a post type. The operator can add or remove slots per day from the dashboard.
+
+- **Time** — time picker per slot (24h, CST)
+- **Post Type** — dropdown per slot: Race Guide / Training / Nutrition / Wearables
+- **Add slot** — button to add another post to the same day
+- **Remove slot** — button to remove a slot
+
+The schedule is stored in `config/schedule.json` on the server. The dashboard reads and writes this file via an API endpoint. The scheduler reads `schedule.json` at runtime to register one cron job per slot — no code changes or restarts required.
+
+### schedule.json Shape
+
+```json
+{
+  "monday":    [{ "time": "21:00", "type": "race" }],
+  "tuesday":   [{ "time": "21:00", "type": "nutritionSupplement" }],
+  "wednesday": [{ "time": "21:00", "type": "training" }],
+  "thursday":  [{ "time": "09:00", "type": "race" }, { "time": "21:00", "type": "wearable" }],
+  "friday":    [{ "time": "21:00", "type": "race" }],
+  "saturday":  [{ "time": "21:00", "type": "training" }],
+  "sunday":    [{ "time": "21:00", "type": "wearable" }]
+}
+```
 
 ---
 

@@ -197,7 +197,7 @@ DATA  →  SCHEDULE  →  GENERATE  →  PUBLISH
 ```
 
 - **Stage 1 — DATA:** Race scraper pulls all upcoming Japanese marathon data into `races.json` weekly via cron
-- **Stage 2 — SCHEDULE:** Scheduler determines today's post type from the 7-day rotation and calls the generator
+- **Stage 2 — SCHEDULE:** Scheduler determines today's post type and publish time from a configurable per-day schedule (day → time + post type), replacing the hardcoded 7-day rotation
 - **Stage 3 — GENERATE:** Claude API receives race context + system prompt → produces paste-ready structured post
 - **Stage 4 — PUBLISH:** Browser automation posts to MOXI爱跑步 XHS account
 
@@ -223,7 +223,9 @@ DATA  →  SCHEDULE  →  GENERATE  →  PUBLISH
 
 #### scheduler.js (new)
 
-- Determines today's post type from the 7-day data-weighted rotation schedule
+- Determines today's post type and publish time from a per-day schedule config (day → time + post type)
+- Schedule config is loaded from `config/schedule.json` — each day maps to an array of `{ time, type }` slots, supporting multiple posts per day
+- One cron job is registered per slot at startup — editable via dashboard without touching code
 - Calls `generatePost(type)` with the correct post type
 - Passes the result to `publisher.js`
 - Weekly cron: trigger scraper → update `races.json`
