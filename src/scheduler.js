@@ -1,13 +1,12 @@
-import nodeCron from "node-cron";
-import { generatePost } from "./generator.js";
-import { populateRaces } from "./scraper.js";
-import { publishPost } from "./publisher.js";
-
+import nodeCron from 'node-cron';
+import { generatePost } from './generator.js';
+import { populateRaces } from './scraper.js';
+import { publishPost, checkAuth } from './publisher.js';
 
 function startScheduler() {
 	// Weekly: refresh race data every Monday at 8am CST (before daily post fires)
 	nodeCron.schedule(
-		"0 8 * * 1",
+		'0 8 * * 1',
 		async () => {
 			try {
 				await populateRaces(25);
@@ -16,18 +15,30 @@ function startScheduler() {
 				return;
 			}
 		},
-		{ timezone: "Asia/Shanghai" },
+		{ timezone: 'Asia/Shanghai' },
 	);
 
 	// Daily: generate and publish post at 9pm CST (peak XHS engagement window)
-	const task = nodeCron.schedule(
-		"*/30 * * * * *",
+	nodeCron.schedule(
+		'*/10 * * * * *',
 		async () => {
-			
 			const type = getPostTypeTest();
-			if (type === undefined){
-				console.error('Ran out of types')
-				return
+			if (type === undefined) {
+				console.error('Ran out of types');
+				return;
+			}
+
+			try {
+				const authRes = await checkAuth();
+				if (!authRes) {
+					console.error(`XHS authentication failed`);
+					return;
+				}
+			} catch (err) {
+				console.error(`Publish post failed : ${err.message}`);
+				if (err.message.includes('Authentication')) {
+					process.exit(1);
+				}
 			}
 			let post;
 			try {
@@ -38,40 +49,36 @@ function startScheduler() {
 			}
 
 			try {
-				const publishRes = await publishPost(post)
-				if (!publishRes){
+				const publishRes = await publishPost(post);
+				if (!publishRes) {
 					console.error(`Publish post failed`);
 					return;
 				}
-				
 			} catch (err) {
 				console.error(`Publish post failed : ${err.message}`);
-				if (err.message.includes('Authentication')) {
-					task.stop();
-				}	
+				return
 			}
 		},
-		{ timezone: "Asia/Shanghai" },
+		{ timezone: 'Asia/Shanghai' },
 	);
 }
 
-let postTypes = ["race", "nutritionSupplement", "training", "race", "race", "training", "wearable",]
+let postTypes = ['race', 'nutritionSupplement', 'training', 'race', 'race', 'training', 'wearable'];
 
 function getPostTypeTest() {
-	return postTypes.shift()
-
+	return postTypes.shift();
 }
 
 function getPostType() {
 	const dayOfWeek = new Date().getDay();
 	const dayTypeMap = {
-		1: "race",
-		2: "nutritionSupplement",
-		3: "training",
-		4: "race",
-		5: "race",
-		6: "training",
-		0: "wearable",
+		1: 'race',
+		2: 'nutritionSupplement',
+		3: 'training',
+		4: 'race',
+		5: 'race',
+		6: 'training',
+		0: 'wearable',
 	};
 	return dayTypeMap[dayOfWeek];
 }
