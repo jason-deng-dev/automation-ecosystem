@@ -11,6 +11,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	const page = await context.newPage();
 
 	try {
+		await page.goto('https://creator.xiaohongshu.com/publish/publish');
 		await page.getByText('写长文').click();
 
 		await page.getByText('新的创作').click();
