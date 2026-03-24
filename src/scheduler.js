@@ -20,7 +20,7 @@ function startScheduler() {
 	);
 
 	// Daily: generate and publish post at 9pm CST (peak XHS engagement window)
-	nodeCron.schedule(
+	const task = nodeCron.schedule(
 		"*/30 * * * * *",
 		async () => {
 			
@@ -39,12 +39,16 @@ function startScheduler() {
 
 			try {
 				const publishRes = await publishPost(post)
-				if (publishRes !== true){
+				if (!publishRes){
+					console.error(`Publish post failed`);
 					return;
-				};
+				}
+				
 			} catch (err) {
 				console.error(`Publish post failed : ${err.message}`);
-				return;
+				if (err.message.includes('Authentication')) {
+					task.stop();
+				}	
 			}
 		},
 		{ timezone: "Asia/Shanghai" },
