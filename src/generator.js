@@ -46,7 +46,9 @@ async function generatePost(
 		const rawText = message.content[0].text
 			.trim()
 			.replace(/^```json\s*/, '')
-			.replace(/```\s*$/, '');
+			.replace(/```\s*$/, '')
+			.replace(/[""]/g, '\\"');
+		console.log(rawText);
 		messageParsed = JSON.parse(rawText);
 	} catch (err) {
 		throw new Error(`Post generation failed: ${err.message}`);
@@ -99,8 +101,9 @@ async function chooseRace({
 	prompts = defaultPrompts,
 } = {}) {
 	// need two way logic
-	const availableRaces = races.races.filter((r) => 
-		!postedRaces.some((p) => cleanName(p).includes(cleanName(r.name)) || cleanName(r.name).includes(cleanName(p)))
+	const availableRaces = races.races.filter(
+		(r) =>
+			!postedRaces.some((p) => cleanName(p).includes(cleanName(r.name)) || cleanName(r.name).includes(cleanName(p))),
 	);
 	const raceStr = availableRaces.map((r) => r.name).join('|||');
 
