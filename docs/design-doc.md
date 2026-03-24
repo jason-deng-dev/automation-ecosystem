@@ -350,6 +350,7 @@ TITLE RULES (derived from performance data):
 OUTPUT FORMAT (critical):
 Return ONLY a raw JSON object. No markdown. No code fences. No ```json. No explanation. The response must start with { and end with }. Any other format will break the parser.
 No trailing whitespace. No \n at the start or end of any field. Every string must be ready to paste directly with no post-processing.
+Do NOT use any double quotation marks of any kind (" or " or ") inside JSON string values — they break JSON parsing. Use 「」or 《》 as alternatives for quoting in Chinese text.
 The JSON must have exactly these fields:
 - "title": the post title. Max 20 characters. No hashtags.
 - "hook": the opening page. No subtitle. Ends with a curiosity gap, not a summary.
@@ -375,6 +376,7 @@ The JSON must have exactly these fields:
 | Line budget with separator cost | XHS has a fixed display area per page swipe — if separators aren't counted against the budget, content overflows to the next page mid-thought |
 | CTA framed as natural next step | Hard-sell CTAs on XHS reduce save rate — readers respond better to a soft nudge that feels like a continuation of the post |
 | No trailing whitespace / paste-ready strings | Publisher pastes directly into XHS editor — extra whitespace or leading newlines cause visible formatting artifacts |
+| No double quotation marks in JSON string values | Any double quote character — straight `"`, curly open `"`, or curly close `"` — inside a JSON string value breaks `JSON.parse()`. Rule broadened to ban all double quotation marks inside values; Chinese text should use `「」` or `《》` instead. |
 
 ### 6.3 Post Type Rotation
 
