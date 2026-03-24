@@ -47,7 +47,6 @@ async function generatePost(
 			.trim()
 			.replace(/^```json\s*/, '')
 			.replace(/```\s*$/, '');
-		console.log(rawText);
 		messageParsed = JSON.parse(rawText);
 	} catch (err) {
 		throw new Error(`Post generation failed: ${err.message}`);
@@ -108,6 +107,7 @@ async function chooseRace({
 
 	let systemRaceSelectionPrompt = prompts.systemRaceSelectionPrompt;
 	let contextChooseRace = prompts.contextRaceSelection + raceStr;
+	console.log('Starting race selection...')
 	let raceSelection;
 	try {
 		raceSelection = await client.messages.create({
@@ -120,6 +120,7 @@ async function chooseRace({
 		throw new Error(`Choose race failed: ${err.message}`);
 	}
 
+	console.log(`Race selection complete — ${raceSelection.content[0].text}`)
 	return raceSelection.content[0].text;
 }
 

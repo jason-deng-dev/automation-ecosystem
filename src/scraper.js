@@ -19,6 +19,7 @@ axiosRetry(client, {
 const timeout = parseInt(process.env.RUNJAPAN_TIMEOUT) || 10000;
 
 async function populateRaces(limit) {
+	console.log('Starting race data refresh...')
 	const races = [];
 	let pageIndex = 1;
 
@@ -86,6 +87,7 @@ async function populateRaces(limit) {
 
 	const output = { last_updated: new Date().toISOString(), races };
 	await writeFile("data/races.json", JSON.stringify(output, null, 2));
+	console.log(`Race data refresh complete — ${races.length} races saved`)
 	return races;
 }
 

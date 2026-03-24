@@ -10,6 +10,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	const context = await browser.newContext({ storageState: 'auth.json' });
 	const page = await context.newPage();
 
+	console.log('Starting post publish...')
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
 		await page.getByText('写长文').click();
@@ -49,12 +50,13 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 
 		await page.getByRole('button', { name: '发布' }).click();
 		await page.waitForURL('**/success?source&bind_status=not_bind&__debugger__=&proxy=');
+		console.log('Post published successfully')
 
 		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
 		await page.waitForSelector('#userPostedFeeds .note-item');
 		await page.locator('#userPostedFeeds .note-item').first().click();
 
-		// post each comment sequentially
+		console.log('Posting comments...')
 		for (const [i, comment] of comments.entries()) {
 			try {
 				await page.locator('.not-active.inner-when-not-active').waitFor();
