@@ -13,10 +13,16 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
 
-		// error handling for auth failure
+		// error handling for auth failure on publish page
 		if (page.url().includes('/login')) {
-			console.error('Authentication expired — run refresh-auth.bat to re-login');
-			return false;
+			throw new Error('Authentication expired — run refresh-auth.bat to re-login')
+		}
+
+		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
+		await page.waitForTimeout(2000)
+		// error handling for auth failure on comment add page
+		if (await page.locator('#login-btn').first().isVisible()) {
+			throw new Error('Authentication expired — run refresh-auth.bat to re-login')
 		}
 
 		await page.getByText('写长文').click();
