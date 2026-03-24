@@ -10,7 +10,7 @@ if (!fs.existsSync('auth.json')) {
 const context = await browser.newContext({ storageState: 'auth.json' });
 
 const page = await context.newPage();
-
+console.log('Starting login process...')
 await page.goto('https://www.xiaohongshu.com');
 
 // await page.pause()
@@ -24,4 +24,5 @@ if (await page.locator('#login-btn').isVisible()){
 	await page.locator('#login-btn').waitFor({ state: 'hidden' })
 }
 await context.storageState({ path: 'auth.json' }); // saves cookies/session to file
+console.log('Login successful — auth.json saved.')
 await browser.close();
