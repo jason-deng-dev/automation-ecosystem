@@ -45,6 +45,55 @@ const jobQueue = [];
 let isRunning = false;
 
 async function Run() {
+	try {
+		const type = getPostType();
+		if (type === undefined) {
+			console.error('Ran out of types');
+			return;
+		}
+
+		console.log('Starting Authentication check...');
+		try {
+			const authRes = await checkAuth();
+			if (!authRes) {
+				console.error(`XHS authentication failed`);
+				return;
+			}
+		} catch (err) {
+			console.error(`Publish post failed : ${err.message}`);
+			if (err.message.includes('Authentication')) {
+				process.exit(1);
+			}
+		}
+		let post;
+		let input_tokens;
+		let output_tokens;
+		console.log('Starting XHS article generation...');
+		try {
+			post = await generatePost(type);
+			({ input_tokens, output_tokens } = post);
+		} catch (err) {
+			console.error(`Generate post failed : ${err.message}`);
+			return;
+		}
+		console.log('XHS generation successful');
+
+		try {
+			const publishRes = await publishPost(post);
+			if (!publishRes) {
+				console.error(`Publish post failed`);
+				return;
+			}
+		} catch (err) {
+			console.error(`Publish post failed : ${err.message}`);
+			return;
+		}
+	} finally {
+		console.log('Process complete');
+	}
+}
+
+async function testRun() {
 	jobQueue.push(1);
 	jobQueue.push(1);
 	jobQueue.push(1);
@@ -106,7 +155,5 @@ async function Run() {
 		}
 	}
 }
-
-Run();
 
 export { startScheduler };
