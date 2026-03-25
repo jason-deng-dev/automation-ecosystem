@@ -3,7 +3,7 @@ import { generatePost } from './generator.js';
 import { publishPost, checkAuth } from './publisher.js';
 import fs from 'fs';
 function startScheduler() {
-	fs.watch('../config.json', setupAllDailyCrons);
+	fs.watch('./config.json', setupAllDailyCrons);
 
 	// Daily posts according to config.json
 	setupAllDailyCrons();
@@ -35,7 +35,7 @@ function setupAllDailyCrons() {
 	// clear existing cron jobs
 	dailyCronJobs.forEach((job) => job.stop());
 	dailyCronJobs = [];
-	const config = Object.entries(JSON.parse(fs.readFileSync('../config.json', 'utf-8')));
+	const config = Object.entries(JSON.parse(fs.readFileSync('./config.json', 'utf-8')));
 	for (const day of config) {
 		const dayOfWeek = day[0];
 		for (const post of day[1]) {
@@ -52,8 +52,8 @@ let isRunning = false;
 
 async function Run(postType) {
 	let type = postType;
-	let input_tokens;
-	let output_tokens;
+	let input_tokens = 0;
+	let output_tokens = 0;
 	let outcome = 'success';
 	let errorStage = null;
 	let errorMsg = null;
@@ -66,6 +66,9 @@ async function Run(postType) {
 			const authRes = await checkAuth();
 			if (!authRes) {
 				console.error(`XHS authentication failed`);
+				outcome = 'failed';
+				errorStage = 'auth';
+				errorMsg = 'XHS authentication failed';
 				return;
 			}
 		} catch (err) {
@@ -138,55 +141,12 @@ async function testRun() {
 	while (jobQueue.length > 0) {
 		jobQueue.shift();
 		isRunning = true;
-
-		try {
-			const type = getPostTypeTest();
-			if (type === undefined) {
-				console.error('Ran out of types');
-				return;
-			}
-
-			console.log('Starting Authentication check...');
-			try {
-				const authRes = await checkAuth();
-				if (!authRes) {
-					console.error(`XHS authentication failed`);
-					return;
-				}
-			} catch (err) {
-				console.error(`Publish post failed : ${err.message}`);
-				if (err.message.includes('Authentication')) {
-					process.exit(1);
-				}
-			}
-			let post;
-			let input_tokens;
-			let output_tokens;
-			console.log('Starting XHS article generation...');
-			try {
-				post = await generatePost(type);
-				({ input_tokens, output_tokens } = post);
-			} catch (err) {
-				console.error(`Generate post failed : ${err.message}`);
-				return;
-			}
-			console.log('XHS generation successful');
-
-			try {
-				const publishRes = await publishPost(post);
-				if (!publishRes) {
-					console.error(`Publish post failed`);
-					return;
-				}
-			} catch (err) {
-				console.error(`Publish post failed : ${err.message}`);
-				return;
-			}
-		} finally {
-			isRunning = false;
-			console.log('Process complete');
-		}
+		const type = getPostTypeTest();
+		await Run(type);
+		isRunning = false;
 	}
 }
 
-export { startScheduler };
+
+
+export { startScheduler, testRun};
