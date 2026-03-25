@@ -119,15 +119,16 @@
 - [x] Test 7-day post cycle
   - [x] Verify all 7 post types fire in order (scheduler test mode — queue-based, back-to-back)
   - [x] Verify race dedup works — no repeat races across cycle
-- [ ] Structured run logging (dashboard prerequisite)
-  - [ ] Append to `xhs/run_log.json` on every pipeline run — timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output
-  - [ ] Pull token counts from `usage` field on every Claude API response and include in log entry
-- [ ] Shared volume migration
-  - [ ] Update all file read/write paths to use shared volume mount (scraper/races.json, xhs/run_log.json, xhs/post_archive/, xhs/auth.json)
-  - [ ] Move hardcoded dayTypeMap + cron times out of scheduler.js into xhs/config.json
-  - [ ] Scheduler watches xhs/config.json for changes and re-registers cron jobs at runtime
-  - [ ] Write xhs/pipeline_state.json to shared volume on run start (running) and run end (idle / failed) — dashboard reads this for GET /api/pipeline-state
-  - [ ] Remove scraper.js from XHS container — reads scraper/races.json from shared volume instead
+- [x] Structured run logging (dashboard prerequisite)
+  - [x] Append to `xhs/run_log.json` on every pipeline run — timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output
+  - [x] Pull token counts from `usage` field on every Claude API response and include in log entry
+- [x] Monthly post_history.json reset — clear the array at the start of each month so the race pool doesn't get permanently exhausted
+- [x] Shared volume migration
+  - [x] Update all file read/write paths to use shared volume mount (scraper/races.json, xhs/run_log.json, xhs/post_archive/, xhs/auth.json)
+  - [x] Move hardcoded dayTypeMap + cron times out of scheduler.js into xhs/config.json
+  - [x] Scheduler watches xhs/config.json for changes and re-registers cron jobs at runtime
+  - [x] Write xhs/pipeline_state.json to shared volume on run start (running) and run end (idle / failed) — dashboard reads this for GET /api/pipeline-state
+  - [x] Remove scraper.js from XHS container — reads scraper/races.json from shared volume instead
 - [ ] Dashboard — Express API (dashboard/server/)
   - [ ] GET /api/schedule — read xhs/config.json
   - [ ] POST /api/schedule — write xhs/config.json

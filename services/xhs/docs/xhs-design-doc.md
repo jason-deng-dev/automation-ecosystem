@@ -222,7 +222,7 @@ DATA  →  SCHEDULE  →  GENERATE  →  PUBLISH
 #### scheduler.js (new)
 
 - Determines today's post type and publish time from a per-day schedule config (day → time + post type)
-- Schedule config is loaded from `config/schedule.json` — each day maps to an array of `{ time, type }` slots, supporting multiple posts per day
+- Schedule config is loaded from `config.json` at the root of the XHS service — each day maps to an array of `{ time, type }` slots, supporting multiple posts per day
 - One cron job is registered per slot at startup — editable via dashboard without touching code
 - Calls `generatePost(type)` with the correct post type
 - Passes the result to `publisher.js`
@@ -609,6 +609,8 @@ A flat array of race name strings used to filter already-used races from future 
 ```
 
 Initialized as `[]` if the file doesn't exist. A race name is appended each time a race guide post is generated. The race selection step filters out any name present in this array.
+
+**Reset cadence:** `post_history.json` resets monthly. Without a reset, the exclusion list grows permanently and eventually exhausts the available race pool. A monthly reset is appropriate because the Japanese marathon calendar is roughly annual — a race covered 5+ weeks ago is fair game again, and the audience turnover on XHS means repeat coverage of popular races (Tokyo, Osaka, Fuji) is expected and welcome. Reset logic should run at the start of each month before the daily post fires.
 
 ---
 

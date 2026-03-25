@@ -129,17 +129,19 @@ Each day supports multiple post slots — each slot has a time and a post type. 
 
 The schedule is stored in `xhs/config.json` on the shared volume. The dashboard reads and writes this file via an API endpoint. The scheduler reads `config.json` at runtime to register one cron job per slot — no code changes or restarts required.
 
-### schedule.json Shape
+### config.json Shape
+
+Keys are numeric day indices matching JavaScript's `Date.getDay()` — `0` = Sunday, `1` = Monday, ..., `6` = Saturday. Using numeric keys means the scheduler can call `new Date().getDay()` and look up the schedule directly with no string conversion or mapping step.
 
 ```json
 {
-  "monday":    [{ "time": "21:00", "type": "race" }],
-  "tuesday":   [{ "time": "21:00", "type": "nutritionSupplement" }],
-  "wednesday": [{ "time": "21:00", "type": "training" }],
-  "thursday":  [{ "time": "09:00", "type": "race" }, { "time": "21:00", "type": "wearable" }],
-  "friday":    [{ "time": "21:00", "type": "race" }],
-  "saturday":  [{ "time": "21:00", "type": "training" }],
-  "sunday":    [{ "time": "21:00", "type": "wearable" }]
+  "1": [{ "time": "21:00", "type": "race" }],
+  "2": [{ "time": "21:00", "type": "nutritionSupplement" }],
+  "3": [{ "time": "21:00", "type": "training" }],
+  "4": [{ "time": "09:00", "type": "race" }, { "time": "21:00", "type": "wearable" }],
+  "5": [{ "time": "21:00", "type": "race" }],
+  "6": [{ "time": "21:00", "type": "training" }],
+  "0": [{ "time": "21:00", "type": "wearable" }]
 }
 ```
 
