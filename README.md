@@ -31,17 +31,17 @@ All five services run on a single AWS Lightsail VPS managed by one `docker-compo
 │  races.json       races.json        publisher.js        Express :3002 (internal)        │
 │       │                │                 │                    │                         │
 │       ▼                ▼                 ▼                    ▼                         │
-│  ┌──────────────────── shared volume ───────────────────────────────┐                  │
-│  │  scraper/races.json   xhs/run_log.json    rakuten/run_log.json   │                  │
-│  │  scraper/run_log.json xhs/post_archive/   rakuten/config.json    │                  │
-│  │  scraper/config.json  xhs/config.json     ...                    │                  │
-│  └────────────────────────────┬─────────────────────────────────────┘                  │
+│  ┌──────────────────── shared volume ───────────────────────────────┐                   │
+│  │  scraper/races.json   xhs/run_log.json    rakuten/run_log.json   │                   │
+│  │  scraper/run_log.json xhs/post_archive/   rakuten/config.json    │                   │
+│  │  scraper/config.json  xhs/config.json     ...                    │                   │
+│  └────────────────────────────┬─────────────────────────────────────┘                   │
 │                               │ reads all                                               │
-│                     ┌─────────▼──────────────┐                                         │
-│                     │      [dashboard]        │                                         │
-│                     │  Express :3000 + React  │                                         │
-│                     └─────────┬──────────────┘                                         │
-└───────────────────────────────┼────────────────────────────────────────────────────────┘
+│                     ┌─────────▼──────────────┐                                          │
+│                     │      [dashboard]       │                                          │
+│                     │  Express :3000 + React │                                          │
+│                     └─────────┬──────────────┘                                          │
+└───────────────────────────────┼─────────────────────────────────────────────────────────┘
             │                   │                        │
           HTTPS               HTTPS                    HTTPS
       GET /api/races        (operator)            WooCommerce API
