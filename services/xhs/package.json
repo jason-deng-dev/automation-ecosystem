@@ -8,7 +8,6 @@
   },
   "scripts": {
     "test": "vitest",
-    "devScraper": "node --watch src/scraper.js",
     "devPostGen": "node --watch src/generator.js",
     "start": "node scripts/run-scheduler.js"
   },
@@ -26,14 +25,9 @@
   "homepage": "https://github.com/jason-deng-dev/rednote-content-automation#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
-    "axios": "^1.13.6",
-    "axios-cookiejar-support": "^6.0.5",
-    "axios-retry": "^4.5.0",
-    "cheerio": "^1.2.0",
     "dotenv": "^17.3.1",
     "node-cron": "^4.2.1",
-    "playwright": "^1.58.2",
-    "tough-cookie": "^6.0.1"
+    "playwright": "^1.58.2"
   },
   "devDependencies": {
     "vitest": "^4.1.0"
