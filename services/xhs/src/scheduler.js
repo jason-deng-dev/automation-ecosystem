@@ -72,6 +72,8 @@ async function Run(postType) {
 	let outcome = 'success';
 	let errorStage = null;
 	let errorMsg = null;
+	const pipeline_state_filePath = `${process.env.DATA_DIR}/xhs/pipeline_state.json`;
+	fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: 'running'}));
 
 	try {
 		console.log('Starting Authentication check...');
@@ -126,14 +128,16 @@ async function Run(postType) {
 		console.log('Process complete');
 		const timestamp = new Date().toISOString();
 		const log = { type, outcome, errorStage, errorMsg, input_tokens, output_tokens };
-		const filePath = `${process.env.DATA_DIR}/xhs/run_log.json`;
-		if (!fs.existsSync(filePath)) {
-			fs.writeFileSync(filePath, JSON.stringify({}));
+		const run_log_filePath = `${process.env.DATA_DIR}/xhs/run_log.json`;
+		if (!fs.existsSync(run_log_filePath)) {
+			fs.writeFileSync(run_log_filePath, JSON.stringify({}));
 		}
-		const run_log = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+		const run_log = JSON.parse(fs.readFileSync(run_log_filePath, 'utf-8'));
 		run_log[timestamp] = log;
-		fs.writeFileSync(filePath, JSON.stringify(run_log, null, 2));
+		fs.writeFileSync(run_log_filePath, JSON.stringify(run_log, null, 2));
 		console.log(`Run Log saved as ${timestamp}`);
+
+		fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: outcome === 'success' ? 'idle' : 'failed' }));
 	}
 }
 
