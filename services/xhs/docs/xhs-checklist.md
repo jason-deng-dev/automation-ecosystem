@@ -119,7 +119,6 @@
 - [x] Test 7-day post cycle
   - [x] Verify all 7 post types fire in order (scheduler test mode — queue-based, back-to-back)
   - [x] Verify race dedup works — no repeat races across cycle
-  - [ ] Record OBS demo video of full cycle
 - [ ] Structured run logging (dashboard prerequisite)
   - [ ] Append to `xhs/run_log.json` on every pipeline run — timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output, cost_usd
   - [ ] Pull token counts from `usage` field on every Claude API response and include in log entry
