@@ -1,0 +1,9 @@
+{
+  "1": [{ "time": "21:00", "type": "race" }],
+  "2": [{ "time": "21:00", "type": "nutritionSupplement" }],
+  "3": [{ "time": "21:00", "type": "training" }],
+  "4": [{ "time": "21:00", "type": "race" }],
+  "5": [{ "time": "21:00", "type": "race" }],
+  "6": [{ "time": "21:00", "type": "training" }],
+  "0": [{ "time": "21:00", "type": "wearable" }]
+}

@@ -18,19 +18,23 @@ function startScheduler() {
 		{ timezone: 'Asia/Shanghai' },
 	);
 
-	// Daily: generate and publish post at 9pm CST (peak XHS engagement window)
-	nodeCron.schedule('* * * * *', Run, { timezone: 'Asia/Shanghai' });
+	// Daily posts according to config.json
+	setupAllDailyCrons()
 
 	// Monthly: reset post_history.json
-	nodeCron.schedule('0 0 1 * *', () => {
-		try {
-			fs.writeFileSync('data/post_history.json', JSON.stringify([], null, 2))
-			console.log('post_history.json reset successful')
-		} catch(err) {
-			console.error(`post_history.json reset failed`)
-			return
-		}
-	}, { timezone: 'Asia/Shanghai' });
+	nodeCron.schedule(
+		'0 0 1 * *',
+		() => {
+			try {
+				fs.writeFileSync('data/post_history.json', JSON.stringify([], null, 2));
+				console.log('post_history.json reset successful');
+			} catch (err) {
+				console.error(`post_history.json reset failed`);
+				return;
+			}
+		},
+		{ timezone: 'Asia/Shanghai' },
+	);
 }
 
 let postTypes = ['race', 'nutritionSupplement', 'training', 'race', 'race', 'training', 'wearable'];
@@ -38,25 +42,38 @@ function getPostTypeTest() {
 	return postTypes.shift();
 }
 
-function getPostType() {
-	const dayOfWeek = new Date().getDay();
-	const dayTypeMap = {
-		1: 'race',
-		2: 'nutritionSupplement',
-		3: 'training',
-		4: 'race',
-		5: 'race',
-		6: 'training',
-		0: 'wearable',
-	};
-	return dayTypeMap[dayOfWeek];
+// function getPostType() {
+// 	const dayOfWeek = new Date().getDay();
+// 	const dayTypeMap = {
+// 		1: 'race',
+// 		2: 'nutritionSupplement',
+// 		3: 'training',
+// 		4: 'race',
+// 		5: 'race',
+// 		6: 'training',
+// 		0: 'wearable',
+// 	};
+// 	return dayTypeMap[dayOfWeek];
+// }
+
+function setupAllDailyCrons() {
+	const config = Object.entries(JSON.parse(fs.readFileSync('../config.json', 'utf-8')));
+	for (const day of config) {
+		const dayOfWeek = day[0];
+		for (const post of day[1]) {
+			const [hour, minute] = post['time'].split(':');
+			const type = post['type'];
+			const cronTime = `${minute} ${hour} * * ${dayOfWeek}`;
+			nodeCron.schedule(cronTime, () => Run(type), { timezone: 'Asia/Shanghai' });
+		}
+	}
 }
 
 const jobQueue = [];
 let isRunning = false;
 
-async function Run() {
-	let type;
+async function Run(postType) {
+	let type = postType;
 	let input_tokens;
 	let output_tokens;
 	let outcome = 'success';
@@ -64,7 +81,6 @@ async function Run() {
 	let errorMsg = null;
 
 	try {
-		type = getPostType();
 		console.log('Starting Authentication check...');
 		try {
 			const authRes = await checkAuth();
