@@ -3,9 +3,9 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 import * as cheerio from "cheerio";
 import { writeFile } from "fs/promises";
-
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
+import fs from 'fs';
 
 const jar = new CookieJar();
 const client = wrapper(axios.create({ jar }));
@@ -19,77 +19,115 @@ axiosRetry(client, {
 const timeout = parseInt(process.env.RUNJAPAN_TIMEOUT) || 10000;
 
 async function populateRaces(limit = null) {
-	console.log('Starting race data refresh...')
-	const races = [];
-	let pageIndex = 1;
+	const pipeline_state_filePath = `${process.env.DATA_DIR}/scraper/pipeline_state.json`;
+	const run_log_filePath = `${process.env.DATA_DIR}/scraper/run_log.json`;
+	const races_file_path = `${process.env.DATA_DIR}/scraper/races.json`;
 
-	const baseUrl =
-		process.env.RUNJAPAN_BASE_URL ||
-		"https://runjapan.jp/entry/runtes/smp/racesearchdetail.do";
-	const formBody =
-		"command=search&distanceClass=0&availableFlag=0&distanceUnit1=1&distanceUnit2=1";
-	
-	while (limit === null || races.length < limit) {
+	let outcome = 'success';
+	let races_scraped = 0;
+	let failure_count = 0;
+	let failed_urls = [];
+	let error_msg = null;
 
-		const res =
-			pageIndex === 1
-				? await client.post(baseUrl, formBody, {
-						timeout,
-						headers: { "Content-Type": "application/x-www-form-urlencoded" },
-					})
-				: await client.get(baseUrl + `?command=page&pageIndex=${pageIndex}`, {
-						timeout,
+	fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: 'running' }));
+
+	try {
+		console.log('Starting race data refresh...')
+		const races = [];
+		let pageIndex = 1;
+
+		const baseUrl =
+			process.env.RUNJAPAN_BASE_URL ||
+			"https://runjapan.jp/entry/runtes/smp/racesearchdetail.do";
+		const formBody =
+			"command=search&distanceClass=0&availableFlag=0&distanceUnit1=1&distanceUnit2=1";
+
+		while (limit === null || races.length < limit) {
+			const res =
+				pageIndex === 1
+					? await client.post(baseUrl, formBody, {
+							timeout,
+							headers: { "Content-Type": "application/x-www-form-urlencoded" },
+						})
+					: await client.get(baseUrl + `?command=page&pageIndex=${pageIndex}`, {
+							timeout,
+						});
+				
+			const $ = cheerio.load(res.data);
+			const cards = [...$(".event-title a")];
+			if (cards.length === 0) break;
+			for (const el of cards) {
+				const url = "https://runjapan.jp" + $(el).attr("href");
+				const name = $(el).children("span").text().trim();
+				try {
+					const {
+						date,
+						location,
+						entryStart,
+						entryEnd,
+						website,
+						images,
+						description,
+						info,
+						notice,
+						registrationOpen,
+						registrationUrl,
+					} = await getInfo(url);
+					races.push({
+						name,
+						url,
+						date,
+						location,
+						entryStart,
+						entryEnd,
+						website,
+						images,
+						description,
+						info,
+						notice,
+						registrationOpen,
+						registrationUrl,
 					});
-
-		// scrape page for races
-		const $ = cheerio.load(res.data);
-		const cards = [...$(".event-title a")];
-		if (cards.length === 0) break;
-		for (const el of cards) {
-			const url = "https://runjapan.jp" + $(el).attr("href");
-			const name = $(el).children("span").text().trim();
-			try {
-				const {
-					date,
-					location,
-					entryStart,
-					entryEnd,
-					website,
-					images,
-					description,
-					info,
-					notice,
-					registrationOpen,
-					registrationUrl,
-				} = await getInfo(url);
-				races.push({
-					name,
-					url,
-					date,
-					location,
-					entryStart,
-					entryEnd,
-					website,
-					images,
-					description,
-					info,
-					notice,
-					registrationOpen,
-					registrationUrl,
-				});
-			} catch (err) {
-				console.error(`Failed to scrape race: ${err.message}`);
+				} catch (err) {
+					console.error(`Failed to scrape race: ${err.message}`);
+					failure_count++;
+					failed_urls.push(url);
+				}
+				if (limit !== null && races.length >= limit) break;
 			}
-			if (limit !== null && races.length >= limit) break;
+			pageIndex++;
 		}
 
-		pageIndex++;
-	}
+		if (races.length < 30) {
+			outcome = 'failed';
+			error_msg = `Only ${races.length} races scraped — below threshold of 30, preserving previous races.json`;
+			console.error(error_msg);
+			return races;
+		}
 
-	const output = { last_updated: new Date().toISOString(), races };
-	await writeFile("data/races.json", JSON.stringify(output, null, 2));
-	console.log(`Race data refresh complete — ${races.length} races saved`)
-	return races;
+		const output = { last_updated: new Date().toISOString(), races };
+		await writeFile(races_file_path, JSON.stringify(output, null, 2));
+		races_scraped = races.length;
+		console.log(`Race data refresh complete — ${races.length} races saved`);
+		return races;
+	} catch (err) {
+		outcome = 'failed';
+		error_msg = err.message;
+		console.error(`Scraper failed: ${err.message}`);
+	} finally {
+		const timestamp = new Date().toISOString();
+		const log = { outcome, races_scraped, failure_count, failed_urls, error_msg };
+
+		if (!fs.existsSync(run_log_filePath)) {
+			fs.writeFileSync(run_log_filePath, JSON.stringify({}));
+		}
+		const run_log = JSON.parse(fs.readFileSync(run_log_filePath, 'utf-8'));
+		run_log[timestamp] = log;
+		fs.writeFileSync(run_log_filePath, JSON.stringify(run_log, null, 2));
+		console.log(`Run log saved as ${timestamp}`);
+
+		fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: outcome === 'success' ? 'idle' : 'failed' }));
+	}
 }
 
 async function getInfo(url) {

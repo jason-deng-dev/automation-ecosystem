@@ -4,3 +4,4 @@
 services/xhs/data/scraper/
 services/xhs/data/xhs/
 services/xhs/data/post_history.json
+services/scraper/data/
