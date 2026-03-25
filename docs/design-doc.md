@@ -827,7 +827,17 @@ XHS enforces a **300-character limit per comment**. This is enforced in the prom
 
 **Solution:** Deploy to AWS Lightsail (Linux, $10/mo — 2 GB RAM, 2 vCPUs, 60 GB SSD, 3 TB transfer, IPv6-only), hosted outside mainland China. This eliminates GFW exposure entirely — Anthropic API calls succeed reliably, RunJapan HTTP requests are unblocked, and XHS (a Chinese app with international infrastructure) is accessible internationally. The instance runs 24/7 independently of any operator machine. `auth.json` persists on disk between cron runs.
 
-**Auth refresh for non-technical operator:** When the XHS session expires, the operator clicks **"Login to XHS"** in the monitoring dashboard. The dashboard spawns a Playwright-controlled browser on the Lightsail instance and streams it to the operator's browser tab via an embedded noVNC viewer — the operator logs in visually, Playwright captures the session cookies, and `auth.json` is saved on the server automatically. No SSH, no terminal, no files to transfer.
+**Auth refresh for non-technical operator:** When the XHS session expires, the operator clicks **"Login to XHS"** in the monitoring dashboard. The full flow is designed to require zero terminal access, zero SSH, and zero technical knowledge:
+
+1. Dashboard sends `POST /api/xhs/login` to the Dashboard Express server
+2. Server spawns `xhs-login.js` — Playwright launches a headless browser and navigates to the XHS login page
+3. `xhs-login.js` automatically clicks through to the QR code sign-in screen (the click sequence is known and hardcoded — no operator interaction needed to reach the QR code)
+4. Server begins polling screenshots of the browser every 2 seconds and streaming them to the dashboard via SSE
+5. Dashboard displays the screenshot stream — operator sees the QR code and scans it with their phone
+6. Playwright detects the post-login redirect to the XHS home page, stops the screenshot stream, saves `auth.json` to the shared volume, returns success to the dashboard
+7. Dashboard clears the auth alert
+
+**Why screenshot polling over noVNC:** noVNC requires a VNC server (e.g. x11vnc) and a virtual display (Xvfb) installed on the Lightsail instance — significant infrastructure overhead for a single use case. Screenshot polling requires nothing beyond Playwright's built-in `page.screenshot()`. The only interactive step in the XHS login flow is scanning the QR code with a phone — the operator never needs to click or type inside the browser. The navigation to the QR code screen is automated, making screenshot polling fully sufficient.
 
 **Why 2 GB RAM minimum:** The pipeline runs three memory-concurrent processes during each publish cycle: Node.js + cron scheduler (~100MB), the Playwright browser instance (~400MB), and Linux + Docker overhead (~200–300MB). A 1GB instance leaves less than 200MB of headroom for Playwright after the OS and Docker claim their share. On a live publish, the kernel OOM killer terminates the browser process mid-run — the post fails silently because the process is killed before it can write to `pipeline.log`. 2GB provides sufficient headroom for all concurrent processes with margin for browser memory spikes during page load.
 
