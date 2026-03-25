@@ -314,7 +314,64 @@ The home page shows one card per pipeline. Each card surfaces the most critical 
 
 ---
 
-## 12. System Architecture
+## 12. Express API Endpoints
+
+All endpoints read from / write to the shared Docker volume unless noted. No database.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/schedule` | Read `xhs/config.json` — returns per-day post schedule |
+| `POST` | `/api/schedule` | Write `xhs/config.json` — scheduler picks up changes at runtime |
+| `GET` | `/api/run-history` | Read `xhs/run_log.json` — full post run history |
+| `GET` | `/api/post-archive` | Read `xhs/post_archive/` — published post archive |
+| `GET` | `/api/pipeline-state` | Read `xhs/pipeline_state.json` and `scraper/pipeline_state.json` — returns `{ xhs: "idle|running|failed", scraper: "idle|running|failed" }` |
+| `GET` | `/api/auth-status` | Derive XHS session status from `xhs/auth.json` mtime |
+| `POST` | `/api/trigger` | Spawn manual XHS run — accepts `{ type }` body param |
+| `GET` | `/api/logs/stream` | SSE — streams XHS process stdout in real time |
+| `POST` | `/api/xhs/login` | Spawn `xhs-login.js`, begin screenshot polling |
+| `GET` | `/api/xhs/login/stream` | SSE — streams screenshots from login browser for QR code display |
+
+### Shared File Schemas
+
+**`xhs/pipeline_state.json`** and **`scraper/pipeline_state.json`**
+```json
+{ "state": "idle | running | failed" }
+```
+
+---
+
+**`xhs/run_log.json`**
+```json
+{
+  "2026-03-25T06:10:28.030Z": {
+    "type": "race | training | nutritionSupplement | wearable",
+    "outcome": "success | failed",
+    "errorStage": "auth | generate | publish | null",
+    "errorMsg": "string | null",
+    "input_tokens": 1727,
+    "output_tokens": 1241
+  }
+}
+```
+
+---
+
+**`scraper/run_log.json`**
+```json
+{
+  "2026-03-25T02:00:00.000Z": {
+    "outcome": "success | failed",
+    "races_scraped": 87,
+    "failure_count": 2,
+    "failed_urls": ["https://runjapan.jp/race/E123456"],
+    "error_msg": "string | null"
+  }
+}
+```
+
+---
+
+## 13. System Architecture
 
 ### Container Layout
 
@@ -335,9 +392,10 @@ Five Docker containers, all on the same AWS Lightsail VPS, managed by a single `
 │    │                                                                      │             │
 │    │  scraper/                xhs/                    rakuten/            │             │
 │    │   races.json ←            run_log.json ←          run_log.json ←     │             │
-│    │   run_log.json ←          post_archive/ ←         catalog_stats.json←│             │
-│    │   config.json →           auth.json ←             import_log.json ←  │             │
-│    │                           config.json →            config.json →     │             │
+│    │   run_log.json ←          pipeline_state.json ←   catalog_stats.json←│             │
+│    │   pipeline_state.json ←   post_archive/ ←         import_log.json ←  │             │
+│    │   config.json →           auth.json ←             config.json →      │             │
+│    │                           config.json →                               │             │
 │    │                                                                      │             │
 │    │   ← pipeline writes          → dashboard writes                      │             │
 │    └───────────────────────────────────┬──────────────────────────────────┘             │
@@ -368,8 +426,10 @@ Five Docker containers, all on the same AWS Lightsail VPS, managed by a single `
 | File | Written by | Read by | Purpose |
 |---|---|---|---|
 | `scraper/races.json` | Scraper | XHS, Race Hub | Race data for XHS post generation + WordPress race hub |
+| `scraper/pipeline_state.json` | Scraper | Dashboard | Current scraper state — `{ state: "idle | running | failed" }` |
 | `scraper/run_log.json` | Scraper | Dashboard | Scrape run history — timestamp, races scraped, failure count, failed URLs, outcome |
 | `scraper/config.json` | Dashboard | Scraper | `scrape_limit` (default: all races) |
+| `xhs/pipeline_state.json` | XHS | Dashboard | Current XHS state — `{ state: "idle | running | failed" }` |
 | `xhs/run_log.json` | XHS | Dashboard | Post run history — timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output |
 | `xhs/post_archive/` | XHS | Dashboard | Published post content (weekly JSON files keyed by ISO timestamp) |
 | `xhs/auth.json` | XHS (xhs-login.js) | XHS (publisher.js) | XHS session cookies — mtime used by dashboard to derive session age |

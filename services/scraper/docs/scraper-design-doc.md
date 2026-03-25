@@ -89,6 +89,18 @@ Both files written to the shared Docker volume:
 - Includes `last_updated` ISO timestamp at top level
 - Read by Race Hub container and XHS container
 
+**`scraper/pipeline_state.json`**
+
+Written at run start and end so the Dashboard can poll current scraper state.
+
+```json
+{ "state": "idle | running | failed" }
+```
+
+Written as `"running"` before the scrape starts, then updated to `"idle"` or `"failed"` when the run completes. Read by Dashboard via `GET /api/pipeline-state`.
+
+---
+
 **`scraper/run_log.json`**
 
 Object keyed by ISO timestamp. Each entry represents one scraper run.

@@ -600,7 +600,25 @@ POST https://api.anthropic.com/v1/messages
 }
 ```
 
-### 7.3 run_log.json Schema
+### 7.3 pipeline_state.json Schema
+
+Written to the shared volume so the Dashboard can poll current XHS run state without reading logs.
+
+```json
+{ "state": "idle | running | failed" }
+```
+
+| Value | Meaning |
+|---|---|
+| `"running"` | Written at the start of `Run()` before any pipeline steps |
+| `"idle"` | Written in `finally` when `outcome === "success"` |
+| `"failed"` | Written in `finally` when `outcome === "failed"` |
+
+Read by Dashboard via `GET /api/pipeline-state`.
+
+---
+
+### 7.4 run_log.json Schema
 
 Object keyed by ISO timestamp. Each entry represents one pipeline run.
 
