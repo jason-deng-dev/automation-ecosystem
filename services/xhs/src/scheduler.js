@@ -1,24 +1,9 @@
 import nodeCron from 'node-cron';
 import { generatePost } from './generator.js';
-import { populateRaces } from './scraper.js';
 import { publishPost, checkAuth } from './publisher.js';
 import fs from 'fs';
 function startScheduler() {
 	fs.watch('../config.json', setupAllDailyCrons);
-
-	// Weekly: refresh race data every Monday at 8am CST (before daily post fires)
-	nodeCron.schedule(
-		'0 8 * * 1',
-		async () => {
-			try {
-				await populateRaces(25);
-			} catch (err) {
-				console.error(`Populate race failed : ${err.message}`);
-				return;
-			}
-		},
-		{ timezone: 'Asia/Shanghai' },
-	);
 
 	// Daily posts according to config.json
 	setupAllDailyCrons();
