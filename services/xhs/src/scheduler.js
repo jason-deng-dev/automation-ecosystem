@@ -4,6 +4,8 @@ import { populateRaces } from './scraper.js';
 import { publishPost, checkAuth } from './publisher.js';
 import fs from 'fs';
 function startScheduler() {
+	fs.watch('../config.json', setupAllDailyCrons);
+
 	// Weekly: refresh race data every Monday at 8am CST (before daily post fires)
 	nodeCron.schedule(
 		'0 8 * * 1',
@@ -19,7 +21,7 @@ function startScheduler() {
 	);
 
 	// Daily posts according to config.json
-	setupAllDailyCrons()
+	setupAllDailyCrons();
 
 	// Monthly: reset post_history.json
 	nodeCron.schedule(
@@ -42,7 +44,12 @@ function getPostTypeTest() {
 	return postTypes.shift();
 }
 
+let dailyCronJobs = [];
+
 function setupAllDailyCrons() {
+	// clear existing cron jobs
+	dailyCronJobs.forEach((job) => job.stop());
+	dailyCronJobs = [];
 	const config = Object.entries(JSON.parse(fs.readFileSync('../config.json', 'utf-8')));
 	for (const day of config) {
 		const dayOfWeek = day[0];
@@ -50,7 +57,7 @@ function setupAllDailyCrons() {
 			const [hour, minute] = post['time'].split(':');
 			const type = post['type'];
 			const cronTime = `${minute} ${hour} * * ${dayOfWeek}`;
-			nodeCron.schedule(cronTime, () => Run(type), { timezone: 'Asia/Shanghai' });
+			dailyCronJobs.push(nodeCron.schedule(cronTime, () => Run(type), { timezone: 'Asia/Shanghai' }));
 		}
 	}
 }
