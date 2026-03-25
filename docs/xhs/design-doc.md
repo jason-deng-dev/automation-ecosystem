@@ -1,8 +1,8 @@
-**Project:** rednote-content-automation
+**Project:** automation-ecosystem — XHS Pipeline
 
 **Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
 
-**GitHub:** [https://github.com/jason-deng-dev/rednote-content-automation](https://github.com/jason-deng-dev/rednote-content-automation)
+**GitHub:** [https://github.com/jason-deng-dev/automation-ecosystem](https://github.com/jason-deng-dev/automation-ecosystem) (`xhs/`)
 
 **Author:** Jason Deng
 
@@ -973,7 +973,7 @@ The data to build these deep links already exists in `races.json` (`registration
 ## 13. Repository Structure
 
 ```
-rednote-content-automation/
+automation-ecosystem/xhs/
     ├── src/                                # XHS container — scheduler, generator, publisher
     │   ├── generator.js                    # Claude API integration — all 4 post types
     │   ├── scheduler.js                    # Rotation logic + cron orchestration; watches xhs/config.json
@@ -1010,7 +1010,7 @@ rednote-content-automation/
 ```
 /data/                                      # Docker shared volume mount
     ├── scraper/
-    │   ├── races.json                      # Written by Scraper container (marathon-hub-race-scraper repo)
+    │   ├── races.json                      # Written by Scraper container (automation-ecosystem/scraper/)
     │   ├── run_log.json                    # Written by Scraper container
     │   └── config.json                     # Written by Dashboard — scrape limit
     ├── xhs/
@@ -1026,7 +1026,7 @@ rednote-content-automation/
         └── config.json                     # Written by Dashboard — pricing, margins, fetch config
 ```
 
-**Note:** `scraper.js` has been removed from this repo. The XHS container reads `scraper/races.json` from the shared volume — race scraping is handled by the Scraper container in `marathon-hub-race-scraper`.
+**Note:** `scraper.js` has been removed from this pipeline. The XHS container reads `scraper/races.json` from the shared volume — race scraping is handled by the Scraper container in `automation-ecosystem/scraper/`.
 
 ---
 

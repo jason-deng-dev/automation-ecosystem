@@ -1,8 +1,8 @@
-**Project:** marathon-hub-race-scraper
+**Project:** automation-ecosystem — Scraper + Race Hub
 
 **Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
 
-**GitHub:** [https://github.com/jason-deng-dev/marathon-hub-race-scraper](https://github.com/jason-deng-dev/marathon-hub-race-scraper)
+**GitHub:** [https://github.com/jason-deng-dev/automation-ecosystem](https://github.com/jason-deng-dev/automation-ecosystem) (`scraper/`, `race-hub/`)
 
 **Author:** Jason Deng
 
@@ -92,7 +92,7 @@ Race data needs to be:
 - Scrapes RunJapan weekly for upcoming Japanese marathon listings
 - Pulls: race name, date, location, entry period, description, registration URL, images, entry status
 - Writes `scraper/races.json` and `scraper/run_log.json` to the shared volume
-- **Core scraping logic fully implemented in `rednote-content-automation/src/scraper.js` — port directly**
+- **Core scraping logic fully implemented in `automation-ecosystem/xhs/src/scraper.js` — port directly**
 
 #### Race Hub container
 
@@ -205,7 +205,7 @@ Race data needs to be:
 
 |Component|Status|Notes|
 |---|---|---|
-|scraper.js|✅ Done (port)|Fully working in `rednote-content-automation/src/scraper.js`|
+|scraper.js|✅ Done (port)|Fully working in `automation-ecosystem/xhs/src/scraper.js`|
 |races.json|🔧 Partial|Exists, data stale|
 |Express API server|❌ Not started|New — simple file-read API|
 |React SPA WordPress plugin|❌ Not started|—|
@@ -214,7 +214,7 @@ Race data needs to be:
 
 ### 7.2 Phase 1 — Data Pipeline
 
-1. Port `scraper.js` from `rednote-content-automation/src/scraper.js`
+1. Port `scraper.js` from `automation-ecosystem/xhs/src/scraper.js`
 2. Validate `races.json` output — abort if < 30 races returned
 3. Wire weekly cron
 
@@ -247,7 +247,7 @@ Race data needs to be:
 
 **Challenge:** All race data must be scraped from HTML. RunJapan's markup may change without notice.
 
-**Solution:** Scraper already handles this — selectors isolated in config, validation aborts without overwriting `races.json` if < 30 races returned. Proven in production via `rednote-content-automation`.
+**Solution:** Scraper already handles this — selectors isolated in config, validation aborts without overwriting `races.json` if < 30 races returned. Proven in production via `automation-ecosystem/xhs`.
 
 ### 8.2 CORS for WordPress → Lightsail API
 
@@ -267,17 +267,17 @@ Race data needs to be:
 ## 10. Repository Structure
 
 ```
-marathon-hub-race-scraper/
+automation-ecosystem/
     ├── scraper/                    # Scraper container (pure cron, no HTTP)
-    │   ├── scraper.js              #   RunJapan scraper (port from rednote-content-automation)
+    │   ├── scraper.js              #   RunJapan scraper (ported from xhs/src/scraper.js)
     │   ├── Dockerfile
     │   └── package.json
     ├── race-hub/                   # Race Hub container (persistent Express server)
     │   ├── server.js               #   Express API — GET /api/races, /api/races/:id, /api/races/upcoming
     │   ├── Dockerfile
     │   └── package.json
-    └── wp-plugin/
-        ├── race-hub.php            # WordPress plugin (registers [race_hub] shortcode, enqueues assets)
+    └── xhs/wp-plugin/              # WordPress plugin lives in xhs/ — shared concern
+        ├── race-hub.php            # Registers [race_hub] shortcode, enqueues assets
         └── dist/                   # Vite build output (bundled React SPA — fetches from Race Hub API)
 ```
 

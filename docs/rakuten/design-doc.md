@@ -1,8 +1,8 @@
-**Project:** rakuten-product-aggregator
+**Project:** automation-ecosystem — Rakuten Pipeline
 
 **Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
 
-**GitHub:** [https://github.com/jason-deng-dev/rakuten-product-aggregator](https://github.com/jason-deng-dev/rakuten-product-aggregator)
+**GitHub:** [https://github.com/jason-deng-dev/automation-ecosystem](https://github.com/jason-deng-dev/automation-ecosystem) (`rakuten/`)
 
 **Author:** Jason Deng
 
@@ -697,7 +697,7 @@ Customer clicks through to WooCommerce product page and adds to cart
 ## 14. Repository Structure
 
 ```
-rakuten-product-aggregator/
+automation-ecosystem/rakuten/
 ├── server/
 │   ├── index.js                  # Express app entry point
 │   ├── routes/
