@@ -155,14 +155,22 @@ A `useLang()` hook reads the URL param and returns the correct locale object. Co
 
 ### Race Data
 
-Chinese content comes from the scraper's translation pass (DeepL EN→ZH-HANS):
+Chinese content comes from the scraper's translation pass (DeepL EN→ZH-HANS). The following `_zh` fields are present on each race object in `races.json`:
 
-- `description_zh` — Chinese translation of `description`
-- `notice_zh[]` — Chinese translations of `notice[]` items
+| `_zh` field | Source field |
+|---|---|
+| `name_zh` | `name` |
+| `date_zh` | `date` |
+| `location_zh` | `location` |
+| `entryStart_zh` | `entryStart` |
+| `entryEnd_zh` | `entryEnd` |
+| `description_zh` | `description` |
+| `info_zh` | `info` (all keys + values, nested structure preserved) |
+| `notice_zh[]` | `notice[]` (each item translated individually) |
 
 The API only returns `_zh` fields when `?lang=zh` is passed — keeping the default response lean.
 
-**Fallback:** If `description_zh` is `null` (DeepL unavailable or untranslated), the SPA falls back to the English `description` field silently.
+**Fallback:** If any `_zh` field is `null` (DeepL unavailable or untranslated), the SPA falls back to the corresponding English field silently.
 
 ---
 

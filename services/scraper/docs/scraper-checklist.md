@@ -11,12 +11,19 @@
   - [x] Wire weekly cron (Sunday 2am JST)
 - [x] Dashboard integration
   - [x] Support manual trigger via docker exec from dashboard (no Express server needed)
+- [ ] Incremental Scraping
+  - [ ] On scraper startup, load existing races.json (if present) and build Map<url, race> for O(1) lookup
+  - [ ] During listing scrape, collect all race URLs from RunJapan
+  - [ ] For each URL: if already in Map, reuse existing race object — skip re-scraping detail page
+  - [ ] Only scrape detail page for URLs not present in existing races.json (new races)
+  - [ ] Merge new races into existing set, preserve all existing _zh fields on unchanged races
+  - [ ] Remove races from output that no longer appear in RunJapan listing (stale races)
 - [ ] Chinese Translation (DeepL EN→ZH-HANS)
   - [ ] Add DEEPL_API_KEY to .env.example
-  - [ ] After scrape, translate description → description_zh and notice[] → notice_zh[] per race
-  - [ ] Skip translation if description_zh already exists and description unchanged
+  - [ ] After full scrape pass, translate all fields per race: name, date, location, entryStart, entryEnd, description, info (keys + values recursively), notice[]
+  - [ ] Only translate races where any _zh field is null or corresponding source field has changed
   - [ ] Graceful fallback — write null for _zh fields if DeepL unavailable, UI falls back to English
-  - [ ] Verify translated fields present in output races.json
+  - [ ] Verify all _zh fields present in output races.json
 - [ ] Docker & Deploy
   - [ ] Write Dockerfile
   - [ ] Verify container starts and cron fires correctly with docker-compose up

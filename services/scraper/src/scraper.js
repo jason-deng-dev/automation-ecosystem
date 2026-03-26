@@ -1,10 +1,10 @@
-import "dotenv/config";
-import axios from "axios";
-import axiosRetry from "axios-retry";
-import * as cheerio from "cheerio";
-import { writeFile } from "fs/promises";
-import { wrapper } from "axios-cookiejar-support";
-import { CookieJar } from "tough-cookie";
+import 'dotenv/config';
+import axios from 'axios';
+import axiosRetry from 'axios-retry';
+import * as cheerio from 'cheerio';
+import { writeFile } from 'fs/promises';
+import { wrapper } from 'axios-cookiejar-support';
+import { CookieJar } from 'tough-cookie';
 import fs from 'fs';
 
 const jar = new CookieJar();
@@ -31,81 +31,99 @@ async function populateRaces(limit = null) {
 
 	fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: 'running' }));
 
+	let existingRaces = [];
 	try {
-		console.log('Starting race data refresh...')
-		const races = [];
+		const data = JSON.parse(fs.readFileSync(races_file_path, 'utf-8'));
+		existingRaces = data.races ?? [];
+	} catch {
+		console.log('No existing races.json found — starting fresh');
+	}
+	const existingRacesMap = new Map(existingRaces.map((race) => [race.url, race]));
+
+	const races = [];
+
+	try {
+		console.log('Starting race data refresh...');
+
 		let pageIndex = 1;
 
-		const baseUrl =
-			process.env.RUNJAPAN_BASE_URL ||
-			"https://runjapan.jp/entry/runtes/smp/racesearchdetail.do";
-		const formBody =
-			"command=search&distanceClass=0&availableFlag=0&distanceUnit1=1&distanceUnit2=1";
+		const baseUrl = process.env.RUNJAPAN_BASE_URL || 'https://runjapan.jp/entry/runtes/smp/racesearchdetail.do';
+		const formBody = 'command=search&distanceClass=0&availableFlag=0&distanceUnit1=1&distanceUnit2=1';
 
 		while (limit === null || races.length < limit) {
 			const res =
 				pageIndex === 1
 					? await client.post(baseUrl, formBody, {
 							timeout,
-							headers: { "Content-Type": "application/x-www-form-urlencoded" },
+							headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 						})
 					: await client.get(baseUrl + `?command=page&pageIndex=${pageIndex}`, {
 							timeout,
 						});
-				
+
 			const $ = cheerio.load(res.data);
-			const cards = [...$(".event-title a")];
+			const cards = [...$('.event-title a')];
 			if (cards.length === 0) break;
 			for (const el of cards) {
-				const url = "https://runjapan.jp" + $(el).attr("href");
-				const name = $(el).children("span").text().trim();
-				try {
-					const {
-						date,
-						location,
-						entryStart,
-						entryEnd,
-						website,
-						images,
-						description,
-						info,
-						notice,
-						registrationOpen,
-						registrationUrl,
-					} = await getInfo(url);
-					races.push({
-						name,
-						url,
-						date,
-						location,
-						entryStart,
-						entryEnd,
-						website,
-						images,
-						description,
-						info,
-						notice,
-						registrationOpen,
-						registrationUrl,
-					});
-				} catch (err) {
-					console.error(`Failed to scrape race: ${err.message}`);
-					failure_count++;
-					failed_urls.push(url);
+				const url = 'https://runjapan.jp' + $(el).attr('href');
+				if (!existingRacesMap.has(url)) {
+					const name = $(el).children('span').text().trim();
+					try {
+						const {
+							date,
+							location,
+							entryStart,
+							entryEnd,
+							website,
+							images,
+							description,
+							info,
+							notice,
+							registrationOpen,
+							registrationUrl,
+						} = await getInfo(url);
+						races.push({
+							name,
+							url,
+							date,
+							location,
+							entryStart,
+							entryEnd,
+							website,
+							images,
+							description,
+							info,
+							notice,
+							registrationOpen,
+							registrationUrl,
+						});
+					} catch (err) {
+						console.error(`Failed to scrape race: ${err.message}`);
+						failure_count++;
+						failed_urls.push(url);
+					}
 				}
+
 				if (limit !== null && races.length >= limit) break;
 			}
 			pageIndex++;
 		}
+		// need to produce translated version of races
+		const translatedRaces = await translateRaces(races);
+		// add to existing races.json["races"]
+		const allRaces = [...existingRaces, ...translatedRaces];
 
-		if (races.length < 30) {
+		if (allRaces.length < 30) {
 			outcome = 'failed';
-			error_msg = `Only ${races.length} races scraped — below threshold of 30, preserving previous races.json`;
+			error_msg = `Only ${allRaces.length} races scraped — below threshold of 30, preserving previous races.json`;
 			console.error(error_msg);
 			return races;
 		}
 
-		const output = { last_updated: new Date().toISOString(), races };
+		// write races.json
+		
+		const cleanedRaces = cleanRaces(allRaces)
+		const output = { last_updated: new Date().toISOString(), races: cleanedRaces };
 		await writeFile(races_file_path, JSON.stringify(output, null, 2));
 		races_scraped = races.length;
 		console.log(`Race data refresh complete — ${races.length} races saved`);
@@ -132,8 +150,8 @@ async function populateRaces(limit = null) {
 
 async function getInfo(url) {
 	let date, location, entryPeriod, website;
-	let entryStart = "";
-	let entryEnd = "";
+	let entryStart = '';
+	let entryEnd = '';
 
 	// scrape details of each race
 	const detailRes = await client.get(url, {
@@ -142,49 +160,42 @@ async function getInfo(url) {
 	const $detail = cheerio.load(detailRes.data);
 
 	// has Date, Location, Entry Period, Web site link
-	$detail("table.race-data tr").each((i, row) => {
-		const label = $detail(row).find("th .lang.en").text().trim();
-		const value = $detail(row).find("td span").first().text().trim();
-		if (label === "Date") date = value;
-		if (label === "Location") location = value;
-		if (label === "Entry Period") entryPeriod = value;
+	$detail('table.race-data tr').each((i, row) => {
+		const label = $detail(row).find('th .lang.en').text().trim();
+		const value = $detail(row).find('td span').first().text().trim();
+		if (label === 'Date') date = value;
+		if (label === 'Location') location = value;
+		if (label === 'Entry Period') entryPeriod = value;
 
-		if (label === "Web Site") website = value;
+		if (label === 'Web Site') website = value;
 	});
 
 	if (entryPeriod) {
-		[entryStart, entryEnd] = entryPeriod
-			.replace(/\s+/g, " ")
-			.trim()
-			.split(" - ");
+		[entryStart, entryEnd] = entryPeriod.replace(/\s+/g, ' ').trim().split(' - ');
 	}
 
 	const images = [];
-	$detail(".race_img img").each((_i, img) => {
-		images.push($detail(img).attr("src"));
+	$detail('.race_img img').each((_i, img) => {
+		images.push($detail(img).attr('src'));
 	});
 
-	const description = $detail(".race_text").text().trim();
+	const description = $detail('.race_text').text().trim();
 
 	const info = {};
-	$detail("#raceinfoID dt:not(.info-start dt):not(dd dl dt)").each((_i, dt) => {
-		const label = $detail(dt).find(".lang.en").text().trim();
-		const dd = $detail(dt).next("dd");
-		const nestedDl = dd.find("dl");
+	$detail('#raceinfoID dt:not(.info-start dt):not(dd dl dt)').each((_i, dt) => {
+		const label = $detail(dt).find('.lang.en').text().trim();
+		const dd = $detail(dt).next('dd');
+		const nestedDl = dd.find('dl');
 		if (nestedDl.length) {
 			const nested = {};
-			nestedDl.find("dt").each((_j, ndt) => {
+			nestedDl.find('dt').each((_j, ndt) => {
 				const nLabel = $detail(ndt).text().trim();
-				const nValue = $detail(ndt)
-					.next("dd")
-					.text()
-					.replace(/\s+/g, " ")
-					.trim();
+				const nValue = $detail(ndt).next('dd').text().replace(/\s+/g, ' ').trim();
 				if (nLabel) nested[nLabel] = nValue;
 			});
 			if (label) info[label] = nested;
 		} else {
-			const value = dd.text().replace(/\s+/g, " ").trim();
+			const value = dd.text().replace(/\s+/g, ' ').trim();
 			if (label) info[label] = value;
 		}
 	});
@@ -194,26 +205,26 @@ async function getInfo(url) {
 		$detail(nodeEl)
 			.contents()
 			.each((_j, node) => {
-				if (node.type === "text") {
-					const text = node.data.replace(/\s+/g, " ").trim();
+				if (node.type === 'text') {
+					const text = node.data.replace(/\s+/g, ' ').trim();
 					if (text) notice.push(text);
-				} else if (node.name !== "br" && node.name !== "font") {
+				} else if (node.name !== 'br' && node.name !== 'font') {
 					collectText(node);
 				}
 			});
 	}
-	$detail(".event-info-bttom_list2 ul li").each((_i, li) => collectText(li));
+	$detail('.event-info-bttom_list2 ul li').each((_i, li) => collectText(li));
 
 	// tri-state: true = open, false = closed, null = unknown (button element missing — page structure changed)
 	let registrationOpen = null;
 	let registrationUrl = null;
-	const entryBtn = $detail(".event-info-btn");
+	const entryBtn = $detail('.event-info-btn');
 	if (!entryBtn.length) {
 		registrationOpen = null;
-	} else if (!entryBtn.find(".close-btn").length) {
-		const onclick = entryBtn.find("a").attr("onclick") || "";
+	} else if (!entryBtn.find('.close-btn').length) {
+		const onclick = entryBtn.find('a').attr('onclick') || '';
 		const match = onclick.match(/location\.href='([^']+)'/);
-		if (match) registrationUrl = "https://runjapan.jp" + match[1];
+		if (match) registrationUrl = 'https://runjapan.jp' + match[1];
 		registrationOpen = true;
 	} else {
 		registrationOpen = false;
@@ -233,5 +244,18 @@ async function getInfo(url) {
 		registrationUrl,
 	};
 }
+
+function cleanRaces(races) {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	return races.filter((race) => {
+		const cleaned = race.date.replace(/\s+/g, ' ').trim();
+		const parts = cleaned.split(' - ');
+		const endDate = new Date(parts[parts.length - 1].trim());
+		return isNaN(endDate) || endDate >= today; // keep if unparseable (don't silently drop)
+	});
+}
+
+async function translateRaces(races) {}
 
 export { populateRaces, getInfo };

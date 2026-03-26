@@ -52,17 +52,23 @@ RunJapan (runjapan.jp) — the most complete Japanese marathon listing source.
 | Field | Notes |
 |---|---|
 | `name` | Race name |
+| `name_zh` | Chinese translation of name (DeepL EN→ZH-HANS) |
 | `url` | RunJapan detail page URL |
 | `date` | Race date |
+| `date_zh` | Chinese translation of date string (DeepL EN→ZH-HANS) |
 | `location` | Prefecture / city |
+| `location_zh` | Chinese translation of location (DeepL EN→ZH-HANS) |
 | `entryStart` | Entry window open date |
+| `entryStart_zh` | Chinese translation of entryStart (DeepL EN→ZH-HANS) |
 | `entryEnd` | Entry window close date |
+| `entryEnd_zh` | Chinese translation of entryEnd (DeepL EN→ZH-HANS) |
 | `registrationOpen` | Boolean — derived from entry window |
 | `registrationUrl` | Direct signup link |
 | `website` | Race official site |
 | `description` | Race description text |
 | `description_zh` | Chinese translation of description (DeepL EN→ZH-HANS) |
-| `info` | Additional race info (structured key-value) |
+| `info` | Additional race info (structured key-value — keys are section labels, values are text or nested objects) |
+| `info_zh` | Chinese translation of all keys and values in `info`, preserving nested structure (DeepL EN→ZH-HANS) |
 | `notice` | Notices / warnings (English) |
 | `notice_zh` | Chinese translations of notice items (DeepL EN→ZH-HANS) |
 | `images` | Array of image URLs |
@@ -89,7 +95,7 @@ Both files written to the shared Docker volume:
 **`scraper/races.json`**
 - Array of race objects (see §3 for schema)
 - Includes `last_updated` ISO timestamp at top level
-- Contains both English and Chinese fields per race (`description`, `description_zh`, `notice`, `notice_zh`)
+- Contains both English and Chinese fields per race — all translatable fields have a corresponding `_zh` variant (`name_zh`, `date_zh`, `location_zh`, `entryStart_zh`, `entryEnd_zh`, `description_zh`, `info_zh`, `notice_zh`)
 - Read by Race Hub container and XHS container
 
 **`scraper/pipeline_state.json`**
@@ -170,25 +176,49 @@ Read by Dashboard to show scraper health and last run time.
 
 **Exit criteria:** `races.json` contains 30+ races with complete data. Cron runs cleanly weekly. `run_log.json` written on each run.
 
-### 7.3 Phase 2 — Chinese Translation
+### 7.3 Phase 2 — Incremental Scraping
 
-After scraping, run a translation pass using DeepL API (EN → ZH-HANS) on the following fields per race:
+1. On startup, load existing `races.json` and build `Map<url, race>` for O(1) lookup
+2. Scrape RunJapan listing pages to get current set of race URLs
+3. For each URL: if already in map, reuse existing race object — skip detail page re-scrape
+4. For new URLs: scrape detail page, add to output set
+5. Drop races no longer appearing in RunJapan listing
+6. Merge and proceed to translation pass
 
-- `description` → `description_zh`
-- `notice[]` → `notice_zh[]` (translate each item individually)
+See §8.4 for the problem statement and full rationale.
 
-**Strategy:**
-- Translate immediately after each scrape run, before writing `races.json`
-- Only translate races where `description_zh` is missing or `description` has changed — avoid re-translating unchanged content to conserve DeepL quota
-- Race `name` is a proper noun — leave untranslated
-- `info` key-value fields: labels are translated by the UI locale strings; values (dates, times, numbers, organiser names) are left as-is
+---
+
+### 7.4 Phase 3 — Chinese Translation
+
+
+After the full scrape is complete, run a translation pass using DeepL API (EN → ZH-HANS).
+
+**Timing:** Translate after `races.json` is fully populated — not per-race during scraping. Races may be deduplicated or dropped during the scrape pass; translating only the final set avoids wasting DeepL quota on discarded records.
+
+**Fields translated per race:**
+
+| Source field | Translated field | Notes |
+|---|---|---|
+| `name` | `name_zh` | Full race name |
+| `date` | `date_zh` | Date string as scraped |
+| `location` | `location_zh` | Prefecture / city string |
+| `entryStart` | `entryStart_zh` | Entry open date string |
+| `entryEnd` | `entryEnd_zh` | Entry close date string |
+| `description` | `description_zh` | Full description text |
+| `info` (all keys + values) | `info_zh` | Translate keys and values recursively — preserve nested structure |
+| `notice[]` | `notice_zh[]` | Translate each item individually |
+
+**Incremental translation:**
+- Only translate races where any `_zh` field is missing or the corresponding source field has changed since the last run
+- Compare by hashing source fields — avoid re-translating unchanged content to conserve DeepL quota
 
 **Failure handling:**
-- If DeepL is unavailable or quota exceeded: write `races.json` with `description_zh: null`, `notice_zh: null` for affected races — UI falls back to English fields gracefully
+- If DeepL is unavailable or quota exceeded: write `races.json` with all `_zh` fields set to `null` for affected races — UI falls back to English fields gracefully
 
 **Technical decisions:**
 - DeepL API key stored in scraper `.env`
-- Batch translate per scrape run (not lazy on API request) — keeps the API layer stateless and fast
+- Translation runs as a post-scrape pass in the same process, before `races.json` is written
 
 ---
 
@@ -217,6 +247,16 @@ After scraping, run a translation pass using DeepL API (EN → ZH-HANS) on the f
 **Discovery:** Network tab inspection of a manual form submission (with "Enterable tournaments only" unchecked) revealed the actual POST payload. Key fields: `command=search`, `distanceClass=0`, `availableFlag=1` (the enterable-only flag).
 
 **Solution:** Change the initial page 1 request from GET to POST with a form-encoded body matching the manual search, setting `availableFlag=0` to include all races regardless of entry status. Subsequent pagination requests (`?command=page&pageIndex=N`) remain GET requests using the session cookie established by the initial POST.
+
+### 8.4 Full Re-Scrape Every Run Wastes DeepL Quota
+
+**Challenge:** The scraper originally rebuilt `races[]` from scratch on every weekly run. With translation added, this would re-translate all ~60 races every run even when nothing changed — burning DeepL quota on identical content and adding unnecessary latency.
+
+**Solution:** Incremental scraping. On startup, load existing `races.json` and build a `Map<url, race>` in memory. During the listing scrape, check each race URL against the map — if already present, reuse the existing object (including all `_zh` fields) and skip re-scraping the detail page. Only new URLs trigger a detail-page fetch. Translation pass then only runs on races missing `_zh` fields.
+
+**Why URL as key, not name:** Each RunJapan URL contains a unique `raceId` (e.g. `raceId=E335908`). Names can repeat across years. URL is guaranteed unique for the lifetime of a listing.
+
+**Why keep races.json as an array:** Race Hub and the SPA both consume races as an array. The `Map` is in-memory only — `races.json` stays as `[]` with no changes needed to any consumer.
 
 ---
 

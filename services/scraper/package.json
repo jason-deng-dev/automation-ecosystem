@@ -20,6 +20,7 @@
     "axios-cookiejar-support": "^6.0.5",
     "axios-retry": "^4.5.0",
     "cheerio": "^1.2.0",
+    "deepl-node": "^1.24.0",
     "dotenv": "^17.3.1",
     "node-cron": "^4.2.1",
     "tough-cookie": "^6.0.1"
