@@ -274,9 +274,7 @@ The API only returns `_zh` fields when `?lang=zh` is passed — keeping the defa
 - `"Fuji Hill Ride Tour – Plan A"` — bike event, no distance → Other
 - Keys with no parseable distance at all → skip, classify race as Other
 
-**Open question:** Multi-distance races (e.g. 10K and Full at same event) — show under all matching categories or just the longest?
-
-**Open question:** Multi-distance races (e.g. 10K and Full at same event) — show under all matching categories or just the longest?
+**Multi-distance races:** Show under all matching categories. `extractDistance` returns an array of all parsed distances per race; the filter uses `.some()`, so a race with both a 10K and a Full will match both buckets.
 
 ---
 
