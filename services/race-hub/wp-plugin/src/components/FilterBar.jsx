@@ -91,8 +91,9 @@ export default function FilterBar({
           </span>
         </div>
 
-        {/* Expanded filters — accordion */}
-        {expanded && (
+        {/* Expanded filters — animated accordion */}
+        <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+          <div className="overflow-hidden">
           <div className="border-t border-border py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
 
             {/* Status — visible here on mobile too */}
@@ -141,7 +142,7 @@ export default function FilterBar({
               </select>
 
               {distanceCategory === 'specify-distance' && (
-                <div className="absolute top-full left-0 right-0 z-20 mt-1 border border-border bg-surface p-3">
+                <div className="popover-animate absolute top-full left-0 right-0 z-20 mt-1 border border-border bg-surface p-3">
                   <label className="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-muted mb-2">Exact km</label>
                   <input
                     type="number"
@@ -156,7 +157,7 @@ export default function FilterBar({
               )}
 
               {distanceCategory === 'specify-range' && (
-                <div className="absolute top-full left-0 right-0 z-20 mt-1 border border-border bg-surface p-3 flex gap-2">
+                <div className="popover-animate absolute top-full left-0 right-0 z-20 mt-1 border border-border bg-surface p-3 flex gap-2">
                   <div className="flex-1">
                     <label className="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-muted mb-2">Min km</label>
                     <input
@@ -208,14 +209,15 @@ export default function FilterBar({
             </div>
 
           </div>
-        )}
+          </div>
+        </div>
 
         {/* Active filter chips */}
         {activeFilters.length > 0 && (
           <div className="pb-3 flex flex-wrap items-center gap-2">
             <span className="font-headline text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted">Active:</span>
             {activeFilters.map(f => (
-              <div key={f.id} className="flex items-center border border-border bg-bg px-2 py-1 hover:border-muted transition-colors">
+              <div key={f.id} className="chip-animate flex items-center border border-border bg-bg px-2 py-1 hover:border-muted transition-colors">
                 <span className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink">{f.label}</span>
                 <button onClick={() => onRemoveFilter(f.id)} className="ml-2 text-muted hover:text-ink transition-colors leading-none">
                   <span className="material-symbols-outlined text-[14px]">close</span>

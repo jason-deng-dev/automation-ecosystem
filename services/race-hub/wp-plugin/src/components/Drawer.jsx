@@ -39,10 +39,13 @@ export default function Drawer({ race, onClose }) {
   const touchStartX = useRef(null)
   const galleryRef = useRef(null)
   const [activeImg, setActiveImg] = useState(0)
-  const dragStart = useRef(null)
+  const [infoExpanded, setInfoExpanded] = useState(false)
+  const [notesExpanded, setNotesExpanded] = useState(false)
 
   useEffect(() => {
     setActiveImg(0)
+    setInfoExpanded(false)
+    setNotesExpanded(false)
     if (galleryRef.current) galleryRef.current.scrollLeft = 0
   }, [race])
 
@@ -73,7 +76,17 @@ export default function Drawer({ race, onClose }) {
 
       {/* Panel */}
       <aside
-        className={`fixed right-0 top-0 z-50 h-screen w-full md:w-120 bg-surface border-l border-border flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`
+          fixed z-50 bg-surface flex flex-col overflow-hidden
+          transition-all duration-300 ease-in-out
+          w-full h-screen right-0 top-0 border-l border-border
+          ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+          md:w-180 md:max-h-[88vh] md:h-auto
+          md:right-auto md:left-1/2 md:top-1/2
+          md:border md:shadow-2xl
+          md:[translate:-50%_-50%]
+          ${isOpen ? 'md:scale-100 md:opacity-100' : 'md:scale-95 md:opacity-0 md:pointer-events-none'}
+        `}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -92,95 +105,129 @@ export default function Drawer({ race, onClose }) {
               <span className="material-symbols-outlined text-white text-[18px] block">close</span>
             </button>
 
-            {/* Image gallery */}
-            <div className="relative shrink-0">
-              <div
-                ref={galleryRef}
-                onScroll={handleGalleryScroll}
-                onTouchStart={e => e.stopPropagation()}
-                onTouchEnd={e => e.stopPropagation()}
-                onMouseDown={e => { dragStart.current = { x: e.pageX, scrollLeft: galleryRef.current.scrollLeft } }}
-                onMouseMove={e => {
-                  if (!dragStart.current) return
-                  e.preventDefault()
-                  galleryRef.current.scrollLeft = dragStart.current.scrollLeft - (e.pageX - dragStart.current.x) * 2
-                }}
-                onMouseUp={() => { dragStart.current = null }}
-                onMouseLeave={() => { dragStart.current = null }}
-                className="w-full h-64 overflow-x-auto flex snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
-              >
-                {race.images?.filter(Boolean).map((img, i) => (
-                  <div key={i} className="relative flex-none w-full h-full snap-start">
-                    <img src={img} alt={race.name} draggable="false" className="absolute inset-0 w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-
-              {race.images?.filter(Boolean).length > 1 && (
-                <>
-                  {/* Desktop arrows */}
-                  {activeImg > 0 && (
-                    <button
-                      onClick={() => galleryRef.current.scrollTo({ left: (activeImg - 1) * galleryRef.current.offsetWidth, behavior: 'smooth' })}
-                      className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-white text-[18px]">chevron_left</span>
-                    </button>
-                  )}
-                  {activeImg < race.images.filter(Boolean).length - 1 && (
-                    <button
-                      onClick={() => galleryRef.current.scrollTo({ left: (activeImg + 1) * galleryRef.current.offsetWidth, behavior: 'smooth' })}
-                      className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-white text-[18px]">chevron_right</span>
-                    </button>
-                  )}
-
-                  {/* Dot indicators */}
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {race.images.filter(Boolean).map((_, i) => (
-                      <span
-                        key={i}
-                        className={`block rounded-full transition-all duration-200 ${i === activeImg ? 'w-4 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-5">
 
                 {/* Title */}
-                <section className="space-y-3">
-                  <Badge status={status} />
-                  <h1 className="font-headline font-black text-3xl uppercase tracking-tighter leading-none text-ink">
+                <section className="flex items-start justify-between gap-3 pr-10">
+                  <h1 className="font-headline font-black text-2xl uppercase tracking-tighter leading-tight text-ink">
                     {race.name}
                   </h1>
-                  {race.description && (
-                    <p className="text-[13px] text-muted leading-relaxed font-body">{race.description}</p>
+                  <div className="shrink-0 mt-1"><Badge status={status} /></div>
+                </section>
+
+                {/* Key info table */}
+                <section className="border-t border-border pt-4 space-y-0">
+                  {race.date && (
+                    <div className="flex gap-4 py-2.5 border-b border-border">
+                      <span className="w-28 shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Date</span>
+                      <span className="text-[13px] text-ink">{race.date}</span>
+                    </div>
+                  )}
+                  {race.location && (
+                    <div className="flex gap-4 py-2.5 border-b border-border">
+                      <span className="w-28 shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Location</span>
+                      <span className="text-[13px] text-ink">{race.location}</span>
+                    </div>
+                  )}
+                  {(race.entryStart || race.entryEnd) && (
+                    <div className="flex gap-4 py-2.5 border-b border-border">
+                      <span className="w-28 shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Entry Period</span>
+                      <span className="text-[13px] text-ink">{[race.entryStart, race.entryEnd].filter(Boolean).join(' — ')}</span>
+                    </div>
+                  )}
+                  {race.website && (
+                    <div className="flex gap-4 py-2.5 border-b border-border">
+                      <span className="w-28 shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Website</span>
+                      <a href={race.website} target="_blank" rel="noopener noreferrer" className="text-[13px] text-accent hover:underline truncate">{race.website}</a>
+                    </div>
                   )}
                 </section>
 
-                {/* Metadata */}
-                <section className="border-t border-border">
-                  <InfoRows info={race.info} />
-                </section>
+                {/* Images — swipe gallery on mobile, strip on desktop */}
+                {race.images?.filter(Boolean).length > 0 && (
+                  <>
+                    {/* Mobile: swipe gallery */}
+                    <div className="relative md:hidden">
+                      <div
+                        ref={galleryRef}
+                        onScroll={handleGalleryScroll}
+                        onTouchStart={e => e.stopPropagation()}
+                        onTouchEnd={e => e.stopPropagation()}
+                        className="flex aspect-video overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      >
+                        {race.images.filter(Boolean).map((img, i) => (
+                          <div key={i} className="relative flex-none w-full h-full snap-start">
+                            <img src={img} alt={race.name} className="absolute inset-0 w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                      {race.images.filter(Boolean).length > 1 && (
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {race.images.filter(Boolean).map((_, i) => (
+                            <span key={i} className={`block rounded-full transition-all duration-200 ${i === activeImg ? 'w-4 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                {/* Notice */}
-                {race.notice?.length > 0 && (
-                  <section className="space-y-2">
-                    <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted">Notes</h3>
-                    <ul className="space-y-2">
-                      {race.notice.map((note, i) => (
-                        <li key={i} className="text-[13px] text-muted leading-relaxed flex gap-2">
-                          <span className="shrink-0">·</span>
-                          <span>{note}</span>
-                        </li>
+                    {/* Desktop: side-by-side strip */}
+                    <div className="hidden md:flex gap-0.5 h-36">
+                      {race.images.filter(Boolean).map((img, i) => (
+                        <div key={i} className="relative flex-1 overflow-hidden">
+                          <img src={img} alt={race.name} className="absolute inset-0 w-full h-full object-cover" />
+                        </div>
                       ))}
-                    </ul>
+                    </div>
+                  </>
+                )}
+
+                {/* Description */}
+                {race.description && (
+                  <p className="text-[13px] text-muted leading-relaxed font-body">{race.description}</p>
+                )}
+
+                {/* Full details — accordion */}
+                {race.info && (
+                  <section className="border-t border-border">
+                    <button
+                      onClick={() => setInfoExpanded(v => !v)}
+                      className="w-full flex items-center justify-between py-4 text-left"
+                    >
+                      <span className="font-headline font-bold text-[13px] uppercase tracking-widest text-ink">Race Information</span>
+                      <span className={`material-symbols-outlined text-muted text-[20px] transition-transform duration-300 ${infoExpanded ? 'rotate-180' : ''}`}>expand_more</span>
+                    </button>
+                    <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${infoExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                      <div className="overflow-hidden">
+                        <InfoRows info={Object.fromEntries(Object.entries(race.info).filter(([k]) => !['Date','Location'].includes(k)))} />
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* Notice — accordion */}
+                {race.notice?.length > 0 && (
+                  <section className="border-t border-border">
+                    <button
+                      onClick={() => setNotesExpanded(v => !v)}
+                      className="w-full flex items-center justify-between py-4 text-left"
+                    >
+                      <span className="font-headline font-bold text-[13px] uppercase tracking-widest text-ink">Notes</span>
+                      <span className={`material-symbols-outlined text-muted text-[20px] transition-transform duration-300 ${notesExpanded ? 'rotate-180' : ''}`}>expand_more</span>
+                    </button>
+                    <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${notesExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                      <div className="overflow-hidden">
+                        <ul className="space-y-2 pb-4">
+                          {race.notice.map((note, i) => (
+                            <li key={i} className="text-[13px] text-muted leading-relaxed flex gap-2">
+                              <span className="shrink-0">·</span>
+                              <span>{note}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   </section>
                 )}
               </div>
