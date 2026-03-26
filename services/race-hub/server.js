@@ -4,7 +4,7 @@ import cors from 'cors';
 import 'dotenv/config';
 
 const app = express();
-app.use(cors({origin: process.env.CORS_ORIGIN}))
+app.use(cors({ origin: process.env.CORS_ORIGIN.split(',') }))
 
 app.get('/api/races/', (req, res) => res.json(getAllRaces()));
 

@@ -16,6 +16,13 @@ export default function App() {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [regionFilter, setRegionFilter] = useState('all')
+  const [distanceCategory, setDistanceCategory] = useState('all')
+  const [distanceExact, setDistanceExact] = useState('')
+  const [distanceMin, setDistanceMin] = useState('')
+  const [distanceMax, setDistanceMax] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [selectedRace, setSelectedRace] = useState(null)
 
 
@@ -35,38 +42,91 @@ export default function App() {
       })
   }, [])
 
+  const DISTANCE_RANGES = {
+    '10k':  [5, 15],
+    'half': [15, 28],
+    'full': [28, 55],
+    'ultra': [55, Infinity],
+  }
+
   const filtered = useMemo(() => {
     return races.filter(race => {
-      const matchesSearch = race.name.toLowerCase().includes(search.toLowerCase())
-      const matchesStatus = statusFilter === 'all' || getEntryStatus(race.entryEnd) === statusFilter
-      return matchesSearch && matchesStatus
+      if (!race.name.toLowerCase().includes(search.toLowerCase())) return false
+      if (statusFilter !== 'all' && getEntryStatus(race.entryEnd) !== statusFilter) return false
+      if (regionFilter !== 'all' && race.region !== regionFilter) return false
+
+      if (distanceCategory !== 'all') {
+        if (distanceCategory === 'specify-distance') {
+          const exact = parseFloat(distanceExact)
+          if (!isNaN(exact) && exact > 0) {
+            if (!race.distances.some(d => Math.abs(d - exact) <= 1)) return false
+          }
+        } else if (distanceCategory === 'specify-range') {
+          const min = parseFloat(distanceMin) || 0
+          const max = parseFloat(distanceMax) || Infinity
+          if (!race.distances.some(d => d >= min && d <= max)) return false
+        } else {
+          const [lo, hi] = DISTANCE_RANGES[distanceCategory]
+          if (!race.distances.some(d => d >= lo && d < hi)) return false
+        }
+      }
+
+      if (dateFrom && race.dateObj && race.dateObj < new Date(dateFrom)) return false
+      if (dateTo && race.dateObj && race.dateObj > new Date(dateTo)) return false
+
+      return true
     })
-  }, [races, search, statusFilter])
+  }, [races, search, statusFilter, regionFilter, distanceCategory, distanceExact, distanceMin, distanceMax, dateFrom, dateTo])
 
   const activeFilters = useMemo(() => {
     const filters = []
     if (search) filters.push({ id: 'search', label: `"${search}"` })
     if (statusFilter !== 'all') filters.push({ id: 'status', label: `Status: ${statusFilter}` })
+    if (regionFilter !== 'all') filters.push({ id: 'region', label: `Region: ${regionFilter}` })
+    if (distanceCategory !== 'all') {
+      const label = distanceCategory === 'specify-distance' ? `~${distanceExact}km`
+        : distanceCategory === 'specify-range' ? `${distanceMin || 0}–${distanceMax || '∞'}km`
+        : distanceCategory.toUpperCase()
+      filters.push({ id: 'distance', label: `Dist: ${label}` })
+    }
+    if (dateFrom) filters.push({ id: 'dateFrom', label: `From: ${dateFrom}` })
+    if (dateTo) filters.push({ id: 'dateTo', label: `To: ${dateTo}` })
     return filters
-  }, [search, statusFilter])
+  }, [search, statusFilter, regionFilter, distanceCategory, distanceExact, distanceMin, distanceMax, dateFrom, dateTo])
 
   function removeFilter(id) {
     if (id === 'search') setSearch('')
     if (id === 'status') setStatusFilter('all')
+    if (id === 'region') setRegionFilter('all')
+    if (id === 'distance') { setDistanceCategory('all'); setDistanceExact(''); setDistanceMin(''); setDistanceMax('') }
+    if (id === 'dateFrom') setDateFrom('')
+    if (id === 'dateTo') setDateTo('')
   }
 
   return (
     <div className="race-hub-root min-h-screen bg-bg font-body">
-      <FilterBar
-        search={search}
-        onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
+      <header className="sticky top-0 z-40 bg-surface border-b border-border">
+        <FilterBar
+        title="Japan Race Calendar"
+        search={search} onSearchChange={setSearch}
+        statusFilter={statusFilter} onStatusChange={setStatusFilter}
+        regionFilter={regionFilter} onRegionChange={setRegionFilter}
+        distanceCategory={distanceCategory} onDistanceCategoryChange={setDistanceCategory}
+        distanceExact={distanceExact} onDistanceExactChange={setDistanceExact}
+        distanceMin={distanceMin} onDistanceMinChange={setDistanceMin}
+        distanceMax={distanceMax} onDistanceMaxChange={setDistanceMax}
+        dateFrom={dateFrom} onDateFromChange={setDateFrom}
+        dateTo={dateTo} onDateToChange={setDateTo}
         count={filtered.length}
         activeFilters={activeFilters}
         onRemoveFilter={removeFilter}
-        onClearAll={() => { setSearch(''); setStatusFilter('all') }}
+        onClearAll={() => {
+          setSearch(''); setStatusFilter('all'); setRegionFilter('all')
+          setDistanceCategory('all'); setDistanceExact(''); setDistanceMin(''); setDistanceMax('')
+          setDateFrom(''); setDateTo('')
+        }}
       />
+      </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 md:px-6">
         {error ? (

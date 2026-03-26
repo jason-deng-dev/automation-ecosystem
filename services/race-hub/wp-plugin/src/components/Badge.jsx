@@ -1,7 +1,7 @@
 const STATUS_CONFIG = {
   open:          { label: 'Open',         bg: 'bg-success-bg', text: 'text-success' },
   'closing-soon': { label: 'Closing Soon', bg: 'bg-warning-bg', text: 'text-warning' },
-  closed:        { label: 'Closed',       bg: 'bg-[#E8E8E4]',  text: 'text-disabled' },
+  closed:        { label: 'Closed',       bg: 'bg-[#E0E0DE]',  text: 'text-muted' },
 }
 
 export default function Badge({ status }) {

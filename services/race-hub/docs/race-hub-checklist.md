@@ -37,10 +37,10 @@
     - [x] Time-based keys — classify as Other ("4-Hours Team")
     - [x] Bike/non-running events — classify as Other ("Fuji Hill Ride Tour")
     - [x] Keys with no parseable distance — skip, classify as Other
-  - [ ] Region filter — extract region from location field, dropdown in FilterBar
-  - [ ] Date range filter — parse race date, add date range picker to FilterBar
-  - [ ] Distance filter UI — quick-pick toggles (10K / Half / Full / Ultra) + custom km range input
-  - [ ] Wire distance + region + date filters into App.jsx filtered memo
+  - [x] Region filter — extract region from location field, dropdown in FilterBar
+  - [x] Date range filter — parse race date, add date range picker to FilterBar
+  - [x] Distance filter UI — dropdown (10K / Half / Full / Ultra) + inline popover for exact km or km range
+  - [x] Wire distance + region + date filters into App.jsx filtered memo
   - [ ] Verify fetch works end-to-end — confirm VITE_API_URL is set correctly and race-hub server is running before testing
   - [ ] UI states — verify loading skeleton, empty state, error state all work
   - [ ] Bundle with Vite → wp-plugin/dist/
