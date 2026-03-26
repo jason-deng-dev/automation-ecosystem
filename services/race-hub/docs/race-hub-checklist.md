@@ -18,7 +18,25 @@
   - [x] FilterBar component — search, status dropdown, active chips, count
   - [x] Drawer component — slide-in panel, image gallery, metadata rows, Register Now CTA
   - [x] App.jsx — fetch races, filter state, render grid + drawer
-  - [ ] Distance extraction utility — parse km from info["Event/Eligibility"], categorise into 10K / Half / Full / Ultra / Other
+  - [ ] Distance extraction utility — parse km from info["Event/Eligibility"] keys, handle edge cases:
+    - [ ] Optional space between number and unit ("5km" vs "16 km")
+    - [ ] k / K shorthand for km ("70k", "14KM", "KAI70k")
+    - [ ] Miles — convert to km, prefer km equivalent if already present ("100mi (161km)")
+    - [ ] Metres — convert to km ("500m")
+    - [ ] Multiple spaces ("Mini  2KM")
+    - [ ] Multiple km values in one string — pick stated value not GPS ("30km (GPS 24.5km)")
+    - [ ] Abbreviated label + exact value — use exact ("【50K】51.2km")
+    - [ ] Named distances with no number — infer ("Full Marathon" → 42.195, "Half Marathon" → 21.0975)
+    - [ ] Em-dash separator ("Marathon―42.195KM")
+    - [ ] Elevation mixed in — strip and ignore ("20km/±2100m", "D+", "/+", "±")
+    - [ ] Newlines/whitespace inside string ("42.195km\n(certified)")
+    - [ ] Full-width date bracket prefix — ignore date ("【April 24】 FUJI100mi")
+    - [ ] Full-width brackets/parens — treat as standard ("（）", "【】")
+    - [ ] Japanese comma and middle dot as separators — ignore ("、", "・")
+    - [ ] Distance after category label ("Solo 18km", "14KM: Pair")
+    - [ ] Time-based keys — classify as Other ("4-Hours Team")
+    - [ ] Bike/non-running events — classify as Other ("Fuji Hill Ride Tour")
+    - [ ] Keys with no parseable distance — skip, classify as Other
   - [ ] Region filter — extract region from location field, dropdown in FilterBar
   - [ ] Date range filter — parse race date, add date range picker to FilterBar
   - [ ] Distance filter UI — quick-pick toggles (10K / Half / Full / Ultra) + custom km range input

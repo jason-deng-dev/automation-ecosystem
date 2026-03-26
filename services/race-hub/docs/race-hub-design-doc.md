@@ -158,16 +158,56 @@ The Race Hub has no scraping logic. It is a pure data server — reads a file, s
 
 ### 7.1 Distance Extraction from Unstructured Scraper Data
 
-**Challenge:** The scraper stores distance inside `info["Event/Eligibility"]` as inconsistent natural-language strings (e.g. `"Approx. 30km [General]"`, `"42.195km Full Marathon"`). There is no clean `distance` field — filtering by distance requires parsing these strings client-side.
+**Challenge:** The scraper stores distance inside `info["Event/Eligibility"]` as inconsistent natural-language strings. There is no clean `distance` field — filtering by distance requires parsing these strings client-side in `extractDistance.js`.
 
 **Approach:**
-- On page load, after fetching `races.json`, run a `extractDistance(race)` utility that scans `info["Event/Eligibility"]` keys/values for km patterns via regex (e.g. `/(\d+\.?\d*)\s*km/i`)
-- Return the largest km value found (handles multi-category races like 30K + Elite 30K)
-- Categorise into buckets: **10K** (≤12km), **Half** (18–23km), **Full** (40–45km), **Ultra** (>45km), **Other** (anything else)
-- Filter UI: quick-pick toggles (10K / Half / Full / Ultra) + optional custom km range input for uncategorised races
-- Races with no parseable distance show under "Other" and are always visible unless a specific category is selected
+- On page load, after fetching `races.json`, run `extractDistance(races)` which maps each race to add a `distances: []` field
+- Scan the keys of `info["Event/Eligibility"]` for distance patterns
+- Categorise into buckets: **10K** (≤12km), **Half** (18–23km), **Full** (40–45km), **Ultra** (>45km), **Other** (no parseable distance)
+- Filter UI: quick-pick toggles (10K / Half / Full / Ultra) + custom km range input for uncategorised races
 
-**Open question:** What to do with races that have multiple distances (e.g. 10K and Full at same event) — show under all matching categories or just the longest?
+**Parsing edge cases to handle (sourced from actual races.json scan):**
+
+*Units and spacing:*
+- `"16 km"` / `"5km"` / `"5 km"` — space between number and unit is optional
+- `"70k"` / `"KAI70k"` / `"14KM"` — `k` and `K` as shorthand for km
+- `"100mi (161km)"` — miles shorthand; prefer km equivalent if present, else convert (×1.60934)
+- `"500m"` / `"Parent-child run (500m)"` — metres, convert to km (÷1000)
+- `"Mini  2KM"` — multiple spaces between parts
+
+*Multiple values in one string:*
+- `"[Advanced class] 30km (GPS 24.5km)"` — two km values; pick the first (stated) not the GPS-corrected one
+- `"【50K】51.2km"` / `"【15K】16.7km"` — abbreviated label + exact value; use the exact numeric km
+- `"CASJ 90k - 86.7 km"` — abbreviated then exact; prefer exact
+
+*Named distances (no number):*
+- `"Full Marathon（Start time 8:30）"` / `"Full Marathon(42.195km)"` — infer 42.195 if no number present
+- `"Half Marathon"` / `"Half marathon (21.0975 km)"` — infer 21.0975 if no number present
+- `"Marathon―42.195KM"` — em-dash separator
+
+*Elevation and dates mixed in:*
+- `"20km/±2100m Sky TARO / May 4"` — strip elevation (`±`, `D+`, `/+`) and date portions, extract km only
+- `"3.5km/+700m Vertical TREKKING / May 3"` — same pattern
+- `"42.195km\n(certified)"` — newline/whitespace inside string, strip before parsing
+- `"【April 24】 FUJI100mi"` — full-width date bracket prefix, ignore date portion
+
+*Japanese formatting:*
+- Full-width brackets `【】` and parentheses `（）` — treat same as `[]` and `()`
+- Japanese comma `、` and middle dot `・` used as separators — ignore
+- `"15km (14.3km、D+361m)"` — Japanese comma in elevation notation
+
+*Distance after category label:*
+- `"Solo 18km"` — distance follows the category name, not precedes it
+- `"14KM: Pair"` — colon between distance and category
+
+*Time-based / non-distance keys:*
+- `"4-Hours Team"` / `"4-Hours Individual"` — time-based, no distance → classify race as Other
+- `"Fuji Hill Ride Tour – Plan A"` — bike event, no distance → Other
+- Keys with no parseable distance at all → skip, classify race as Other
+
+**Open question:** Multi-distance races (e.g. 10K and Full at same event) — show under all matching categories or just the longest?
+
+**Open question:** Multi-distance races (e.g. 10K and Full at same event) — show under all matching categories or just the longest?
 
 ---
 
