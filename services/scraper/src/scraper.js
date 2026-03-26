@@ -114,7 +114,7 @@ async function populateRaces(limit = null) {
 		// add to existing races.json["races"]
 		const allRaces = [...existingRaces, ...translatedRaces];
 
-		if (allRaces.length < 30) {
+		if (limit === null && allRaces.length < 30) {
 			outcome = 'failed';
 			error_msg = `Only ${allRaces.length} races scraped — below threshold of 30, preserving previous races.json`;
 			console.error(error_msg);
@@ -263,45 +263,58 @@ async function translateRaces(races) {
 	const translatedRaces = await Promise.all(
 		races.map(async (race) => {
 			const { name, date, location, entryStart, entryEnd, description, info, notice } = race;
-			const name_zh = (await deeplClient.translateText(name, null, 'ZH-HANS')).text;
-			const date_zh = (await deeplClient.translateText(date, null, 'ZH-HANS')).text;
-			const location_zh = (await deeplClient.translateText(location, null, 'ZH-HANS')).text;
-			const entryStart_zh = (await deeplClient.translateText(entryStart, null, 'ZH-HANS')).text;
-			const entryEnd_zh = (await deeplClient.translateText(entryEnd, null, 'ZH-HANS')).text;
-			const description_zh = (await deeplClient.translateText(description, null, 'ZH-HANS')).text;
+
+			// Flatten all strings into one array, track indices for reassembly
+			const texts = [];
+			const push = (str) => { texts.push(str); return texts.length - 1; };
+
+			const i = {
+				name: push(name),
+				date: push(date),
+				location: push(location),
+				entryStart: push(entryStart),
+				entryEnd: push(entryEnd),
+				description: push(description),
+				info: Object.entries(info).map(([key, value]) => {
+					const keyIdx = push(key);
+					if (typeof value === 'string') {
+						return { keyIdx, valueIdx: push(value) };
+					} else {
+						return { keyIdx, nested: Object.entries(value).map(([k, v]) => ({ k: push(k), v: push(v) })) };
+					}
+				}),
+				notice: notice.map(push),
+			};
+
+			// Single DeepL call for all strings in this race
+			const results = await deeplClient.translateText(texts, null, 'ZH-HANS');
+			const t = results.map((r) => r.text);
+
+			// Reassemble translated fields
 			const info_zh = Object.fromEntries(
-				await Promise.all(
-					Object.entries(info).map(async ([key, value]) => {
-						if (typeof value === 'string') {
-							const key_zh = (await deeplClient.translateText(key, null, 'ZH-HANS')).text;
-							const value_zh = (await deeplClient.translateText(value, null, 'ZH-HANS')).text;
-							return [key_zh, value_zh];
-						} else {
-							const key_zh = (await deeplClient.translateText(key, null, 'ZH-HANS')).text;
-							const value_zh = Object.fromEntries(
-								await Promise.all(
-									Object.entries(value).map(async ([innerKey, innerValue]) => {
-										const inner_key_zh = (await deeplClient.translateText(innerKey, null, 'ZH-HANS')).text;
-										const inner_value_zh = (await deeplClient.translateText(innerValue, null, 'ZH-HANS')).text;
-										return [inner_key_zh, inner_value_zh];
-									}),
-								),
-							);
-
-							return [key_zh, value_zh];
-						}
-					}),
-				),
+				i.info.map(({ keyIdx, valueIdx, nested }) => {
+					const key_zh = t[keyIdx];
+					if (nested) {
+						return [key_zh, Object.fromEntries(nested.map(({ k, v }) => [t[k], t[v]]))];
+					}
+					return [key_zh, t[valueIdx]];
+				}),
 			);
 
-			const notice_zh = await Promise.all(
-				notice.map(async (item) => (await deeplClient.translateText(item, null, 'ZH-HANS')).text),
-			);
-
-			return { ...race, name_zh, date_zh, location_zh, entryStart_zh, entryEnd_zh, description_zh, info_zh, notice_zh };
+			return {
+				...race,
+				name_zh: t[i.name],
+				date_zh: t[i.date],
+				location_zh: t[i.location],
+				entryStart_zh: t[i.entryStart],
+				entryEnd_zh: t[i.entryEnd],
+				description_zh: t[i.description],
+				info_zh,
+				notice_zh: i.notice.map((idx) => t[idx]),
+			};
 		}),
 	);
-	return translatedRaces
+	return translatedRaces;
 }
 
 export { populateRaces, getInfo };
