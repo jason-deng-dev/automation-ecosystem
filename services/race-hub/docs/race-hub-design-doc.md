@@ -156,11 +156,18 @@ The Race Hub has no scraping logic. It is a pure data server — reads a file, s
 
 ## 7. Engineering Challenges
 
-### 7.1 CORS for WordPress → Lightsail API
+### 7.1 Distance Extraction from Unstructured Scraper Data
 
-**Challenge:** The React SPA embedded in WordPress (running.moximoxi.net) will make cross-origin requests to the Express API on Lightsail.
+**Challenge:** The scraper stores distance inside `info["Event/Eligibility"]` as inconsistent natural-language strings (e.g. `"Approx. 30km [General]"`, `"42.195km Full Marathon"`). There is no clean `distance` field — filtering by distance requires parsing these strings client-side.
 
-**Solution:** Add CORS headers to the Express API allowing `running.moximoxi.net` as an origin. Use the `cors` npm package — one-liner configuration.
+**Approach:**
+- On page load, after fetching `races.json`, run a `extractDistance(race)` utility that scans `info["Event/Eligibility"]` keys/values for km patterns via regex (e.g. `/(\d+\.?\d*)\s*km/i`)
+- Return the largest km value found (handles multi-category races like 30K + Elite 30K)
+- Categorise into buckets: **10K** (≤12km), **Half** (18–23km), **Full** (40–45km), **Ultra** (>45km), **Other** (anything else)
+- Filter UI: quick-pick toggles (10K / Half / Full / Ultra) + optional custom km range input for uncategorised races
+- Races with no parseable distance show under "Other" and are always visible unless a specific category is selected
+
+**Open question:** What to do with races that have multiple distances (e.g. 10K and Full at same event) — show under all matching categories or just the longest?
 
 ---
 

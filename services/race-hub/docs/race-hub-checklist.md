@@ -8,14 +8,24 @@
   - [x] Add CORS header for running.moximoxi.net
 - [ ] React SPA WordPress Plugin (race-hub/wp-plugin/)
   - [x] Scaffold Vite + React project in `wp-plugin/`
-  - [x] Install and configure Tailwind CSS
-  - [ ] Configure `tailwind.config.js` with design system tokens (colours, spacing, fonts, border-radius: 0) per `docs/design-system.md`
-  - [ ] Scope all Tailwind styles under a `.race-hub-root` wrapper class to avoid clashing with WordPress/Flatsome theme CSS
-  - [ ] Race listing view — card grid, search bar, filter panel (status, date range)
-  - [ ] Race detail view — full info, entry status, Register Now button (registrationUrl), CTAs
-  - [ ] UI states — loading skeleton, empty state, error state
+  - [x] Install and configure Tailwind CSS v4
+  - [x] Configure design system tokens in `index.css` (@theme — colours, fonts, border-radius: 0)
+  - [x] Scope styles under `.race-hub-root` wrapper in App.jsx
+  - [x] Stitch design language — card, filter bar, drawer, badge, skeleton (reference in `stitch/`)
+  - [x] Badge component — Open / Closing Soon / Closed variants
+  - [x] SkeletonCard component — shimmer placeholder
+  - [x] RaceCard component — image, hover lift + zoom, stagger animation
+  - [x] FilterBar component — search, status dropdown, active chips, count
+  - [x] Drawer component — slide-in panel, image gallery, metadata rows, Register Now CTA
+  - [x] App.jsx — fetch races, filter state, render grid + drawer
+  - [ ] Distance extraction utility — parse km from info["Event/Eligibility"], categorise into 10K / Half / Full / Ultra / Other
+  - [ ] Region filter — extract region from location field, dropdown in FilterBar
+  - [ ] Date range filter — parse race date, add date range picker to FilterBar
+  - [ ] Distance filter UI — quick-pick toggles (10K / Half / Full / Ultra) + custom km range input
+  - [ ] Wire distance + region + date filters into App.jsx filtered memo
+  - [ ] UI states — verify loading skeleton, empty state, error state all work
   - [ ] Bundle with Vite → wp-plugin/dist/
-  - [ ] WordPress plugin — register [race_hub] shortcode, enqueue bundled assets
+  - [ ] WordPress plugin PHP — register [race_hub] shortcode, enqueue bundled assets
   - [ ] Upload plugin to running.moximoxi.net
   - [ ] Add shortcode to race hub page
   - [ ] Smoke test end-to-end
