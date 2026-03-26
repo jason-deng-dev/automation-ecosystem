@@ -30,7 +30,7 @@ export default function RaceCard({ race, index, onClick }) {
           <img
             src={race.images[0]}
             alt={race.name}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute top-3 left-3">
             <Badge status={status} />
