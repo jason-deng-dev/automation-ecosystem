@@ -53,7 +53,7 @@ export default function FilterBar({
               type="text"
               value={search}
               onChange={e => onSearchChange(e.target.value)}
-              placeholder="SEARCH RACES..."
+              placeholder="SEARCH BY NAME OR CITY..."
               className="w-full border border-border bg-transparent py-2.5 pl-10 pr-4 font-body text-[13px] text-ink placeholder:text-disabled focus:border-ink focus:outline-none rounded-none transition-colors"
             />
           </div>

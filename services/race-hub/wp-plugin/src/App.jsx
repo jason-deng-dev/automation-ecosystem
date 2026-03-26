@@ -51,7 +51,8 @@ export default function App() {
 
   const filtered = useMemo(() => {
     return races.filter(race => {
-      if (!race.name.toLowerCase().includes(search.toLowerCase())) return false
+      const q = search.toLowerCase()
+      if (q && !race.name.toLowerCase().includes(q) && !race.location?.toLowerCase().includes(q)) return false
       if (statusFilter !== 'all' && getEntryStatus(race.entryEnd) !== statusFilter) return false
       if (regionFilter !== 'all' && race.region !== regionFilter) return false
 

@@ -77,6 +77,11 @@ export default function Drawer({ race, onClose }) {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Drag handle — mobile only */}
+        <div className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pl-1 pr-2 py-6 flex items-center">
+          <div className="w-1 h-10 rounded-full bg-white/60" />
+        </div>
+
         {race && (
           <>
             {/* Close button */}
@@ -98,7 +103,7 @@ export default function Drawer({ race, onClose }) {
                 onMouseMove={e => {
                   if (!dragStart.current) return
                   e.preventDefault()
-                  galleryRef.current.scrollLeft = dragStart.current.scrollLeft - (e.pageX - dragStart.current.x)
+                  galleryRef.current.scrollLeft = dragStart.current.scrollLeft - (e.pageX - dragStart.current.x) * 2
                 }}
                 onMouseUp={() => { dragStart.current = null }}
                 onMouseLeave={() => { dragStart.current = null }}
