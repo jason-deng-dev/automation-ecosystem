@@ -1,5 +1,6 @@
 import { populateRaces } from "../src/scraper.js";
 
 console.log("Starting scrape...");
-await populateRaces();
-console.log("Scrape complete. Output written to data/races.json");
+const races = await populateRaces();
+if (races) console.log("Scrape complete. Output written to data/races.json");
+else console.log('Scrape failed — check run_log.json')
