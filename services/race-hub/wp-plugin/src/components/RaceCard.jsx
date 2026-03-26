@@ -21,7 +21,7 @@ export default function RaceCard({ race, index, onClick }) {
     <article
       ref={ref}
       className="bg-surface overflow-hidden shadow-sm group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md card-animate flex flex-col"
-      style={{ transitionDelay: `${Math.min(index, 5) * 80}ms` }}
+      style={{ transitionDelay: `${Math.min(index, 5) * 15}ms` }}
       onClick={onClick}
     >
       {/* Image */}
