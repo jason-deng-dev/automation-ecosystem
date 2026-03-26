@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
+import { LangContext } from '../App'
+
 
 const REGIONS = [
   'Hokkaido / Tohoku',
@@ -23,6 +25,8 @@ export default function FilterBar({
   count,
   activeFilters, onRemoveFilter, onClearAll,
 }) {
+  const [lang, toggleLang] = useContext(LangContext)
+
   const [expanded, setExpanded] = useState(false)
 
   return (
