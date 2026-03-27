@@ -44,7 +44,7 @@ Running the platform manually at scale is not viable. Three core operations — 
 
 **Problem:** The store sells Japanese running products sourced from Rakuten Ichiba. Every product currently requires: finding it on Rakuten, translating the name and description from Japanese to Chinese, calculating a sale price with margin and shipping, downloading images, and creating the WooCommerce listing by hand. This limits catalog size and makes scaling the store impossible.
 
-**Solution:** An automated pipeline that fetches products from the Rakuten API, normalises and caches them in PostgreSQL, calculates prices using a configurable margin formula, and pushes them to WooCommerce. Translation is handled by DeepL via TranslatePress on first customer view. A "request a product" flow on the storefront lets customers trigger the pipeline in real time if they can't find what they need.
+**Solution:** An automated pipeline that fetches top-ranked products from the Rakuten Ranking API, normalises and stores them permanently in PostgreSQL (URL-based deduplication), calculates prices using a configurable margin formula, and pushes them to WooCommerce. Translation is handled by TranslatePress + DeepL on first customer view in WordPress — not in the pipeline. A "request a product" flow lets customers trigger the pipeline in real time if they can't find what they need.
 
 → See `services/rakuten/docs/rakuten-design-doc.md`
 
@@ -69,7 +69,7 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 │    │                                                                      │             │
 │    │  scraper/                xhs/                    rakuten/            │             │
 │    │   races.json ←            run_log.json ←          run_log.json ←     │             │
-│    │   run_log.json ←          pipeline_state.json ←   catalog_stats.json←│             │
+│    │   run_log.json ←          pipeline_state.json ←   product_stats.json←│             │
 │    │   pipeline_state.json ←   post_archive/ ←         import_log.json ←  │             │
 │    │   config.json →           auth.json ←             config.json →      │             │
 │    │                           config.json →                               │             │
@@ -86,13 +86,14 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 │                      │  commands → Rakuten :3002          │                             │
 │                      └───────────────┬───────────────────┘                             │
 │                                      │                                                  │
-└──────────────────────────────────────┼──────────────────────────────────────────────────┘
-                │                      │                                │
-              HTTPS                  HTTPS                           HTTPS
-          GET /api/races          (operator)                    (push products)
-          (race hub WP plugin)        │                                │
-                │                     ▼                                ▼
-       [WordPress race hub]    [Operator browser]          [WooCommerce REST API]
+└──────┬───────────────────────────────┼───────────────────────────────────────┬──────────┘
+       │ Race Hub :3001                │ Dashboard :3000                        │ Rakuten :3002
+     HTTPS                          HTTPS                                     HTTPS
+ GET /api/races                  (operator)                             push products
+       │                              │                                         │
+       ▼                              ▼                                         ▼
+[WordPress plugin           [Operator browser]                    [WooCommerce REST API]
+ running.moximoxi.net]
 ```
 
 ---
@@ -104,7 +105,7 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 | **Scraper** | Cron-only process. Runs weekly, scrapes RunJapan, writes `scraper/races.json` to shared volume. No HTTP server. | RunJapan (scrape) |
 | **Race Hub** | Persistent Express server (:3001). Always up. Reads `scraper/races.json` from shared volume, serves it to WordPress via `GET /api/races`. Public-facing. | — |
 | **XHS** | Daily automation pipeline. Scheduler triggers generator (Claude API) → publisher (Playwright → XHS). Reads race data from shared volume, writes logs and post archive back. | Claude API, XHS web |
-| **Rakuten** | Product ingestion pipeline. Fetches from Rakuten API, normalises, prices, caches in PostgreSQL, pushes to WooCommerce. Internal Express :3002 for dashboard commands only. | Rakuten API, WooCommerce REST API, DeepL |
+| **Rakuten** | Product ingestion pipeline. Fetches from Rakuten API, normalises, prices, stores permanently in PostgreSQL, pushes to WooCommerce. Internal Express :3002 for dashboard commands only. Translation handled by TranslatePress on WordPress side — not in the pipeline. | Rakuten API, WooCommerce REST API |
 | **Dashboard** | Operator-facing monitoring UI. Next.js :3000 (App Router + API routes, served via PM2 + NGINX). Reads all pipeline state from the shared volume. Writes config files that pipelines pick up at runtime. Calls Rakuten :3002 for commands (trigger fetch, retry import). | — |
 
 ---
@@ -122,9 +123,10 @@ The shared volume is the communication bus between all containers. Pipelines wri
 | `xhs/run_log.json` | XHS | Dashboard | Per-run: timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output |
 | `xhs/post_archive/` | XHS | Dashboard | Published post content, weekly JSON files |
 | `xhs/auth.json` | XHS (xhs-login.js) | XHS (publisher.js) | XHS session cookies |
+| `xhs/post_history.json` | XHS | XHS | Tracks which races have been posted — avoids re-posting the same race |
 | `xhs/config.json` | Dashboard | XHS | Per-day post schedule — XHS re-registers cron jobs on change |
 | `rakuten/run_log.json` | Rakuten | Dashboard | Per-run: operation, category, products fetched/pushed, failures |
-| `rakuten/catalog_stats.json` | Rakuten | Dashboard | Total cached, total pushed, per-category breakdown |
+| `rakuten/product_stats.json` | Rakuten | Dashboard | Total cached, total pushed, per-category breakdown |
 | `rakuten/import_log.json` | Rakuten | Dashboard | Per-product WooCommerce push attempts and outcomes |
 | `rakuten/config.json` | Dashboard | Rakuten | Per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold |
 
@@ -160,7 +162,7 @@ XHS sessions expire every few weeks. The operator clicks "Login to XHS" in the d
 
 ## 7. Bilingual Strategy
 
-The platform targets Chinese runners — all user-facing content defaults to Simplified Chinese. English is available via URL param for portfolio and development use.
+The platform targets Chinese runners — all user-facing content defaults to Simplified Chinese. English is available via a toggle button for portfolio and development use.
 
 **How translation flows through the system:**
 
@@ -168,9 +170,9 @@ The platform targets Chinese runners — all user-facing content defaults to Sim
 RunJapan (English)
   → scraper.js extracts description + notice[]
   → DeepL API translates → description_zh, notice_zh[]
-  → written into scraper/races.json
-  → Race Hub serves ?lang=zh → includes _zh fields
-  → SPA reads ?lang from URL → renders Chinese copy
+  → written into scraper/races.json (all _zh fields always included)
+  → Race Hub always returns full data — both English and _zh fields in every response
+  → SPA reads lang from localStorage via useLang() hook → renders _zh fields or falls back to English
 ```
 
 **Key decisions:**
@@ -179,11 +181,11 @@ RunJapan (English)
 |---|---|
 | Race content translation | Scraper pipeline — DeepL runs once after each scrape, results stored in `races.json` |
 | UI string translation | Locale files in SPA — `locales/en.js` + `locales/zh.js`, loaded via `useLang()` hook |
-| Language switching | URL param `?lang=zh` / `?lang=en` — no cookies, no localStorage |
-| Live vs portfolio | Same deployment: `running.moximoxi.net/racehub/` (Chinese), `/racehub/?lang=en` (English) |
-| Null fallback | If `description_zh` is null (DeepL unavailable), SPA silently renders `description` instead |
+| Language switching | localStorage via `useLang()` hook — EN/中文 segmented toggle in FilterBar; state persists across page loads |
+| API response | Always returns full payload — all `_zh` fields included regardless of language; React picks the right field |
+| Null fallback | If `_zh` field is null (DeepL unavailable), SPA silently renders English field instead |
 
-Translation only affects the Scraper and Race Hub services. XHS pipeline generates content directly in Chinese via Claude. Rakuten uses TranslatePress on WordPress for product descriptions.
+Translation only affects the Scraper and Race Hub services. XHS pipeline generates content directly in Chinese via Claude. Rakuten uses TranslatePress + DeepL on WordPress for product descriptions — translation is not handled in the Rakuten pipeline.
 
 ---
 

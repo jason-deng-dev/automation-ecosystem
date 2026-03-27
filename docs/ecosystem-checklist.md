@@ -10,8 +10,8 @@
 |---|---|
 | XHS | Feature complete — awaiting Docker & deploy |
 | Scraper | Feature complete — awaiting Docker & deploy |
-| Race Hub | In progress |
-| Rakuten | Not started |
+| Race Hub | SPA + i18n complete — awaiting bundle & deploy |
+| Rakuten | In progress — pipeline design done, build starting |
 | Dashboard | Not started |
 
 ---
@@ -47,18 +47,31 @@
 > Full checklist: `services/race-hub/docs/race-hub-checklist.md`
 
 - [x] Setup (package.json, .env, .dockerignore, .gitignore)
-- [ ] GET /api/races — serve full races.json
-- [ ] CORS for running.moximoxi.net
-- [ ] React SPA WordPress plugin (listing, detail, filter, search)
-- [ ] Dockerfile
-- [ ] Deploy + smoke test end-to-end
+- [x] GET /api/races — serve full races.json
+- [x] CORS for running.moximoxi.net
+- [x] React SPA WordPress plugin (listing, detail, filter, search, drawer)
+- [x] i18n — EN/ZH toggle, locale files, _zh field rendering
+- [ ] Bundle with Vite → wp-plugin/dist/
+- [ ] WordPress plugin PHP + shortcode
+- [ ] Upload to running.moximoxi.net + smoke test
+- [ ] Dockerfile + docker-compose integration
 
 ---
 
 ## Rakuten (`services/rakuten/`)
 > Full checklist: `services/rakuten/docs/rakuten-checklist.md`
 
-- [ ] Not started
+- [x] Setup (package.json, .env.example, .dockerignore, .gitignore)
+- [x] Rakuten API — keyword search + genre fetch implemented
+- [ ] Ranking API (getRanking) — primary fetch mechanism, not yet built
+- [ ] normalizeItems.js
+- [ ] pricing.js
+- [ ] PostgreSQL product store (permanent, URL-based dedup)
+- [ ] WooCommerce integration
+- [ ] Initial bulk push
+- [ ] Product request flow + SSE stream
+- [ ] Weekly auto-sync cron
+- [ ] Docker & deploy
 
 ---
 
@@ -66,6 +79,19 @@
 > Full checklist: `services/dashboard/docs/dashboard-checklist.md`
 
 - [ ] Not started
+
+---
+
+## Portfolio Architecture Diagrams
+
+Visual HTML/CSS diagrams for each service + the full ecosystem — intended for portfolio use.
+
+- [x] Rakuten pipeline diagram (`docs/architecture/rakuten/rakuten.html`)
+- [ ] XHS pipeline diagram
+- [ ] Scraper pipeline diagram
+- [ ] Race Hub architecture diagram
+- [ ] Dashboard architecture diagram
+- [ ] Ecosystem-wide diagram (all services + how they connect on Lightsail)
 
 ---
 
