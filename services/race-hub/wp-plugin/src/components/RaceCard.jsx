@@ -1,10 +1,18 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useContext } from 'react'
+import { LangContext } from '../App'
+import enText from '../locales/en'
+import zhText from '../locales/zh'
 import Badge from './Badge'
 import { getEntryStatus } from '../utils/status'
 
 export default function RaceCard({ race, index, onClick }) {
+  const [lang] = useContext(LangContext)
+  const text = lang === 'en' ? enText : zhText
+  const f = (field) => (lang === 'zh' && race[`${field}_zh`]) ? race[`${field}_zh`] : race[field]
+
   const ref = useRef(null)
   const status = getEntryStatus(race.entryEnd)
+  const badgeLabel = { open: text.badge_open, 'closing-soon': text.badge_closing_soon, closed: text.badge_closed }[status] ?? text.badge_closed
 
   useEffect(() => {
     const el = ref.current
@@ -29,26 +37,26 @@ export default function RaceCard({ race, index, onClick }) {
         <div className="relative aspect-video overflow-hidden">
           <img
             src={race.images[0]}
-            alt={race.name}
+            alt={f('name')}
             className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute top-3 left-3">
-            <Badge status={status} />
+            <Badge status={status} label={badgeLabel} />
           </div>
         </div>
       )}
 
       {/* Content */}
       <div className="p-6 flex flex-col flex-1">
-        {!race.images?.[0] && <div className="mb-3"><Badge status={status} /></div>}
+        {!race.images?.[0] && <div className="mb-3"><Badge status={status} label={badgeLabel} /></div>}
         <h3 className="font-headline font-bold text-[17px] text-ink tracking-tight uppercase leading-tight mb-1">
-          {race.name}
+          {f('name')}
         </h3>
         <p className="font-body text-[13px] text-muted">
-          {race.date}{race.location ? ` · ${race.location}` : ''}
+          {f('date')}{race.location ? ` · ${f('location')}` : ''}
         </p>
         <div className="mt-auto pt-4 border-t border-border flex justify-between items-center">
-          <span className="text-[11px] font-body uppercase tracking-widest text-muted">View Details</span>
+          <span className="text-[11px] font-body uppercase tracking-widest text-muted">{text.view_details}</span>
           <span className="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
         </div>
       </div>

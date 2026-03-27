@@ -42,6 +42,7 @@ export default function Drawer({ race, onClose }) {
 
   const isOpen = !!race
   const status = race ? getEntryStatus(race.entryEnd) : null
+  const badgeLabel = status ? ({ open: text.badge_open, 'closing-soon': text.badge_closing_soon, closed: text.badge_closed }[status] ?? text.badge_closed) : null
   const touchStartX = useRef(null)
   const galleryRef = useRef(null)
   const [activeImg, setActiveImg] = useState(0)
@@ -120,7 +121,7 @@ export default function Drawer({ race, onClose }) {
                   <h1 className="font-headline font-black text-2xl uppercase tracking-tighter leading-tight text-ink">
                     {race.name}
                   </h1>
-                  <div className="shrink-0 mt-1"><Badge status={status} /></div>
+                  <div className="shrink-0 mt-1"><Badge status={status} label={badgeLabel} /></div>
                 </section>
 
                 {/* Key info table */}

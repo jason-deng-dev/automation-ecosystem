@@ -41,6 +41,14 @@ const zhText = {
   drawer_cta: '立即报名',
   drawer_official_site: '官方网站',
 
+  // Badge
+  badge_open: '报名中',
+  badge_closing_soon: '即将截止',
+  badge_closed: '已截止',
+
+  // RaceCard
+  view_details: '查看详情',
+
   // App states
   error_loading: '无法加载赛事信息',
   no_results: '没有符合筛选条件的赛事',

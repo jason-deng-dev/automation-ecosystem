@@ -41,6 +41,14 @@ const enText = {
   drawer_cta: 'Register Now',
   drawer_official_site: 'Official Site',
 
+  // Badge
+  badge_open: 'Open',
+  badge_closing_soon: 'Closing Soon',
+  badge_closed: 'Closed',
+
+  // RaceCard
+  view_details: 'View Details',
+
   // App states
   error_loading: 'Unable to load races',
   no_results: 'No races match your filters',
