@@ -129,10 +129,20 @@
   - [x] Scheduler watches xhs/config.json for changes and re-registers cron jobs at runtime
   - [x] Write xhs/pipeline_state.json to shared volume on run start (running) and run end (idle / failed) — dashboard reads this for GET /api/pipeline-state
   - [x] Remove scraper.js from XHS container — reads scraper/races.json from shared volume instead
+- [ ] xhs-login.js — dashboard re-auth flow
+  - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
+  - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
+  - [ ] Detect successful login via post-login URL redirect
+  - [ ] Run headless (headless: true) — dashboard streams screenshots via SSE instead of showing a browser window
 - [ ] Dashboard integration — manual trigger + preview mode
   - [ ] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
   - [ ] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
   - [ ] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
+- [ ] Bot detection mitigations (publisher.js)
+  - [ ] Replace all `page.fill()` with clipboard paste — `page.evaluate(() => navigator.clipboard.writeText(text))` + `Ctrl+V`
+  - [ ] Add `humanDelay(min, max)` helper — random sleep between min/max ms, applied between all major actions
+  - [ ] Add random 3–8s page dwell after navigation before first interaction
+  - [ ] Add ±15–30 min random offset to actual post time inside publisher (cron fires at 21:00, post lands 20:30–21:30)
 - [ ] Docker & Deploy
   - [x] Write Dockerfile (XHS container)
   - [x] Write .dockerignore

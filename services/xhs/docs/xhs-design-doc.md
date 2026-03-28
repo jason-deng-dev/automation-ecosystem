@@ -867,7 +867,31 @@ Post type is passed as a positional argument (`process.argv[2]`) — e.g. `run-m
 
 ---
 
-### 9.8 Race Deduplication: Variant Entry Tiers in Source Data
+### 9.8 XHS Bot Detection: Account Ban During Testing
+
+**Challenge:** During live testing, the MOXI爱跑步 account (115 posts, 60k+ views) was issued a 7-day posting ban by XHS. The ban notice explicitly cited "账号多次利用AI托管进行发文/互动" — the account had been detected using AI tools to manage posting and interactions. The root cause was a combination of signals accumulated during a testing session: 7 posts published in rapid back-to-back succession, text injected instantly via `page.fill()` with no keystroke events, fixed `waitForTimeout` values producing robotic and predictable timing, and posting at an exact clock time with zero variance. Any one of these alone might have been tolerable — all four together was an unambiguous automation fingerprint.
+
+This was a significant finding. It meant the pipeline as built would get the account banned in production, and that live account testing was too risky to continue. A full approach pivot was required before the publisher could be considered production-safe.
+
+**Solution — a layered set of mitigations applied to the publisher:**
+
+- **Chinese text via clipboard, not page.fill():** `page.fill()` injects text with no keystroke events — detectable instantly. `page.type()` simulates keystrokes but has no IME support and can't input Chinese characters. Solution: write the text to the system clipboard via `page.evaluate(() => navigator.clipboard.writeText(text))`, then trigger `Ctrl+V` to paste. Indistinguishable from a human manually pasting content they wrote elsewhere.
+
+- **humanDelay(min, max) helper:** All fixed `waitForTimeout(X)` calls replaced with a `humanDelay(min, max)` utility that sleeps for a random duration within a range. Applied between every major action — navigation, click, fill, submit, comment. The randomized rhythm eliminates the fixed-interval signature that automated tools produce.
+
+- **Page dwell time:** Humans spend time on the page before interacting — reading, reviewing, thinking. After navigating to the XHS publish page, the publisher now waits a random 3–8 seconds before touching any fields, simulating natural dwell behaviour.
+
+- **Posting time variance:** The cron fires at a fixed time (21:00 CST) but the actual publish action now includes a randomized ±15–30 minute offset applied inside the publisher — so the real post time varies naturally across days rather than hitting exactly 21:00 every night.
+
+- **Hard 1 post/day limit:** The scheduler enforces one post per day and does not expose any mechanism to override this. Batch testing on the live account is what triggered the ban — this must never happen again.
+
+- **Throwaway account for all Playwright testing:** The live MOXI爱跑步 account is production-only, touched exclusively by the scheduler at the configured post time. All publisher development, selector testing, and flow verification is done against a separate throwaway XHS account with no history or follower base to lose.
+
+- **Manual posting period post-ban:** After the 7-day ban lifts (2026-04-01), the pipeline will not be re-enabled immediately. Manual posting for approximately 2 weeks first rebuilds account trust and re-establishes a normal activity baseline before automation resumes.
+
+---
+
+### 9.9 Race Deduplication: Variant Entry Tiers in Source Data
 
 **Challenge:** RunJapan lists the same race multiple times under different entry tiers (e.g. "Kasumigaura Marathon 2026【Regular Entry】" and "Kasumigaura Marathon 2026 【Late entry】"). These are the same event with identical content but different registration windows. Exact-name dedup in `post_history.json` fails to catch these — each variant passes the filter as a new race, causing the pipeline to generate near-identical posts about the same event.
 

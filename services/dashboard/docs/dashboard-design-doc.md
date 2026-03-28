@@ -325,9 +325,10 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 | `GET` | `/api/xhs/run-history` | Read `xhs/run_log.json` — full post run history |
 | `GET` | `/api/xhs/post-archive` | Read `xhs/post_archive/` — published post archive |
 | `GET` | `/api/xhs/auth-status` | Derive XHS session status from `xhs/auth.json` mtime |
-| `POST` | `/api/xhs/trigger` | Spawn manual XHS run — accepts `{ type }` body param |
+| `POST` | `/api/xhs/trigger` | Spawn manual XHS run — accepts `{ type }` body; runs `run-manualPost.js <type>` via docker exec |
+| `POST` | `/api/xhs/preview` | Generate post without publishing — runs `run-preview.js <type>` via docker exec, captures stdout, returns parsed post JSON |
 | `GET` | `/api/xhs/logs/stream` | SSE — streams XHS process stdout in real time |
-| `POST` | `/api/xhs/login` | Spawn `xhs-login.js`, begin screenshot polling |
+| `POST` | `/api/xhs/login` | Spawn `xhs-login.js` via docker exec, begin screenshot polling |
 | `GET` | `/api/xhs/login/stream` | SSE — streams screenshots from login browser for QR code display |
 | `GET` | `/api/pipeline-state` | Read `xhs/pipeline_state.json` and `scraper/pipeline_state.json` — returns `{ xhs: "idle|running|failed", scraper: "idle|running|failed" }` |
 | `POST` | `/api/scraper/trigger` | Spawn manual scraper run via `docker exec` |
@@ -441,6 +442,18 @@ Five Docker containers, all on the same AWS Lightsail VPS, managed by a single `
 | `rakuten/product_stats.json` | Rakuten | Dashboard | Total cached, total pushed, stale count, per-category breakdown (cached / pushed to WC) — rewritten after each run |
 | `rakuten/import_log.json` | Rakuten | Dashboard | Per-product WooCommerce push attempts — product_id, product_name, status (success/failed/skipped), error_message |
 | `rakuten/config.json` | Dashboard | Rakuten | Per-category: `margin_pct`, `shipping_cny`, `default_fetch_count`; global: `jpy_to_cny_rate`, `jpy_to_cny_updated`, `search_fill_threshold` |
+
+### XHS Script Invocation
+
+The dashboard invokes XHS scripts via `docker exec` in production. Locally, it calls `node` directly with the path to the script. Switched via `NODE_ENV`:
+
+| Action | Local | Production |
+|---|---|---|
+| Manual post | `node ../../services/xhs/scripts/run-manualPost.js <type>` | `docker exec xhs node scripts/run-manualPost.js <type>` |
+| Preview | `node ../../services/xhs/scripts/run-preview.js <type>` | `docker exec xhs node scripts/run-preview.js <type>` |
+| Re-auth | `node ../../services/xhs/scripts/xhs-login.js` | `docker exec xhs node scripts/xhs-login.js` |
+
+Post type is passed as a positional argument (`process.argv[2]`). Preview mode returns the generated post as JSON via stdout — dashboard captures it with `execSync` or a child process pipe and parses it.
 
 ### Key design principles
 
