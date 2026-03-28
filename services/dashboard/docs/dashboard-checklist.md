@@ -1,16 +1,23 @@
-- [ ] Setup
-  - [ ] Initialize Next.js project (App Router)
-  - [ ] Install Tailwind CSS + configure design tokens (per design-system.md)
-  - [ ] Set up shared volume reads — `DATA_DIR` from `.env`
-  - [ ] Set up `NODE_ENV` switching for local (direct node) vs prod (docker exec) script invocation
+- [x] Setup
+  - [x] Initialize Next.js project (App Router)
+  - [x] Install Tailwind CSS + configure design tokens (per design-system.md)
+  - [x] Set up shared volume reads — `DATA_DIR` from `.env`
+  - [x] Set up `NODE_ENV` switching for local (direct node) vs prod (docker exec) script invocation
+
+---
+
+- [ ] i18n — vocab files
+  - [ ] Create `app/lib/locales/en.js` and `app/lib/locales/zh.js`
+  - [ ] Read `NEXT_PUBLIC_LANG` env var to select locale at render time
+  - [ ] Replace all hardcoded UI strings with vocab file references
+  - [ ] Verify Chinese strings display correctly
 
 ---
 
 - [ ] Home page — pipeline cards
-  - [ ] XHS card: run state, weekly posts success/fail ratio, last post, next scheduled post, auth status
+  - [x] XHS card: run state, last run, next scheduled post, auth status, success rate, error breakdown, post type distribution, API token totals
   - [ ] Scraper card: run state, last run timestamp + outcome, races scraped, data freshness
   - [ ] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator
-  - [ ] `GET /api/pipeline-state` — read `xhs/pipeline_state.json` + `scraper/pipeline_state.json`
   - [ ] Poll or SSE to keep cards live without page refresh
 
 ---
@@ -34,8 +41,6 @@
     - [ ] Parse returned JSON and display generated post in dashboard
     - [ ] Post type dropdown + "Preview" button
   - [ ] Auth status + re-auth
-    - [ ] `GET /api/xhs/auth-status` — derive session age from `xhs/auth.json` mtime
-    - [ ] Session indicator: active / expiring soon / expired
     - [ ] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec
     - [ ] `GET /api/xhs/login/stream` — SSE screenshot stream (base64 frames as NDJSON lines)
     - [ ] Dashboard renders screenshot stream as `<img>` for QR code scanning
@@ -43,16 +48,15 @@
   - [ ] Live log stream
     - [ ] `GET /api/xhs/logs/stream` — SSE stream of XHS process stdout
     - [ ] Scrollable log panel, auto-scroll to bottom, colour-coded lines
-  - [ ] Claude API token tracker
-    - [ ] Tokens per post (input + output) from run_log.json
-    - [ ] Cumulative this week / this month
 
 ---
 
 - [ ] Scraper section
+  - [ ] Add `run_log.json` + `pipeline_state.json` writes to scraper service (prerequisite)
+  - [x] `scrapperController.js` — pipeline state, last run, success rate, data freshness, races scraped, failed URLs, manual trigger
+  - [ ] Scraper home card component
   - [ ] `GET /api/scraper/run-history` — read `scraper/run_log.json`
   - [ ] `POST /api/scraper/trigger` — spawn scraper via docker exec
-  - [ ] Key metrics: races scraped, failure count, data freshness
   - [ ] Failed URLs list — expandable from last run
   - [ ] races.json viewer — table of current races (name, date, location)
   - [ ] Run history table: timestamp, races scraped, failure count, outcome
