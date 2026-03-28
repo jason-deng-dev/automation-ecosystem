@@ -129,6 +129,10 @@
   - [x] Scheduler watches xhs/config.json for changes and re-registers cron jobs at runtime
   - [x] Write xhs/pipeline_state.json to shared volume on run start (running) and run end (idle / failed) — dashboard reads this for GET /api/pipeline-state
   - [x] Remove scraper.js from XHS container — reads scraper/races.json from shared volume instead
+- [ ] Dashboard integration — manual trigger + preview mode
+  - [ ] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
+  - [ ] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
+  - [ ] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
 - [ ] Docker & Deploy
   - [x] Write Dockerfile (XHS container)
   - [x] Write .dockerignore
