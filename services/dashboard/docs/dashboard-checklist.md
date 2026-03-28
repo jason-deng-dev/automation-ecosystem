@@ -14,65 +14,60 @@
 
 ---
 
+**Layout principle: home cards = metrics + action triggers. Detail pages = scrollable data tables.**
+
 - [ ] Home page — pipeline cards
   - [x] XHS card: run state, last run, next scheduled post, auth status, success rate, error breakdown, post type distribution, API token totals
-  - [ ] Scraper card: run state, last run timestamp + outcome, races scraped, data freshness
+  - [x] Scraper card: run state, last run, next scrape, total races, last scraped, data freshness, success rate
   - [ ] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator
+  - [ ] Action triggers on each home card (manual trigger, re-auth, etc.)
   - [ ] Poll or SSE to keep cards live without page refresh
 
 ---
 
-- [ ] XHS section
+- [ ] XHS section (detail page)
   - [ ] Schedule management
     - [ ] `GET /api/xhs/schedule` — read `xhs/config.json`
     - [ ] `POST /api/xhs/schedule` — write `xhs/config.json`
     - [ ] Weekly grid UI — per-day rows, time picker + post type dropdown per slot, add/remove slot, save button
-  - [ ] Run history
+  - [ ] Run history table: timestamp, post type, outcome, error stage, error message, token counts
     - [ ] `GET /api/xhs/run-history` — read `xhs/run_log.json`
-    - [ ] Table: timestamp, post type, outcome, error stage, error message, token counts
   - [ ] Post archive viewer
     - [ ] `GET /api/xhs/post-archive` — read `xhs/post_archive/` weekly files
     - [ ] List: title, post type, publish timestamp — expandable to show full post content
-  - [ ] Manual trigger
-    - [ ] `POST /api/xhs/trigger` — runs `run-manualPost.js <type>` via docker exec
-    - [ ] Post type dropdown + "Run now" button
-  - [ ] Preview mode
-    - [ ] `POST /api/xhs/preview` — runs `run-preview.js <type>` via docker exec, captures stdout
-    - [ ] Parse returned JSON and display generated post in dashboard
-    - [ ] Post type dropdown + "Preview" button
-  - [ ] Auth status + re-auth
-    - [ ] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec
-    - [ ] `GET /api/xhs/login/stream` — SSE screenshot stream (base64 frames as NDJSON lines)
-    - [ ] Dashboard renders screenshot stream as `<img>` for QR code scanning
-    - [ ] On `{ type: 'done' }` event, close panel and clear auth alert
   - [ ] Live log stream
     - [ ] `GET /api/xhs/logs/stream` — SSE stream of XHS process stdout
     - [ ] Scrollable log panel, auto-scroll to bottom, colour-coded lines
+  - [ ] Home card triggers
+    - [ ] Manual trigger: `POST /api/xhs/trigger` — post type dropdown + "Run now" button
+    - [ ] Preview: `POST /api/xhs/preview` — post type dropdown + "Preview" button, display returned JSON
+    - [ ] Re-auth: `POST /api/xhs/login` + `GET /api/xhs/login/stream` — SSE screenshot stream as `<img>` for QR scan, close on `{ type: 'done' }`
 
 ---
 
-- [ ] Scraper section
-  - [ ] Add `run_log.json` + `pipeline_state.json` writes to scraper service (prerequisite)
+- [ ] Scraper section (detail page)
   - [x] `scrapperController.js` — pipeline state, last run, success rate, data freshness, races scraped, failed URLs, manual trigger
-  - [ ] Scraper home card component
-  - [ ] `GET /api/scraper/run-history` — read `scraper/run_log.json`
-  - [ ] `POST /api/scraper/trigger` — spawn scraper via docker exec
-  - [ ] Failed URLs list — expandable from last run (detail page only)
-  - [ ] races.json viewer — table of current races (name, date, location)
+  - [x] Scraper home card
   - [ ] Run history table: timestamp, races scraped, failure count, outcome
+    - [ ] `GET /api/scraper/run-history` — read `scraper/run_log.json`
+  - [ ] Failed URLs list — expandable from last run
+  - [ ] races.json viewer — table of current races (name, date, location)
+  - [ ] Home card triggers
+    - [ ] Manual trigger: `POST /api/scraper/trigger` — spawn scraper via docker exec
 
 ---
 
-- [ ] Rakuten section
-  - [ ] `GET /api/rakuten/stats` — read `rakuten/product_stats.json`
-  - [ ] `GET /api/rakuten/import-log` — read `rakuten/import_log.json`
-  - [ ] `GET /api/rakuten/config` — read `rakuten/config.json`
-  - [ ] `POST /api/rakuten/config` — write `rakuten/config.json`
+- [ ] Rakuten section (detail page)
   - [ ] Catalog stats: total cached, pushed to WooCommerce, per-category breakdown
+    - [ ] `GET /api/rakuten/stats` — read `rakuten/product_stats.json`
+  - [ ] Import log table with failed imports panel
+    - [ ] `GET /api/rakuten/import-log` — read `rakuten/import_log.json`
   - [ ] Pricing config editor — inline editable table, save writes config.json
-  - [ ] Import log table with failed imports panel + one-click retry
-  - [ ] `POST /api/rakuten/trigger` — fetch more products (category + count) via Rakuten :3002
-  - [ ] `POST /api/rakuten/retry` — retry failed WooCommerce imports via Rakuten :3002
+    - [ ] `GET /api/rakuten/config` — read `rakuten/config.json`
+    - [ ] `POST /api/rakuten/config` — write `rakuten/config.json`
+  - [ ] Home card triggers
+    - [ ] Fetch products: `POST /api/rakuten/trigger` — category + count via Rakuten :3002
+    - [ ] Retry failed imports: `POST /api/rakuten/retry` — via Rakuten :3002
 
 ---
 

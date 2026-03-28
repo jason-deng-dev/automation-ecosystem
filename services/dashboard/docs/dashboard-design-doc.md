@@ -145,23 +145,34 @@ Keys are numeric day indices matching JavaScript's `Date.getDay()` — `0` = Sun
 
 ## 7. Dashboard Home Page — Pipeline Cards
 
-The home page shows one card per pipeline. Each card surfaces the most critical info at a glance without needing to navigate into the full pipeline view.
+**Layout principle: home cards = metrics + action triggers. Detail pages = scrollable data tables.**
 
-### 7.1 XHS Pipeline Card
+The home page shows one card per pipeline side by side, full height. Each card surfaces the most critical info at a glance and exposes action buttons — operator never needs to leave the home page for routine operations. Detail pages exist for bulk data (run history tables, races viewer, post archive).
 
-- **Current run state** — live indicator: Idle / Running / Failed
-- **Weekly posts** — success count / failed count / success ratio (e.g. 6/7 — 86%)
-- **Last post** — timestamp, post type, status (success / failed)
-- **Last failure reason** — if last run failed, surface the error type inline: auth expired / Claude API error / publish timeout
-- **Next scheduled post** — day, time, and post type from `xhs/config.json`
-- **Auth status** — session active / expiring soon / expired (Login button shown if expired)
+### 7.1 XHS Pipeline Card ✅
 
-### 7.2 Race Scraper Pipeline Card
+- **Current run state** — color-coded: running (green) / failed (red) / idle (yellow)
+- **Last run** — timestamp in CST
+- **Last status** — success or failed with error stage (Authentication / Generate / Publishing)
+- **Next scheduled post** — day, time, post type, and time until — from `xhs/config.json`
+- **Success rate (30d)** — `success/total (%)` format
+- **Errors by type** — count per error stage
+- **Post type distribution** — count per type (Race, Training, Nutrition & Supplement, Wearable)
+- **API tokens (lifetime)** — input + output token totals
+- **Auth banner** — shown only when last run failed at auth stage; includes Login button
+- **Action triggers** (to be added): manual trigger, preview, re-auth flow
 
-- **Current run state** — live indicator: Idle / Running / Failed
-- **Last run** — timestamp + outcome (success / failed)
-- **Races scraped** — count from last run, with threshold alert if < 30
-- **Data freshness** — how old is the current `races.json` (e.g. "3 days ago")
+### 7.2 Race Scraper Pipeline Card ✅
+
+- **Current run state** — color-coded: running / failed / idle
+- **Last run** — timestamp in CST
+- **Last status** — success or failed
+- **Total races** — live count from `races.json`
+- **Last scraped** — races_scraped from last run log, with below-threshold warning (< 30)
+- **Next scrape** — time until next Sunday 02:00 CST cron
+- **Data freshness** — age of `races.json`
+- **Success rate (30d)** — `success/total (%)` format
+- **Action triggers** (to be added): manual trigger
 
 ### 7.3 Rakuten Aggregator Pipeline Card
 
@@ -169,6 +180,7 @@ The home page shows one card per pipeline. Each card surfaces the most critical 
 - **WooCommerce live** — how many products have been pushed to the store
 - **Last activity** — timestamp of last Rakuten fetch or WooCommerce push
 - **Error indicator** — any recent API failures (Rakuten, WooCommerce)
+- **Action triggers** (to be added): fetch products, retry failed imports
 
 ---
 
@@ -234,30 +246,25 @@ The home page shows one card per pipeline. Each card surfaces the most critical 
 
 ## 9. Race Scraper Dashboard Section — Full Spec
 
-### 9.1 Key Metrics
+Home card metrics and triggers are in section 7.2. This section covers the detail page only.
 
-- Races scraped per run (threshold alert if < 30)
-- Scrape failures per run — count of individual race detail pages that failed
-- Data freshness — age of current `races.json`
-
-### 9.2 Failed URLs List
-
-- Expandable list of race URLs that failed during the last scrape run
-- Shows which races are missing from `races.json` without requiring log access
-
-### 9.3 races.json Viewer
+### 9.1 races.json Viewer (detail page)
 
 - Simple table of currently scraped races: name, date, location
 - Lets the operator spot-check data quality after a fresh scrape without SSHing in
 
-### 9.4 Run History
+### 9.2 Run History (detail page)
 
 - Table of past scrape runs: timestamp, races scraped, failure count, outcome
-- Same pattern as XHS run history — failed runs currently leave no trace
 
-### 9.5 Manual Trigger
+### 9.3 Failed URLs List (detail page)
 
-- "Run scraper now" button — fires the scrape on demand outside the weekly cron
+- Expandable list of race URLs that failed during the last scrape run
+- Shows which races are missing from `races.json` without requiring log access
+
+### 9.4 Manual Trigger (home card)
+
+- "Run scraper now" button on the home card — fires the scrape on demand outside the weekly cron
 - Always scrapes all races — no limit config needed
 
 ---
@@ -473,5 +480,8 @@ Post type is passed as a positional argument (`process.argv[2]`). Preview mode r
 
 ## 14. Next Steps
 
-- Implement per-pipeline structured logging as a prerequisite (logs need consistent format for the dashboard to parse)
-- Build dashboard after all three pipelines are deployed to Lightsail
+- Add action triggers to XHS and Scraper home cards (manual trigger, preview, re-auth)
+- Build Rakuten home card + controller
+- Build detail pages: XHS (schedule, run history, post archive, log stream), Scraper (races viewer, run history, failed URLs), Rakuten (catalog stats, import log, pricing config)
+- Poll or SSE to keep home cards live without page refresh
+- Docker + deploy
