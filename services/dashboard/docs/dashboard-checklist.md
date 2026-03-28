@@ -80,5 +80,6 @@
   - [ ] Provision AWS Lightsail instance (Linux, $10/mo — 2 GB RAM, 2 vCPUs, 60 GB SSD, 3 TB transfer)
   - [ ] Install Docker + Docker Compose on Lightsail
   - [ ] Clone repo, create .env with production keys, transfer auth.json
+  - [ ] Set `NEXT_PUBLIC_LANG=zh` in production `.env` (local dev defaults to `en`)
   - [ ] Run docker-compose up, verify all containers start and cron fires correctly
   - [ ] Hand off — document: docker-compose up to start, "Login to XHS" button when session expires

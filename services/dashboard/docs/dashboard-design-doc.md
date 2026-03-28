@@ -475,6 +475,7 @@ Post type is passed as a positional argument (`process.argv[2]`). Preview mode r
   - Goldwin-inspired aesthetic: minimal, sharp corners, warm off-white, deep red accent
 - **Deployment:** Same AWS Lightsail instance as all three pipelines — Next.js runs as a Node.js process via PM2 (`pm2 start npm --name dashboard -- start`), proxied by NGINX on port 3000
 - **Translation tracking:** Removed — translation is handled by TranslatePress on the WordPress side, not tracked in the dashboard
+- **Language switching:** No runtime toggle — UI language is controlled by `NEXT_PUBLIC_LANG` env var. Set to `zh` in production `.env`, defaults to `en` locally. Components import from `en.js` or `zh.js` vocab files and read from the right one at render time. No React context or client components needed.
 - **XHS login browser streaming: screenshot polling, not noVNC** — noVNC requires a VNC server (x11vnc) and virtual display (Xvfb) on the Lightsail instance — significant infrastructure overhead for a single use case. Screenshot polling via `page.screenshot()` every 2 seconds is sufficient because the only operator action is scanning a QR code with their phone. The navigation to the QR code screen is automated in `xhs-login.js` (click sequence is hardcoded), so the QR code is already showing by the time the first screenshot reaches the dashboard. Operator never needs to click or type inside the browser.
 
 ---
