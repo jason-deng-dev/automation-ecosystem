@@ -71,7 +71,7 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 │    │   races.json ←            run_log.json ←          run_log.json ←     │             │
 │    │   run_log.json ←          pipeline_state.json ←   product_stats.json←│             │
 │    │   pipeline_state.json ←   post_archive/ ←         import_log.json ←  │             │
-│    │   config.json →           auth.json ←             config.json →      │             │
+│    │                           auth.json ←             config.json →      │             │
 │    │                           config.json →                               │             │
 │    │                                                                      │             │
 │    │   ← pipeline writes          → dashboard writes                     │             │
