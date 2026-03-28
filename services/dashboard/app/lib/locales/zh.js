@@ -1,0 +1,66 @@
+export default {
+	// Nav
+	navTitle: "控制台",
+	nav: {
+		home: "首页",
+		xhs: "小红书",
+		rakuten: "乐天",
+		scraper: "赛事爬虫",
+	},
+
+	// Section titles
+	xhsPipeline: "小红书 · 运行状态",
+	errorsByType: "错误类型统计",
+	postTypes: "帖子类型",
+	apiTokens: "API 用量（累计）",
+
+	// Labels
+	pipelineState: "当前状态",
+	lastRun: "上次运行",
+	lastStatus: "上次状态",
+	nextPost: "下次发布",
+	successRate30d: "成功率（30天）",
+	input: "输入",
+	output: "输出",
+
+	// Status values
+	success: "成功",
+	failed: "失败",
+
+	// Pipeline state values
+	pipelineStateValue: {
+		running: "运行中",
+		failed: "失败",
+		idle: "待机",
+	},
+
+	// Auth banner
+	authFailed: "登录失效 — 需要重新认证",
+	login: "登录",
+
+	// Post type labels
+	postType: {
+		race: "赛事",
+		training: "训练",
+		nutritionSupplement: "营养补剂",
+		wearable: "装备",
+	},
+
+	// Error stage labels
+	errorStage: {
+		auth: "认证",
+		generate: "生成",
+		publish: "发布",
+	},
+
+	// Day names
+	days: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
+
+	// Scraper card
+	scraperPipeline: "赛事爬虫 · 运行状态",
+	racesScraped: "爬取赛事数",
+	dataFreshness: "数据新鲜度",
+	failedUrls: "失败链接",
+	noFailedUrls: "—",
+	belowThreshold: "低于阈值",
+};
