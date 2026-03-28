@@ -58,9 +58,8 @@ export default {
 
 	// Scraper card
 	scraperPipeline: "Race Scraper",
-	racesScraped: "Races Scraped",
+	totalRaces: "Total Races",
+	lastScraped: "Last Scraped",
 	dataFreshness: "Data Freshness",
-	failedUrls: "Failed URLs",
-	noFailedUrls: "—",
 	belowThreshold: "below threshold",
 };

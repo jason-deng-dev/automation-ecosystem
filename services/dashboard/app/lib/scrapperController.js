@@ -42,6 +42,12 @@ export function getSuccessRate() {
 	return total === 0 ? null : { success, total };
 }
 
+// total races in races.json
+export function getTotalRaces() {
+	const { races } = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/races.json"), "utf-8"));
+	return races.length;
+}
+
 // data freshness — age of races.json
 export function getDataFreshness() {
 	const stat = fs.statSync(path.join(dataDir, "scraper/races.json"));

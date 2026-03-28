@@ -1,4 +1,4 @@
-import { getLastTimestamp, getLastRunStatus, getLastRun, getPipelineState, getSuccessRate, getDataFreshness, getRacesScraped, getFailedUrls } from "../lib/scrapperController";
+import { getLastTimestamp, getLastRunStatus, getLastRun, getPipelineState, getSuccessRate, getDataFreshness, getRacesScraped, getTotalRaces } from "../lib/scrapperController";
 
 export default function ScraperMetric({ dict }) {
 	const pipelineState = getPipelineState();
@@ -8,7 +8,8 @@ export default function ScraperMetric({ dict }) {
 	const successRate = getSuccessRate();
 	const dataFreshness = getDataFreshness();
 	const racesScraped = getRacesScraped();
-	const failedUrls = getFailedUrls();
+	const totalRaces = getTotalRaces();
+
 
 	return (
 		<div className="p-6 flex flex-col gap-3 flex-1" style={{backgroundColor: '#111111', border: '1px solid #2A2A2A'}}>
@@ -32,7 +33,11 @@ export default function ScraperMetric({ dict }) {
 					</span>
 				</div>
 				<div className="flex justify-between text-sm">
-					<span className="text-text-secondary">{dict.racesScraped}</span>
+					<span className="text-text-secondary">{dict.totalRaces}</span>
+					<span className="font-medium">{totalRaces}</span>
+				</div>
+				<div className="flex justify-between text-sm">
+					<span className="text-text-secondary">{dict.lastScraped}</span>
 					<span className="font-medium" style={{color: racesScraped.belowThreshold ? '#F5A623' : '#EDEDED'}}>
 						{racesScraped.count}{racesScraped.belowThreshold ? ` (${dict.belowThreshold})` : ''}
 					</span>
@@ -49,14 +54,6 @@ export default function ScraperMetric({ dict }) {
 				</div>
 			</div>
 
-			<div className="border-t border-border pt-3 flex flex-col gap-1">
-				<span className="text-xs tracking-wide uppercase text-text-secondary">{dict.failedUrls}</span>
-				{failedUrls.length === 0 ? (
-					<span className="text-sm text-text-secondary">{dict.noFailedUrls}</span>
-				) : failedUrls.map((url, i) => (
-					<div key={i} className="text-sm text-accent truncate">{url}</div>
-				))}
 			</div>
-		</div>
 	);
 }

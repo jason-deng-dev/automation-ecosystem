@@ -58,9 +58,8 @@ export default {
 
 	// Scraper card
 	scraperPipeline: "赛事爬虫 · 运行状态",
-	racesScraped: "爬取赛事数",
+	totalRaces: "赛事总数",
+	lastScraped: "本次爬取",
 	dataFreshness: "数据新鲜度",
-	failedUrls: "失败链接",
-	noFailedUrls: "—",
 	belowThreshold: "低于阈值",
 };

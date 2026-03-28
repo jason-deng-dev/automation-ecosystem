@@ -57,7 +57,7 @@
   - [ ] Scraper home card component
   - [ ] `GET /api/scraper/run-history` — read `scraper/run_log.json`
   - [ ] `POST /api/scraper/trigger` — spawn scraper via docker exec
-  - [ ] Failed URLs list — expandable from last run
+  - [ ] Failed URLs list — expandable from last run (detail page only)
   - [ ] races.json viewer — table of current races (name, date, location)
   - [ ] Run history table: timestamp, races scraped, failure count, outcome
 
