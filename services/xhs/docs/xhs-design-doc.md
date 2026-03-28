@@ -1010,24 +1010,17 @@ services/xhs/
 
 **Shared volume — local dev:** `shared_volume/` at repo root, set `DATA_DIR=../../shared_volume` in `.env`.
 
-**Shared volume (runtime only — not in repo):**
-```
-/data/                                      # Docker shared volume mount point (local dev: shared_volume/ at repo root)
-    ├── scraper/
-    │   ├── races.json                      # Written by Scraper container — XHS reads from here at runtime
-    │   └── run_log.json                    # Written by Scraper container
-    ├── xhs/
-    │   ├── run_log.json                    # Written by XHS — per-run metrics + token costs
-    │   ├── post_archive/                   # Written by XHS — weekly post archive
-    │   ├── post_history.json               # Written by XHS — race name dedup
-    │   ├── auth.json                       # Written by xhs-login.js — XHS session cookies
-    │   └── config.json                     # Written by Dashboard — per-day post schedule
-    └── rakuten/
-        ├── run_log.json
-        ├── product_stats.json
-        ├── import_log.json
-        └── config.json
-```
+**Shared volume — files this service interacts with:**
+
+| File | Direction | Contains |
+|---|---|---|
+| `shared_volume/scraper/races.json` | XHS reads | Race data — used by generator to pick race context |
+| `shared_volume/xhs/config.json` | Dashboard writes → XHS reads | Per-day post schedule — scheduler watches for changes |
+| `shared_volume/xhs/pipeline_state.json` | XHS writes | `{ state: "idle \| running \| failed" }` |
+| `shared_volume/xhs/run_log.json` | XHS writes | Per-run: type, outcome, error stage/msg, token counts |
+| `shared_volume/xhs/post_history.json` | XHS reads + writes | Race names already posted — dedup tracker |
+| `shared_volume/xhs/auth.json` | xhs-login.js writes → publisher reads | XHS session cookies |
+| `shared_volume/xhs/post_archive/` | XHS writes | Weekly JSON files — one per published post |
 
 ---
 

@@ -313,3 +313,11 @@ automation-ecosystem/
             ├── Dockerfile
             └── package.json
 ```
+
+**Shared volume — local dev:** `shared_volume/` at repo root. Set `DATA_DIR=../../shared_volume` in `.env`.
+
+**Shared volume — files this service interacts with:**
+
+| File | Direction | Contains |
+|---|---|---|
+| `shared_volume/scraper/races.json` | Race Hub reads | All upcoming race data — served via `GET /api/races` |

@@ -310,4 +310,12 @@ services/scraper/
     └── package.json                # (to be created)
 ```
 
-`scraper/races.json` and `scraper/run_log.json` live on the shared Docker volume at runtime — not committed to the repo.
+**Shared volume — local dev:** `shared_volume/` at repo root. Set `DATA_DIR=../../shared_volume` in `.env`.
+
+**Shared volume — files this service interacts with:**
+
+| File | Direction | Contains |
+|---|---|---|
+| `shared_volume/scraper/races.json` | Scraper writes | All upcoming race data from RunJapan |
+| `shared_volume/scraper/run_log.json` | Scraper writes | Per-run: timestamp, races scraped, failure count, failed URLs, outcome |
+| `shared_volume/scraper/pipeline_state.json` | Scraper writes | `{ state: "idle \| running \| failed" }` |
