@@ -6,10 +6,10 @@
 
 ---
 
-- [ ] i18n — vocab files
-  - [ ] Create `app/lib/locales/en.js` and `app/lib/locales/zh.js`
-  - [ ] Read `NEXT_PUBLIC_LANG` env var to select locale at render time
-  - [ ] Replace all hardcoded UI strings with vocab file references
+- [x] i18n — vocab files
+  - [x] Create `app/lib/locales/en.js` and `app/lib/locales/zh.js`
+  - [x] Read `NEXT_PUBLIC_LANG` env var to select locale at render time
+  - [x] Replace all hardcoded UI strings with vocab file references
   - [ ] Verify Chinese strings display correctly
 
 ---
