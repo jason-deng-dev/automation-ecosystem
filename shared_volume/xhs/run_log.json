@@ -74,7 +74,7 @@
   "2026-03-28T04:10:18.131Z": {
     "type": "race",
     "outcome": "failed",
-    "errorStage": "publish",
+    "errorStage": "auth",
     "errorMsg": "publish returned false",
     "input_tokens": 1639,
     "output_tokens": 1089

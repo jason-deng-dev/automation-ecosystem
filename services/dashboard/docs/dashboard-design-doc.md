@@ -329,7 +329,7 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 | `POST` | `/api/xhs/preview` | Generate post without publishing — runs `run-preview.js <type>` via docker exec, captures stdout, returns parsed post JSON |
 | `GET` | `/api/xhs/logs/stream` | SSE — streams XHS process stdout in real time |
 | `POST` | `/api/xhs/login` | Spawn `xhs-login.js` via docker exec, begin screenshot polling |
-| `GET` | `/api/xhs/login/stream` | SSE — streams screenshots from login browser for QR code display |
+| `GET` | `/api/xhs/login` | SSE — streams screenshots from login browser for QR code display |
 
 ### Scraper
 
