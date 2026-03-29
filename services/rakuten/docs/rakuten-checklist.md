@@ -5,28 +5,28 @@ x
   - [x] Write .dockerignore
   - [x] Write .gitignore
 
-- [x] Rakuten API integration (`server/services/rakutenAPI.js`)
+- [x] Rakuten API integration (`src/services/rakutenAPI.ts`)
   - [x] Get products by keyword
   - [x] Get products by genre
   - [x] getRanking(genreId, count) — fetch top-ranked products per genre via Ranking API
 
-- [x] Product normalization (`server/services/normalizeItems.js`)
-  - [x] normalizeItem(rawItem) — map Rakuten API fields to internal product schema (built into rakutenAPI.js)
+- [x] Product normalization (`src/services/normalizeItems.ts`)
+  - [x] normalizeItem(rawItem) — map Rakuten API fields to internal product schema (built into rakutenAPI.ts)
 
-- [ ] Config (`server/config/`)
-  - [ ] `config.js` — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
-  - [ ] Fill in missing genre IDs in `genres.js`
+- [ ] Config (`src/config/`)
+  - [ ] `config.ts` — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
+  - [ ] Fill in missing genre IDs in `genres.ts`
 
-- [ ] Pricing (`server/services/pricing.js`)
+- [ ] Pricing (`src/services/pricing.ts`)
   - [ ] calculatePrice(product, category) — apply margin formula per design doc Section 4.3
-  - [ ] Load per-category config from pricing_config.js
+  - [ ] Load per-category config from pricing_config.ts
 
-- [ ] PostgreSQL product store (`server/db/store.js`)
+- [ ] PostgreSQL product store (`src/db/store.ts`)
   - [ ] Run schema.sql — create products table
   - [ ] upsertProduct(product) — insert if new URL, update if price/availability changed, skip if unchanged
   - [ ] URL-based deduplication (rakuten_url as unique key — no TTL)
 
-- [ ] WooCommerce integration (`server/services/woocommerce.js`)
+- [ ] WooCommerce integration (`src/services/woocommerce.ts`)
   - [ ] pushProduct(product) — push single product via WooCommerce REST API
   - [ ] bulkPush(products) — push multiple products, log each to import_log.json
   - [ ] Idempotency check by rakuten_url (not SKU)
