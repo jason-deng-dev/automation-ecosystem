@@ -141,38 +141,38 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 ### 3.2 Component Breakdown
 
-#### rakutenAPI.js (exists, partial)
+#### rakutenAPI.ts
 
-- `searchByKeyword(keyword, options)` — Ichiba Item Search API (used for product request flow)
-- `getRanking(genreId, options)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
-- Returns raw Rakuten API response objects
+- `getProductsByKeyword(keyword, count, sortMode)` — Ichiba Item Search API (used for product request flow)
+- `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
+- Returns normalized product objects via `normalizeItems`
 
-#### normalizeItems.js (exists as helper, needs extraction)
+#### normalizeItems.ts (new)
 
 - Maps raw Rakuten API response fields to internal product schema
 - Handles missing fields gracefully (null-safe)
 - Deduplicates by `rakuten_url` across results
 
-#### genres.js (exists — curated genre ID map)
+#### genres.ts (exists — curated genre ID map)
 
 - Maps internal category names to Rakuten genre IDs
-- Used by rakutenAPI.js to target specific product categories for ranking fetch
+- Used by rakutenAPI.ts to target specific product categories for ranking fetch
 - See Section 6 for full category structure
 
-#### db/store.js (new)
+#### db/store.ts (new)
 
 - PostgreSQL interface for permanent product storage
 - `getProductByUrl(url)` — check if product already exists (deduplication key)
 - `upsertProduct(product)` — insert new or update price/availability if changed
 - `getProductsByGenre(genreId)` — return stored products for a genre
 
-#### pricing.js (new)
+#### pricing.ts (new)
 
 - `calculatePrice(rakutenPrice, options)` — applies margin formula
 - Returns `{ sale_price, cost_price, margin_pct, shipping_estimate }`
 - Configurable margin % and shipping estimate per category
 
-#### woocommerce.js (new)
+#### woocommerce.ts (new)
 
 - Wraps WooCommerce REST API (Consumer Key + Consumer Secret auth)
 - `pushProduct(product)` — creates single WooCommerce product
@@ -180,8 +180,9 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 - `checkExists(sku)` — checks if product already exists by SKU before pushing
 - Maps internal product schema to WooCommerce product fields (Japanese text — TranslatePress handles translation)
 
-#### Express API server / index.js (exists, needs productionizing)
+#### app.ts (exists)
 
+- Express entry point — routes defined directly in app.ts (no separate routes/controllers)
 - Orchestrates: Rakuten fetch → normalize → price → PostgreSQL store → WooCommerce push
 - Handles product request flow
 - Hosts weekly cron trigger endpoint
@@ -639,27 +640,22 @@ TranslatePress translates on first view, caches in WordPress DB
 
 ```
 automation-ecosystem/rakuten/
-├── server/
-│   ├── index.js                  # Express app entry point
-│   ├── routes/
-│   │   ├── products.js           # GET /api/products, /api/products/:id
-│   │   ├── push.js               # POST /api/push/bulk
-│   │   └── requestProduct.js     # POST /api/request-product, GET /api/request-product/status/:id
-│   ├── controllers/
-│   │   ├── productController.js
-│   │   ├── pushController.js
-│   │   └── requestProductController.js
+├── src/
+│   ├── app.ts                    # Express entry point — routes defined directly here
 │   ├── services/
-│   │   ├── rakutenAPI.js         # Rakuten API wrapper (exists, partial)
-│   │   ├── normalizeItems.js     # Product normalization (exists as helper)
-│   │   ├── pricing.js            # Margin formula (new)
-│   │   └── woocommerce.js        # WooCommerce REST API wrapper (new)
+│   │   ├── rakutenAPI.ts         # Rakuten API wrapper
+│   │   ├── normalizeItems.ts     # Product normalization
+│   │   ├── pricing.ts            # Margin formula
+│   │   └── woocommerce.ts        # WooCommerce REST API wrapper
 │   ├── db/
-│   │   ├── store.js              # PostgreSQL product store (new)
+│   │   ├── store.ts              # PostgreSQL product store
 │   │   └── schema.sql            # Table definitions
 │   └── config/
-│       ├── genres.js             # Rakuten genre ID map (exists, partial)
-│       └── config.js     # Default per-category config (margin %, shipping, JPY→CNY rate, fetch count) — runtime values read from shared_volume/rakuten/config.json
+│       ├── genres.ts             # Rakuten genre ID map
+│       └── config.ts             # Per-category config (margin %, shipping, JPY→CNY rate, fetch count) — runtime values read from shared_volume/rakuten/config.json
+├── dist/                         # Compiled JS output (tsc)
+├── tsconfig.json
+└── package.json
 ```
 
 **Shared volume — local dev:** `shared_volume/` at repo root. Set `DATA_DIR=../../shared_volume` in `.env`.

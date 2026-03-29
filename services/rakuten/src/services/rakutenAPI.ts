@@ -1,47 +1,38 @@
-import 'dotenv/config';
-import { sportsApparelGenres } from '../config/genres.js';
+import "dotenv/config";
 
-export const getProductsByKeyword = async (
-	keyword,
-	count,
-	sortMode,
-) => {
-
+export const getProductsByKeyword = async (keyword: string, count: number, sortMode: string = 'standard') => {
 	const translatedKeyword = keyword;
 	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&keyword=${translatedKeyword}&hits=${count}&availability=1&applicationId=${process.env.RAKUTEN_APP_ID}&sort=${sortMode}`;
 	try {
 		const res = await fetch(itemSearchEndpoint, {
 			headers: {
-				Referer: process.env.RAKUTEN_REFERRER,
-				Origin: process.env.RAKUTEN_REFERRER,
-				accessKey: process.env.RAKUTEN_ACCESS_KEY,
+				Referer: process.env.RAKUTEN_REFERRER!,
+				Origin: process.env.RAKUTEN_REFERRER!,
+				accessKey: process.env.RAKUTEN_ACCESS_KEY!,
 			},
 		});
-		console.log(res)
 		const resJson = await res.json();
 		const items = resJson.Items;
-		// const items = mockAPICall();
-		const normalizedItem = normalizeItems(items)
+		const normalizedItem = normalizeItems(items);
 		return normalizedItem;
-
 	} catch (err) {
 		console.log(err);
 	}
 };
 
 export const getProductsByGenresId = async (
-	genreId,
-	count,
-	sortMode,
+	genreId: number,
+	count: number,
+	sortMode: string = 'standard',
 ) => {
 	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&genreId=${genreId}&availability=1&hits=${count}&sort=${sortMode}&applicationId=${process.env.RAKUTEN_APP_ID}`;
 
 	try {
 		const res = await fetch(itemSearchEndpoint, {
 			headers: {
-				Referer: process.env.RAKUTEN_REFERRER,
-				Origin: process.env.RAKUTEN_REFERRER,
-				accessKey: process.env.RAKUTEN_ACCESS_KEY,
+				Referer: process.env.RAKUTEN_REFERRER!,
+				Origin: process.env.RAKUTEN_REFERRER!,
+				accessKey: process.env.RAKUTEN_ACCESS_KEY!,
 			},
 		});
 		console.log(res)
@@ -56,63 +47,30 @@ export const getProductsByGenresId = async (
 };
 
 export const getProductsByRankingGenre = async (
-	genreId,
-	count,
+	genreId: number,
+	count: number,
 ) => {
 	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601?format=json&genreId=${genreId}&hits=${count}&applicationId=${process.env.RAKUTEN_APP_ID}`
 	
 	try {
 		const res = await fetch(itemSearchEndpoint, {
 			headers: {
-				Referer: process.env.RAKUTEN_REFERRER,
-				Origin: process.env.RAKUTEN_REFERRER,
-				accessKey: process.env.RAKUTEN_ACCESS_KEY,
+				Referer: process.env.RAKUTEN_REFERRER!,
+				Origin: process.env.RAKUTEN_REFERRER!,
+				accessKey: process.env.RAKUTEN_ACCESS_KEY!,
 			},
 		});
-		console.log(res)
+		
 		const resJson = await res.json();
 		const items = resJson.Items;
 		const normalizedItem = normalizeItems(items)
+		console.log(normalizedItem)
 		
 		return normalizedItem;
 	} catch (err) {
 		console.log(err)
 	}
 };
-
-function normalizeItems(items) {
-	return items.map(
-		({
-			Item: {
-				itemName,
-				itemPrice,
-				itemCaption,
-				itemUrl,
-				smallImageUrls,
-				mediumImageUrls,
-				reviewCount,
-				reviewAverage,
-				shopName,
-				shopCode,
-				genreId,
-				tagIds,
-			},
-		}) => ({
-			itemName,
-			itemPrice,
-			itemCaption,
-			itemUrl,
-			smallImageUrls,
-			mediumImageUrls,
-			reviewCount,
-			reviewAverage,
-			shopName,
-			shopCode,
-			genreId,
-			tagIds,
-		}),
-	);
-}
 
 function mockAPICall() {
 	return [
@@ -246,4 +204,58 @@ function mockAPICall() {
 	];
 }
 
+function normalizeItems(items: RakutenResponseItem[]) {
+	return items.map(
+		({
+			Item: {
+				itemName,
+				itemPrice,
+				itemCaption,
+				itemUrl,
+				smallImageUrls,
+				mediumImageUrls,
+				reviewCount,
+				reviewAverage,
+				shopName,
+				shopCode,
+				genreId,
+				tagIds,
+			},
+		}) => ({
+			itemName,
+			itemPrice,
+			itemCaption,
+			itemUrl,
+			smallImageUrls,
+			mediumImageUrls,
+			reviewCount,
+			reviewAverage,
+			shopName,
+			shopCode,
+			genreId,
+			tagIds,
+		}),
+	);
+}
 
+interface RakutenResponseItem {
+	Item: {
+		itemName: string;
+		itemPrice: number | string;
+		itemCaption: string;
+		itemUrl: string;
+		smallImageUrls: Array<{ imageUrl: string }>;
+		mediumImageUrls: Array<{ imageUrl: string }>;
+		reviewCount: number | string;
+		reviewAverage: number | string;
+		shopName: string;
+		shopCode: string;
+		genreId: string;
+		tagIds: number[] | undefined;
+	};
+}
+
+
+(async() => {
+    console.log(await getProductsByKeyword('running shoes', 1))
+})();
