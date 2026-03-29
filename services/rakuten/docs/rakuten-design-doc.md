@@ -76,7 +76,7 @@ This matters most in the pricing layer: `rakuten_price`, `shipping_estimate`, `m
 
 **2. Explicit product schema as the source of truth**
 
-The internal product schema (Section 4.1) is defined once as a TypeScript interface and referenced by every module — `normalizeItems`, `pricing`, `store`, `woocommerce`. If the schema changes (e.g. a field is renamed or a new field added), TypeScript surfaces every call site that needs to be updated. In plain JavaScript, those mismatches are silent until runtime.
+The internal product schema (Section 4.1) is defined once as a TypeScript interface and referenced by every module — `rakutenAPI`, `pricing`, `store`, `woocommerce`. If the schema changes (e.g. a field is renamed or a new field added), TypeScript surfaces every call site that needs to be updated. In plain JavaScript, those mismatches are silent until runtime.
 
 **3. IDE autocomplete on API responses**
 
@@ -145,13 +145,7 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 - `getProductsByKeyword(keyword, count, sortMode)` — Ichiba Item Search API (used for product request flow)
 - `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
-- Returns normalized product objects via `normalizeItems`
-
-#### normalizeItems.ts (new)
-
-- Maps raw Rakuten API response fields to internal product schema
-- Handles missing fields gracefully (null-safe)
-- Deduplicates by `rakuten_url` across results
+- Returns normalized product objects (normalization handled internally)
 
 #### genres.ts (exists — curated genre ID map)
 
@@ -182,10 +176,12 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 #### app.ts (exists)
 
-- Express entry point — routes defined directly in app.ts (no separate routes/controllers)
+- Express entry point — routes defined directly in app.ts
+
+#### controller.ts (new)
+
+- Handles all route logic — bulk push, product request flow, cron sync, product queries
 - Orchestrates: Rakuten fetch → normalize → price → PostgreSQL store → WooCommerce push
-- Handles product request flow
-- Hosts weekly cron trigger endpoint
 
 ### 3.3 Data Flow
 
@@ -538,7 +534,7 @@ TranslatePress translates on first view, caches in WordPress DB
 |Component|Status|Notes|
 |---|---|---|
 |rakutenAPI.js|🔧 Partial|Keyword search + genre search working; ranking not yet implemented|
-|normalizeItems.js|🔧 Partial|Exists as inline helper, needs extraction to module|
+|normalizeItems|✅ Done|Normalization handled internally in rakutenAPI.ts — no separate module|
 |genres.js|🔧 Partial|Structure exists, some genre IDs missing|
 |config.js|🔧 In Progress|Per-category margin %, shipping estimate, JPY→CNY rate — being built now|
 |db/store.js|❌ Not started|PostgreSQL permanent product store|
@@ -552,9 +548,8 @@ TranslatePress translates on first view, caches in WordPress DB
 
 ### 10.2 Phase 1 — Data Pipeline
 
-1. Add `getRanking()` to rakutenAPI.js
-2. Extract `normalizeItems.js` as standalone module
-3. Build `pricing.js` — formula implementation with per-category config
+1. Add `getRanking()` to rakutenAPI.ts
+2. Build `pricing.ts` — formula implementation with per-category config
 4. Build `db/store.js` — PostgreSQL product store with upsert + URL deduplication
 5. Test full fetch → normalize → price → store pipeline end-to-end
 
@@ -587,9 +582,9 @@ TranslatePress translates on first view, caches in WordPress DB
 
 ### 11.1 Rakuten API Rate Limits
 
-**Challenge:** Rakuten Ichiba APIs have rate limits. The weekly cron fetching top N products per genre across all categories could exhaust the daily quota.
+**Challenge:** Rakuten Ichiba APIs are limited to 1 request per second per Application ID. The bulk fetch and weekly cron make one API call per category — exceeding this rate causes request failures.
 
-**Solution:** PostgreSQL deduplication by `rakuten_url` means only new products trigger WooCommerce pushes. Rate limit errors are caught, logged, and the sync job resumes on the next run without losing already-processed products.
+**Solution:** Add a 1-second delay between each Rakuten API call during bulk fetch and cron runs. The Ranking API returns up to 30 products per request — to fetch more, paginate using the `page` parameter (page=1 → 1–30, page=2 → 31–60, etc.). At 1 req/sec, fetching 200 products per category costs 7 requests × 5 categories = 35 seconds total — negligible for a weekly job. Rate limit errors are caught, logged, and the sync job resumes on the next run without losing already-processed products. Note: PostgreSQL deduplication reduces redundant WooCommerce pushes but does not reduce Rakuten API call volume — the delay is the actual rate limit protection.
 
 ### 11.2 Translation Quality
 
@@ -642,17 +637,16 @@ TranslatePress translates on first view, caches in WordPress DB
 automation-ecosystem/rakuten/
 ├── src/
 │   ├── app.ts                    # Express entry point — routes defined directly here
+│   ├── controller.ts             # All route handler logic
 │   ├── services/
 │   │   ├── rakutenAPI.ts         # Rakuten API wrapper
-│   │   ├── normalizeItems.ts     # Product normalization
 │   │   ├── pricing.ts            # Margin formula
 │   │   └── woocommerce.ts        # WooCommerce REST API wrapper
 │   ├── db/
 │   │   ├── store.ts              # PostgreSQL product store
 │   │   └── schema.sql            # Table definitions
 │   └── config/
-│       ├── genres.ts             # Rakuten genre ID map
-│       └── config.ts             # Per-category config (margin %, shipping, JPY→CNY rate, fetch count) — runtime values read from shared_volume/rakuten/config.json
+│       └── genres.ts             # Rakuten genre ID map
 ├── dist/                         # Compiled JS output (tsc)
 ├── tsconfig.json
 └── package.json
