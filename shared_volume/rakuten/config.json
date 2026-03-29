@@ -1,0 +1,19 @@
+{
+	"margin": {
+		"Running Gear": 0,
+		"Training": 0,
+		"Nutrition & Supplements": 0,
+		"Recovery & Care": 0,
+		"Sportswear": 0
+	},
+	"shipping": {
+		"Running Gear": 120,
+		"Training": 150,
+		"Nutrition & Supplements": 65,
+		"Recovery & Care": 120,
+		"Sportswear": 150
+	},
+	"YenToYuan": 0.043,
+	"fetchPerCategory": 0,
+	"SearchFillThreshhold": 10
+}
