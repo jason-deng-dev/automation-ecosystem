@@ -26,7 +26,6 @@ export const getProductsByGenresId = async (
 	sortMode: string = 'standard',
 ) => {
 	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&genreId=${genreId}&availability=1&hits=${count}&sort=${sortMode}&applicationId=${process.env.RAKUTEN_APP_ID}`;
-
 	try {
 		const res = await fetch(itemSearchEndpoint, {
 			headers: {
@@ -35,11 +34,9 @@ export const getProductsByGenresId = async (
 				accessKey: process.env.RAKUTEN_ACCESS_KEY!,
 			},
 		});
-		console.log(res)
 		const resJson = await res.json();
 		const items = resJson.Items;
 		const normalizedItem = normalizeItems(items)
-		
 		return normalizedItem;
 	} catch (err) {
 		console.log(err)
@@ -60,12 +57,9 @@ export const getProductsByRankingGenre = async (
 				accessKey: process.env.RAKUTEN_ACCESS_KEY!,
 			},
 		});
-		
 		const resJson = await res.json();
 		const items = resJson.Items;
 		const normalizedItem = normalizeItems(items)
-		console.log(normalizedItem)
-		
 		return normalizedItem;
 	} catch (err) {
 		console.log(err)
@@ -254,8 +248,3 @@ interface RakutenResponseItem {
 		tagIds: number[] | undefined;
 	};
 }
-
-
-(async() => {
-    console.log(await getProductsByKeyword('running shoes', 1))
-})();
