@@ -52,11 +52,55 @@ Product ingestion needs to be:
 
 |Component|Role|
 |---|---|
-|**WooCommerce**|Full customer-facing storefront — product browsing, search, cart, checkout, payments|
+|**WooCommerce**|Full customer-facing storefront — product browsing, search, cart, checkout, payments (Stripe is built-in via WooCommerce)|
 |**Express API**|Backend pipeline — Rakuten fetch, normalize, price, WooCommerce push, product request handler, weekly cron|
 |**PostgreSQL**|Permanent product store — rate limit protection, re-scrape deduplication, price change tracking|
 |**TranslatePress + DeepL**|JA → ZH-HANS translation on first customer page view, cached in WordPress DB permanently|
-|**Stripe**|Payment processor (already integrated via WooCommerce)|
+|**TypeScript**|Implementation language for the entire Express pipeline — enforces type correctness across all pipeline stages at compile time|
+
+### Why TypeScript
+
+The entire Express pipeline (server, services, config, DB layer) is written in TypeScript.
+
+**1. Type safety through multi-stage data transformation**
+
+The pipeline moves product data through five distinct transformation stages:
+
+```
+Rakuten API response → normalize → price → PostgreSQL → WooCommerce
+```
+
+Each stage mutates or reshapes the product object. Without types, a misnamed field, a missing property, or a wrong unit (JPY vs CNY, integer vs string) produces a silent runtime bug that only surfaces when a product lands in WooCommerce with a wrong price or a broken image. TypeScript catches these at compile time — before they ever reach production.
+
+This matters most in the pricing layer: `rakuten_price`, `shipping_estimate`, `margin_pct`, and `sale_price` are all numeric fields that feed the formula. TypeScript enforces that each stage passes the right shape and the right types, so the formula always receives what it expects.
+
+**2. Explicit product schema as the source of truth**
+
+The internal product schema (Section 4.1) is defined once as a TypeScript interface and referenced by every module — `normalizeItems`, `pricing`, `store`, `woocommerce`. If the schema changes (e.g. a field is renamed or a new field added), TypeScript surfaces every call site that needs to be updated. In plain JavaScript, those mismatches are silent until runtime.
+
+**3. IDE autocomplete on API responses**
+
+Rakuten returns deeply nested JSON. With TypeScript interfaces defined for the API response shape, every downstream consumer gets full autocomplete when accessing fields — instead of guessing field names and cross-referencing docs.
+
+**4. Refactoring safety**
+
+When a field in the product schema is renamed (e.g. `sale_price` → `price_cny`), TypeScript surfaces every call site that breaks at compile time. In JavaScript, that's a find-and-replace with no guarantee of completeness.
+
+**5. Self-documenting function signatures**
+
+```ts
+calculatePrice(rakutenPrice: number, options: PricingOptions): PricedProduct
+```
+
+The signature tells you what goes in and comes out without reading the implementation. For a pipeline with this many transformation stages, that readability compounds across every module.
+
+**6. Catches unit mismatches at the type level**
+
+JPY and CNY are both `number` at runtime — TypeScript can enforce the distinction via branded types or clear interface field naming, preventing a raw Rakuten JPY price from silently flowing into a CNY field.
+
+**7. Resume and professional context**
+
+TypeScript is the production standard for Node.js backend services. Having a deployed pipeline written in TypeScript is a concrete talking point when job searching — not just "I know TypeScript" but "I built and deployed a production service in it."
 
 ### Why WooCommerce as the storefront (not a custom React SPA)
 
