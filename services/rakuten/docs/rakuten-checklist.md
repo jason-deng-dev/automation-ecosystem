@@ -10,18 +10,20 @@ x
   - [x] Get products by genre
   - [x] getRanking(genreId, count) — fetch top-ranked products per genre via Ranking API
 
-- [x] Product normalization (`src/services/normalizeItems.ts`)
-  - [x] normalizeItem(rawItem) — map Rakuten API fields to internal product schema (built into rakutenAPI.ts)
+- [x] Product normalization (`src/utils.ts`)
+  - [x] normalizeItem(rawItem) — map Rakuten API fields to internal product schema (moved to utils.ts)
+  - [x] Add `availability` field to Rakuten API response + normalizeItems — maps to `stock_status` in DB
 
 - [x] Config (`src/config/`)
   - [x] `config.ts` — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
   - [x] Fill in missing genre IDs in `genres.ts`
 
-- [ ] PostgreSQL product store (`src/db/store.ts`)
-  - [x] Run schema.sql — create products table
-
-   - [ ] upsertProduct(product) — insert if new URL, update if price/availability changed, skip if unchanged
-  - [ ] URL-based deduplication (rakuten_url as unique key — no TTL)
+- [ ] PostgreSQL product store
+  - [x] Write schema.sql — categories, subcategories, products tables
+  - [x] Install pg
+  - [x] Run schema.sql against rakutenDB
+  - [x] `src/db/pool.ts` — PostgreSQL connection pool
+  - [ ] `src/db/queries.ts` — upsertProduct, getProductByUrl, getProductsByGenre, incrementAllMissedScrapes, deleteStaleProducts
 
 - [ ] Pricing (`src/services/pricing.ts`)
   - [ ] calculatePrice(product, category) — apply margin formula per design doc Section 4.3
