@@ -1,6 +1,8 @@
 import "dotenv/config";
 import fs from 'fs';
 
+const file = fs.readFileSync("/")
+
 export const getProductsByKeyword = async (keyword: string, count: number, sortMode: string = 'standard') => {
 	const translatedKeyword = keyword;
 	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&keyword=${translatedKeyword}&hits=${count}&availability=1&applicationId=${process.env.RAKUTEN_APP_ID}&sort=${sortMode}`;
@@ -16,6 +18,10 @@ export const getProductsByKeyword = async (keyword: string, count: number, sortM
 		const items = resJson.Items;
 		const normalizedItem = normalizeItems(items);
 		return normalizedItem;
+		
+
+
+		
 	} catch (err) {
 		console.log(err);
 	}
@@ -249,6 +255,8 @@ interface RakutenResponseItem {
 		tagIds: number[] | undefined;
 	};
 }
+
+
 
 (async ()=> {
 	console.log(await getProductsByRankingGenre(402463, 100));

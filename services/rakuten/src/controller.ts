@@ -12,7 +12,7 @@ export function bulkFetch(){
 // POST api/products/keyword/:keyword
 
 export function bulkPush(){
-
+    
 }
 
 // bulkFetch (saves to postgresSQL)

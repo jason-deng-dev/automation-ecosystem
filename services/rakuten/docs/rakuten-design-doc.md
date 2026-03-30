@@ -208,7 +208,8 @@ CREATE TABLE products (
   wc_product_id    INTEGER,
   wc_pushed_at     TIMESTAMP,
   created_at       TIMESTAMP DEFAULT NOW(),
-  updated_at       TIMESTAMP DEFAULT NOW()
+  updated_at       TIMESTAMP DEFAULT NOW(),
+  missed_scrapes   INTEGER DEFAULT 0
 );
 
 CREATE TABLE import_log (
@@ -219,7 +220,7 @@ CREATE TABLE import_log (
   error_message TEXT,
   imported_at   TIMESTAMP DEFAULT NOW()
 );
-```
+
 
 **Note:** No `name_zh`, `description_zh`, or `translated_at` columns — translation is handled entirely by TranslatePress in WordPress DB (MySQL), not in PostgreSQL.
 

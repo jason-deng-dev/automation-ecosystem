@@ -13,18 +13,19 @@ x
 - [x] Product normalization (`src/services/normalizeItems.ts`)
   - [x] normalizeItem(rawItem) — map Rakuten API fields to internal product schema (built into rakutenAPI.ts)
 
-- [ ] Config (`src/config/`)
-  - [ ] `config.ts` — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
-  - [ ] Fill in missing genre IDs in `genres.ts`
+- [x] Config (`src/config/`)
+  - [x] `config.ts` — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
+  - [x] Fill in missing genre IDs in `genres.ts`
+
+- [ ] PostgreSQL product store (`src/db/store.ts`)
+  - [ ] Run schema.sql — create products table
+
+   - [ ] upsertProduct(product) — insert if new URL, update if price/availability changed, skip if unchanged
+  - [ ] URL-based deduplication (rakuten_url as unique key — no TTL)
 
 - [ ] Pricing (`src/services/pricing.ts`)
   - [ ] calculatePrice(product, category) — apply margin formula per design doc Section 4.3
   - [ ] Load per-category config from pricing_config.ts
-
-- [ ] PostgreSQL product store (`src/db/store.ts`)
-  - [ ] Run schema.sql — create products table
-  - [ ] upsertProduct(product) — insert if new URL, update if price/availability changed, skip if unchanged
-  - [ ] URL-based deduplication (rakuten_url as unique key — no TTL)
 
 - [ ] WooCommerce integration (`src/services/woocommerce.ts`)
   - [ ] pushProduct(product) — push single product via WooCommerce REST API
