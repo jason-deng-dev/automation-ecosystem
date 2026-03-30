@@ -1,17 +1,3 @@
-**Project:** automation-ecosystem — Rakuten Pipeline
-
-**Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
-
-**GitHub:** [https://github.com/jason-deng-dev/automation-ecosystem](https://github.com/jason-deng-dev/automation-ecosystem) (`services/rakuten/`)
-
-**Author:** Jason Deng
-
-**Date:** March 2026
-
-**Status:** In Development
-
----
-
 ## 1. Problem Statement
 
 ### 1.1 Context
@@ -58,68 +44,7 @@ Product ingestion needs to be:
 |**TranslatePress + DeepL**|JA → ZH-HANS translation on first customer page view, cached in WordPress DB permanently|
 |**TypeScript**|Implementation language for the entire Express pipeline — enforces type correctness across all pipeline stages at compile time|
 
-### Why TypeScript
-
-The entire Express pipeline (server, services, config, DB layer) is written in TypeScript.
-
-**1. Type safety through multi-stage data transformation**
-
-The pipeline moves product data through five distinct transformation stages:
-
-```
-Rakuten API response → normalize → price → PostgreSQL → WooCommerce
-```
-
-Each stage mutates or reshapes the product object. Without types, a misnamed field, a missing property, or a wrong unit (JPY vs CNY, integer vs string) produces a silent runtime bug that only surfaces when a product lands in WooCommerce with a wrong price or a broken image. TypeScript catches these at compile time — before they ever reach production.
-
-This matters most in the pricing layer: `rakuten_price`, `shipping_estimate`, `margin_pct`, and `sale_price` are all numeric fields that feed the formula. TypeScript enforces that each stage passes the right shape and the right types, so the formula always receives what it expects.
-
-**2. Explicit product schema as the source of truth**
-
-The internal product schema (Section 4.1) is defined once as a TypeScript interface and referenced by every module — `rakutenAPI`, `pricing`, `store`, `woocommerce`. If the schema changes (e.g. a field is renamed or a new field added), TypeScript surfaces every call site that needs to be updated. In plain JavaScript, those mismatches are silent until runtime.
-
-**3. IDE autocomplete on API responses**
-
-Rakuten returns deeply nested JSON. With TypeScript interfaces defined for the API response shape, every downstream consumer gets full autocomplete when accessing fields — instead of guessing field names and cross-referencing docs.
-
-**4. Refactoring safety**
-
-When a field in the product schema is renamed (e.g. `sale_price` → `price_cny`), TypeScript surfaces every call site that breaks at compile time. In JavaScript, that's a find-and-replace with no guarantee of completeness.
-
-**5. Self-documenting function signatures**
-
-```ts
-calculatePrice(rakutenPrice: number, options: PricingOptions): PricedProduct
-```
-
-The signature tells you what goes in and comes out without reading the implementation. For a pipeline with this many transformation stages, that readability compounds across every module.
-
-**6. Catches unit mismatches at the type level**
-
-JPY and CNY are both `number` at runtime — TypeScript can enforce the distinction via branded types or clear interface field naming, preventing a raw Rakuten JPY price from silently flowing into a CNY field.
-
-**7. Resume and professional context**
-
-TypeScript is the production standard for Node.js backend services. Having a deployed pipeline written in TypeScript is a concrete talking point when job searching — not just "I know TypeScript" but "I built and deployed a production service in it."
-
-### Why WooCommerce as the storefront (not a custom React SPA)
-
-A custom React SPA was considered and rejected for the following reasons:
-
-1. **Zero support after handoff.** This platform will be operated by a non-technical operator after the original developer leaves. WooCommerce has 24/7 support, a massive plugin ecosystem, and any WordPress developer can maintain it.
-2. **Security.** WooCommerce is battle-tested against fraud, injection attacks, and payment security edge cases.
-3. **Complexity without proportionate benefit.** A large pre-loaded catalog + weekly auto-sync covers the vast majority of customer demand. The edge case of a missing product is handled by the "Request a product" flow.
-4. **TranslatePress handles translation on the storefront.** Since the storefront is WordPress, TranslatePress + DeepL translates product pages on first customer view and caches permanently in WordPress DB — no custom translation pipeline needed.
-
-### Why no pipeline-level translation (no deepl.js)
-
-The pipeline pushes Japanese product names and descriptions directly to WooCommerce. TranslatePress translates them on first customer view and caches the result in WordPress DB (MySQL) forever. This is entirely separate from PostgreSQL — the two stores do not share data.
-
-Removing deepl.js from the pipeline:
-- Simplifies the pipeline (fetch → normalize → price → push)
-- Eliminates the DeepL API key dependency from the Express service
-- Lets TranslatePress manage translations as a maintainable WordPress plugin
-- Tradeoff: PostgreSQL only stores Japanese text; if the admin UI ever needs Chinese names, it must query WordPress, not PostgreSQL
+See Section 8 (Technical Decisions) for rationale on TypeScript, WooCommerce, and the no-deepl.js approach.
 
 ---
 
@@ -418,32 +343,7 @@ Before every push:
   └── Bags & Accessories
 ```
 
-### 6.2 genres.js Structure
-
-```javascript
-module.exports = {
-  nutrition: {
-    label: "🥤 Nutrition & Supplements",
-    subgenres: {
-      sports_drinks: { label: "Sports Drinks", genreId: "XXXXXX" },
-      protein:       { label: "Protein",        genreId: "XXXXXX" },
-      amino_acid:    { label: "Amino Acid",      genreId: "505814" },
-      vitamins:      { label: "Vitamins & Minerals", genreId: "XXXXXX" },
-      recovery:      { label: "Recovery",        genreId: "XXXXXX" }
-    }
-  },
-  gear: {
-    label: "🏃 Running Gear",
-    subgenres: {
-      shoes:       { label: "Shoes",       genreId: "XXXXXX" },
-      apparel:     { label: "Apparel",     genreId: "XXXXXX" },
-      gps_watch:   { label: "GPS / Watch", genreId: "XXXXXX" },
-      accessories: { label: "Accessories", genreId: "XXXXXX" }
-    }
-  },
-  // ... recovery, training, sportswear
-}
-```
+See `src/config/genres.ts` for the full genre ID map.
 
 ---
 
@@ -529,24 +429,9 @@ TranslatePress translates on first view, caches in WordPress DB
 
 ## 10. Implementation Phases
 
-### 10.1 Current Status
+See `docs/rakuten-checklist.md` for current build status.
 
-|Component|Status|Notes|
-|---|---|---|
-|rakutenAPI.js|🔧 Partial|Keyword search + genre search working; ranking not yet implemented|
-|normalizeItems|✅ Done|Normalization handled internally in rakutenAPI.ts — no separate module|
-|genres.js|🔧 Partial|Structure exists, some genre IDs missing|
-|config.js|🔧 In Progress|Per-category margin %, shipping estimate, JPY→CNY rate — being built now|
-|db/store.js|❌ Not started|PostgreSQL permanent product store|
-|pricing.js|❌ Not started|Formula defined, not implemented|
-|woocommerce.js|❌ Not started|WooCommerce REST API integration|
-|Express API|🔧 Partial|MVC structure set up, endpoints not fully implemented|
-|Product request flow|❌ Not started|SSE-based progress indicator + Express endpoint|
-|TranslatePress config|❌ Not started|WordPress plugin setup + DeepL API key|
-|Weekly auto-sync cron|❌ Not started|Scheduled Ranking API fetch + re-scrape logic|
-|Deployment|❌ Not started|—|
-
-### 10.2 Phase 1 — Data Pipeline
+### 10.1 Phase 1 — Data Pipeline
 
 1. Add `getRanking()` to rakutenAPI.ts
 2. Build `pricing.ts` — formula implementation with per-category config
@@ -555,7 +440,7 @@ TranslatePress translates on first view, caches in WordPress DB
 
 **Exit criteria:** Express API fetches top N products from Ranking API, normalizes, prices, and stores in PostgreSQL. Re-run skips unchanged products, updates changed ones.
 
-### 10.3 Phase 2 — WooCommerce Integration + Bulk Push
+### 10.2 Phase 2 — WooCommerce Integration + Bulk Push
 
 1. Set up WooCommerce REST API credentials on running.moximoxi.net
 2. Build `woocommerce.js` with push, bulk push, and SKU existence check
@@ -566,7 +451,7 @@ TranslatePress translates on first view, caches in WordPress DB
 
 **Exit criteria:** Products appear in WooCommerce in Japanese. TranslatePress translates to Chinese on first customer view and caches. Prices match formula.
 
-### 10.4 Phase 3 — Product Request Flow + Cron + Deploy
+### 10.3 Phase 3 — Product Request Flow + Cron + Deploy
 
 1. Build product request flow: `POST /api/request-product` + SSE progress stream
 2. Embed progress indicator widget on WooCommerce search results page via shortcode
@@ -609,6 +494,12 @@ TranslatePress translates on first view, caches in WordPress DB
 **Challenge:** Rakuten product images are hotlinked from Rakuten's CDN. If Rakuten removes the image or changes the URL, WooCommerce product images break.
 
 **Solution:** On import, images are passed via WooCommerce's `images[].src` field — WooCommerce sideloads them into the WordPress media library automatically. Product images become self-contained in WordPress.
+
+### 11.6 Stale Product Refresh at Scale
+
+**Challenge:** The weekly re-scrape uses the Ranking API, which only returns the current top N products per genre. Products already in the DB that fall off the ranking have no scalable way to get their price/availability refreshed — calling the Search API one-by-one per stored product becomes untenable at hundreds or thousands of products (1 req/sec rate limit, blocking the weekly job).
+
+**Solution:** Add a `missed_scrapes` counter to each product in PostgreSQL. Each weekly ranking run increments the counter for any product not returned by the ranking. At 3 consecutive missed scrapes, the product is hard-deleted from both PostgreSQL and WooCommerce. No separate refresh pass is needed — if a product is popular enough to return to stock, it will re-appear in the Ranking API results and be re-imported naturally as a new product.
 
 ---
 

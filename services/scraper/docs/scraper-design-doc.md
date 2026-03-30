@@ -1,17 +1,3 @@
-**Project:** automation-ecosystem — Scraper
-
-**Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
-
-**GitHub:** [https://github.com/jason-deng-dev/automation-ecosystem](https://github.com/jason-deng-dev/automation-ecosystem) (`services/scraper/`)
-
-**Author:** Jason Deng
-
-**Date:** March 2026
-
-**Status:** In Development — `scraper.js` ported to `services/scraper/`; Dockerfile and package.json not yet created
-
----
-
 ## 1. What This Is
 
 The Scraper is a pure cron process running as a Docker container. It scrapes RunJapan weekly and writes `races.json` to a shared Docker volume. No HTTP server. No persistent process. Just a file writer on a schedule.

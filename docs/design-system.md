@@ -1,13 +1,3 @@
-**Project:** automation-ecosystem — Design System
-
-**Author:** Jason Deng
-
-**Date:** March 2026
-
-**Applies to:** Race Hub SPA · Dashboard SPA · WooCommerce (Flatsome theme)
-
----
-
 ## 1. Design Direction
 
 **Inspiration:** Goldwin (goldwin.co.jp) — Japanese performance apparel. Modern, minimal, premium. Let whitespace and typography signal quality rather than decoration.

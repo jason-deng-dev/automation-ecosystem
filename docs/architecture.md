@@ -1,15 +1,3 @@
-**Project:** automation-ecosystem
-
-**Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
-
-**Author:** Jason Deng
-
-**Date:** March 2026
-
-**Status:** In Development
-
----
-
 ## 1. What This Is
 
 running.moximoxi.net is a marathon platform targeting Chinese runners in China who see Japan as an aspirational race destination and Japanese running products as premium and authentic. The platform has four core destinations: a shop (`/shop/`), a race hub (`/racehub/`), marathon prep tools (`/mara-prep-tools/`), and a community (`/community/`).
@@ -22,9 +10,7 @@ Running the platform manually at scale is not viable. Three core operations — 
 
 ### 2.1 Content Creation Bottleneck — XHS Pipeline
 
-**Problem:** The platform's primary traffic channel is Xiaohongshu (XHS / RedNote). Building an audience requires consistent daily posts — race guides, training tips, nutrition breakdowns, gear recommendations. Writing, formatting, and publishing each post manually takes 1-2 hours. At daily cadence, this is unsustainable alongside other platform work.
-
-**Solution:** A fully automated content pipeline. Claude generates structured posts in the MOXI brand voice, calibrated against 115 manually written posts and 60k+ views of real performance data. Playwright publishes directly to XHS on a configurable daily schedule. Zero manual effort per post.
+**Problem:** The platform's primary traffic channel is Xiaohongshu (XHS / RedNote). Writing, formatting, and publishing each post manually takes 1-2 hours — unsustainable at daily cadence alongside other platform work.
 
 → See `services/xhs/docs/xhs-design-doc.md`
 
@@ -32,9 +18,7 @@ Running the platform manually at scale is not viable. Three core operations — 
 
 ### 2.2 Stale Race Data — Scraper + Race Hub
 
-**Problem:** The race hub is supposed to show upcoming Japanese marathons — registration windows, dates, locations, entry fees. This data changes constantly: new races open, deadlines pass, events are added. Updating it manually means either stale listings or hours of copy-paste per week.
-
-**Solution:** A weekly automated scraper pulls all upcoming race data from RunJapan and writes it to a shared data store. A persistent Race Hub server exposes this data via REST API. The race hub page on WordPress embeds a React SPA that fetches from the API — always showing live, current race listings with search, filter, and direct registration links.
+**Problem:** The race hub shows upcoming Japanese marathons — registration windows, dates, locations, entry fees. This data changes constantly and updating it manually means either stale listings or hours of copy-paste per week.
 
 → See `services/scraper/docs/scraper-design-doc.md` and `services/race-hub/docs/race-hub-design-doc.md`
 
@@ -42,9 +26,7 @@ Running the platform manually at scale is not viable. Three core operations — 
 
 ### 2.3 Manual Product Sourcing — Rakuten Aggregator
 
-**Problem:** The store sells Japanese running products sourced from Rakuten Ichiba. Every product currently requires: finding it on Rakuten, translating the name and description from Japanese to Chinese, calculating a sale price with margin and shipping, downloading images, and creating the WooCommerce listing by hand. This limits catalog size and makes scaling the store impossible.
-
-**Solution:** An automated pipeline that fetches top-ranked products from the Rakuten Ranking API, normalises and stores them permanently in PostgreSQL (URL-based deduplication), calculates prices using a configurable margin formula, and pushes them to WooCommerce. Translation is handled by TranslatePress + DeepL on first customer view in WordPress — not in the pipeline. A "request a product" flow lets customers trigger the pipeline in real time if they can't find what they need.
+**Problem:** The store sells Japanese running products sourced from Rakuten Ichiba. Every product currently requires finding it on Rakuten, calculating a sale price with margin and shipping, downloading images, and creating the WooCommerce listing by hand. This limits catalog size and makes scaling the store impossible.
 
 → See `services/rakuten/docs/rakuten-design-doc.md`
 
@@ -139,27 +121,7 @@ The shared volume is the communication bus between all containers. Pipelines wri
 
 ## 6. Dashboard
 
-The monitoring dashboard gives a non-technical operator full visibility and control over all three pipelines from a browser — no SSH, no terminal, no code changes required.
-
-**What the operator can see:**
-- Per-pipeline health cards on the home page (run state, last run, success rate, next scheduled run)
-- Live log stream from the XHS pipeline via SSE
-- Full run history for all pipelines (including failed runs, not just successes)
-- Post archive — all published XHS posts with full content
-- Rakuten catalog stats and import log
-
-**What the operator can configure:**
-- XHS posting schedule — per-day time slots and post types, applied at runtime without restart
-- Rakuten pricing — margins, shipping estimates, JPY→CNY rate, configurable per category
-
-**What the operator can trigger:**
-- Manual XHS post (with optional preview mode — generate without publishing)
-- Manual scrape run
-- Fetch more Rakuten products (category + count)
-- Retry failed WooCommerce imports
-
-**XHS session re-auth:**
-XHS sessions expire every few weeks. The operator clicks "Login to XHS" in the dashboard — the server spawns a Playwright browser, auto-navigates to the QR code login screen, and streams screenshots via SSE. The operator scans the QR code with their phone. Playwright detects the successful login, saves `auth.json` to the shared volume, and the pipeline resumes. No terminal access required.
+The monitoring dashboard gives a non-technical operator full visibility and control over all pipelines from a browser — no SSH, no terminal, no code changes required. Reads all pipeline state from the shared volume; writes config files that pipelines pick up at runtime.
 
 → See `services/dashboard/docs/dashboard-design-doc.md`
 

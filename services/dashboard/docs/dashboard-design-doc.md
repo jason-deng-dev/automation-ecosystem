@@ -1,13 +1,3 @@
-**Project:** Automation Pipeline Monitoring Dashboard
-
-**Author:** Jason Deng
-
-**Date:** March 2026
-
-**Status:** Planning — to be built after all three pipelines are operational
-
-<!-- --- -->
-
 ## 1. Problem Statement
 
 Three automation pipelines are running in production:
@@ -54,21 +44,6 @@ A unified monitoring dashboard gives a single place to check the health of all t
 ### XHS Pipeline
 - Posts generated per day
 - Post type distribution (race / training / nutrition / wearable)
-
----
-
-## 4. Claude-Assisted Error Resolution
-
-When a pipeline run fails, the dashboard feeds the error context (pipeline name, failed stage, error message, recent log lines) to Claude with a system prompt that gives it full knowledge of the pipeline architecture.
-
-Claude returns a plain-English explanation of what likely went wrong and a step-by-step fix — displayed directly in the dashboard. The operator follows the steps without needing to understand the underlying code.
-
-Example flow:
-1. XHS pipeline fails at publisher stage — `auth.json` session expired
-2. Dashboard detects failure, identifies error type
-3. Feeds error context to Claude
-4. Claude responds: "Your XHS session has expired. Click the **Login to XHS** button to refresh your session."
-5. Operator clicks the button, logs in via the embedded browser view, pipeline resumes
 
 ---
 
@@ -202,41 +177,31 @@ The home page shows one card per pipeline side by side, full height. Each card s
 - New lines appended as they arrive, auto-scrolls to bottom
 - Lines are colour-coded: errors in red, success messages in green, neutral in default
 
-### 8.3 XHS Authentication
-
-- Session status indicator on the XHS card:
-  - **Active** — last successful publish timestamp + estimated expiry (30 days from last login)
-  - **Expiring soon** — warning at <7 days remaining
-  - **Expired / failed** — error state with Login button prominently shown
-- When auth error is detected in the log stream, dashboard surfaces an alert banner prompting the operator to re-authenticate
-- **Login to XHS** button — triggers `POST /api/xhs/login`, spawns `xhs-login.js`, auto-navigates to QR code screen, streams screenshots via SSE so operator can scan the QR code without leaving the dashboard
-- On successful login, `auth.json` is saved on the server and the alert clears
-
-### 8.4 Key Metrics
+### 8.3 Key Metrics
 
 - Post type distribution (race / training / nutrition / wearable)
 - Last run timestamp + status
 
-### 8.5 Post Archive Viewer
+### 8.4 Post Archive Viewer
 
 - List of recent published posts pulled from `xhs/post_archive/`
 - Shows: title, post type, publish timestamp
 - Expandable to show full post content (hook, contents, cta)
 
-### 8.6 Manual Trigger
+### 8.5 Manual Trigger
 
 - "Run now" button — fires a post immediately outside the schedule
 - Post type dropdown to select what type to generate
 - **Preview mode** — checkbox to generate without publishing; output is shown in the dashboard for QA without consuming an XHS post slot
 - Useful for testing or one-off posts without modifying the schedule
 
-### 8.7 Run History
+### 8.6 Run History
 
 - Table of every run attempt, not just successful publishes
 - Columns: timestamp, post type, outcome (success / failed), error message if failed
 - Fills the gap left by `post_archive/` which only records successful posts — failed runs currently leave no trace
 
-### 8.8 Claude API Token Tracker
+### 8.7 Claude API Token Tracker
 
 - Tokens used per post (input + output) logged from the `usage` field on each API response
 - Cumulative tokens this week / this month
@@ -395,95 +360,7 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 
 ---
 
-## 13. System Architecture
-
-### Container Layout
-
-Five Docker containers, all on the same AWS Lightsail VPS, managed by a single `docker-compose.yml`:
-
-```
-┌──────────────────────────────── AWS Lightsail VPS ──────────────────────────────────────┐
-│                                                                                         │
-│  [Scraper container]  [Race Hub container]  [XHS container]    [Rakuten container]      │
-│   cron only            Express :3001         scheduler.js       cron: fetch pipeline    │
-│   scraper.js weekly    (always up)           generator.js       PostgreSQL              │
-│   no HTTP              serves races.json     publisher.js       Express :3002           │
-│          │             to WordPress               │             (internal only)         │
-│          │                   │                    │                    │                │
-│          ▼                   ▼                    ▼                    ▼                │
-│    ┌──────────────────────────────────────────────────────────────────────┐             │
-│    │                          shared volume                               │             │
-│    │                                                                      │             │
-│    │  scraper/                xhs/                    rakuten/            │             │
-│    │   races.json ←            run_log.json ←          run_log.json ←     │             │
-│    │   run_log.json ←          pipeline_state.json ←   product_stats.json←│             │
-│    │   pipeline_state.json ←   post_archive/ ←         import_log.json ←  │             │
-│    │                           post_history.json ←     config.json →      │             │
-│    │                           auth.json ←                                 │             │
-│    │                           config.json →                               │             │
-│    │                                                                      │             │
-│    │   ← pipeline writes          → dashboard writes                      │             │
-│    └───────────────────────────────────┬──────────────────────────────────┘             │
-│                                        │ reads all                                      │
-│                                        ▼                                                │
-│                      ┌───────────────────────────────────┐                              │
-│                      │        Dashboard container        │                              │
-│                      │  Next.js :3000 (PM2 + NGINX)      │                              │
-│                      │  App Router pages + API routes    │                              │
-│                      │  (operator-facing only)           │                              │
-│                      │  commands → Rakuten :3002         │                              │
-│                      └───────────────┬───────────────────┘                              │
-│                                      │                                                  │
-└──────────────────────────────────────┼──────────────────────────────────────────────────┘
-                                       │
-                                     HTTPS
-                                   (operator)
-                                       │
-                                       ▼
-                               [Operator browser]
-```
-
-**Note on Scraper vs Race Hub:** separated by single responsibility. The Scraper is a pure cron process — no HTTP server, no persistent process. The Race Hub container runs Express persistently (always up) and reads `scraper/races.json` from the shared volume to serve to WordPress. Either can be restarted or updated independently.
-
-**Note on Rakuten:** all passive state (run logs, catalog stats, import log) is written to the shared volume after each operation — dashboard reads it like everything else. Rakuten :3002 is only called by the dashboard for commands (trigger fetch, retry import) — never for reads.
-
-### Shared volume file ownership
-
-| File | Written by | Read by | Purpose |
-|---|---|---|---|
-| `scraper/races.json` | Scraper | XHS, Race Hub | Race data for XHS post generation + WordPress race hub |
-| `scraper/pipeline_state.json` | Scraper | Dashboard | Current scraper state — `{ state: "idle | running | failed" }` |
-| `scraper/run_log.json` | Scraper | Dashboard | Scrape run history — timestamp, races scraped, failure count, failed URLs, outcome |
-| `xhs/pipeline_state.json` | XHS | Dashboard | Current XHS state — `{ state: "idle | running | failed" }` |
-| `xhs/run_log.json` | XHS | Dashboard | Post run history — timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output |
-| `xhs/post_archive/` | XHS | Dashboard | Published post content (weekly JSON files keyed by ISO timestamp) |
-| `xhs/post_history.json` | XHS | XHS | Tracks which races have been posted — used to avoid re-posting the same race |
-| `xhs/auth.json` | XHS (xhs-login.js) | XHS (publisher.js) | XHS session cookies — mtime used by dashboard to derive session age |
-| `xhs/config.json` | Dashboard | XHS | Per-day post slots (time + post type) — XHS watches for changes and re-registers cron jobs at runtime |
-| `rakuten/run_log.json` | Rakuten | Dashboard | Run history — timestamp, operation (fetch/push), category, products_fetched, products_pushed, failures, outcome |
-| `rakuten/product_stats.json` | Rakuten | Dashboard | Total cached, total pushed, stale count, per-category breakdown (cached / pushed to WC) — rewritten after each run |
-| `rakuten/import_log.json` | Rakuten | Dashboard | Per-product WooCommerce push attempts — product_id, product_name, status (success/failed/skipped), error_message |
-| `rakuten/config.json` | Dashboard | Rakuten | Per-category: `margin_pct`, `shipping_cny`, `default_fetch_count`; global: `jpy_to_cny_rate`, `jpy_to_cny_updated`, `search_fill_threshold` |
-
-### XHS Script Invocation
-
-The dashboard invokes XHS scripts via `docker exec` in production. Locally, it calls `node` directly with the path to the script. Switched via `NODE_ENV`:
-
-| Action | Local | Production |
-|---|---|---|
-| Manual p  ost | `node ../../services/xhs/scripts/run-manualPost.js <type>` | `docker exec xhs node scripts/run-manualPost.js <type>` |
-| Preview | `node ../../services/xhs/scripts/run-preview.js <type>` | `docker exec xhs node scripts/run-preview.js <type>` |
-| Re-auth | `node ../../services/xhs/scripts/xhs-login.js` | `docker exec xhs node scripts/xhs-login.js` |
-
-Post type is passed as a positional argument (`process.argv[2]`). Preview mode returns the generated post as JSON via stdout — dashboard captures it with `execSync` or a child process pipe and parses it.
-
-### Key design principles
-
-- **Single instance, everything co-located** — one `docker-compose.yml` manages all five containers
-- **Shared volume is two-way** — pipelines write state (logs, output), dashboard writes config; pipelines watch their config files and adjust at runtime without restarting
-- **Commands vs reads** — dashboard reads state from shared volume; only calls internal APIs for triggering actions (Rakuten :3002 for fetch/retry, process spawning for XHS manual trigger)
-- **Two external-facing servers** — Race Hub :3001 (public, serves race data to WordPress) and Dashboard :3000 (operator-facing, auth-gated)
-- **Rakuten :3002 is internal only** — never exposed outside the Docker network
+→ See `docs/architecture.md` for container layout, shared volume ownership, and system design.
 
 ---
 
@@ -500,12 +377,3 @@ Post type is passed as a positional argument (`process.argv[2]`). Preview mode r
 - **Language switching:** No runtime toggle — UI language is controlled by `NEXT_PUBLIC_LANG` env var. Set to `zh` in production `.env`, defaults to `en` locally. Components import from `en.js` or `zh.js` vocab files and read from the right one at render time. No React context or client components needed.
 - **XHS login browser streaming: screenshot polling, not noVNC** — noVNC requires a VNC server (x11vnc) and virtual display (Xvfb) on the Lightsail instance — significant infrastructure overhead for a single use case. Screenshot polling via `page.screenshot()` every 2 seconds is sufficient because the only operator action is scanning a QR code with their phone. The navigation to the QR code screen is automated in `xhs-login.js` (click sequence is hardcoded), so the QR code is already showing by the time the first screenshot reaches the dashboard. Operator never needs to click or type inside the browser.
 
----
-
-## 14. Next Steps
-
-- Add action triggers to XHS and Scraper home cards (manual trigger, preview, re-auth)
-- Build Rakuten home card + controller
-- Build detail pages: XHS (schedule, run history, post archive, log stream), Scraper (races viewer, run history, failed URLs), Rakuten (catalog stats, import log, pricing config)
-- Poll or SSE to keep home cards live without page refresh
-- Docker + deploy

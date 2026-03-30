@@ -1,17 +1,3 @@
-**Project:** automation-ecosystem — XHS Pipeline
-
-**Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
-
-**GitHub:** [https://github.com/jason-deng-dev/automation-ecosystem](https://github.com/jason-deng-dev/automation-ecosystem) (`services/xhs/`)
-
-**Author:** Jason Deng
-
-**Date:** March 2026
-
-**Status:** In Development
-
----
-
 ## 1. Problem Statement
 
 ### 1.1 Context
@@ -580,27 +566,9 @@ POST https://api.anthropic.com/v1/messages
 }
 ```
 
-### 7.2 races.json Schema
+See `services/scraper/docs/scraper-design-doc.md` §3 for the full `races.json` schema.
 
-```json
-{
-  "races": [
-    {
-      "name": "东京马拉松2026",
-      "date": "2026-03-01",
-      "location": "Tokyo",
-      "prefecture": "東京都",
-      "distance": "42.195km",
-      "entry_fee": "¥15,700",
-      "url": "https://runjapan.jp/...",
-      "description": "..."
-    }
-  ],
-  "last_updated": "2026-03-17T00:00:00Z"
-}
-```
-
-### 7.3 pipeline_state.json Schema
+### 7.2 pipeline_state.json Schema
 
 Written to the shared volume so the Dashboard can poll current XHS run state without reading logs.
 
@@ -736,22 +704,9 @@ If the week file already exists, the new entry is merged into the existing objec
 
 ## 8. Implementation Phases
 
-### 8.1 Current Status
+See `docs/xhs-checklist.md` for current build status.
 
-|Component|Status|Notes|
-|---|---|---|
-|Manually written posts|✅ Done|115 posts — performance data extracted and analyzed|
-|Node.js project setup|✅ Done|npm init, node-cron + playwright installed, .gitignore + .env.example in place|
-|scraper.js (Scraper container)|✅ Done|Lives in `automation-ecosystem/scraper/` — see scraper design doc|
-|races.json (shared volume)|✅ Populated|Written by Scraper container; XHS container reads from shared volume at runtime|
-|generator.js|✅ Done|All post types wired; race selection + dedup; structured return; error handling; injectable deps for testing; template substitution guarded; axios-retry + Anthropic retries configured.|
-|formatter.js|🚫 Removed|Formatting is enforced via prompt structure — separate formatter step not needed|
-|scheduler.js|✅ Done|startScheduler() with weekly scraper cron (Mon 8am CST) and daily post cron (9pm CST); getPostType() 7-day rotation; error handling per cron; run-scheduler.js entry point|
-|publisher.js|❌ Not started|File does not exist yet|
-|Cron orchestration|❌ Not started|End-to-end pipeline not wired|
-
-
-### 8.2 Phase 1 — Core Generator (Priority: Ship before May 20)
+### 8.1 Phase 1 — Core Generator
 
 1. Fix `races.json`: raise `RUNJAPAN_RACES_LIMIT`, fix broken cron, wire WP sync
 2. Rebuild `generator.js` with Claude API integration
@@ -759,14 +714,14 @@ If the week file already exists, the new entry is merged into the existing objec
 4. Enforce data-derived title patterns in prompt instructions
 5. Test generation across all post types — validate Chinese quality and format compliance
 
-### 8.3 Phase 2 — Auto-Publishing
+### 8.2 Phase 2 — Auto-Publishing
 
 1. Build `publisher.js` with Playwright targeting XHS web client
 2. Implement two-step post flow: publish body → add comment with CTA URL
 3. Add human-like timing delays and session persistence to reduce bot detection risk
 4. Add retry logic and failure logging to `pipeline.log`
 
-### 8.4 Phase 3 — Full Pipeline Automation
+### 8.3 Phase 3 — Full Pipeline Automation
 
 1. Wire full cron: scrape → generate → format → publish in one shot
 2. Add `post_history.json` to track recent topics — inject as "do not repeat" context
@@ -851,14 +806,7 @@ Post type is passed as a positional argument (`process.argv[2]`) — e.g. `run-m
 
 **Preview mode:** When `--preview` is passed, the pipeline runs the full generation step (Claude API call, context building, race selection) but skips `publishPost()`. The generated post is written to `post_archive/` for operator review. `post_history.json` is not updated.
 
-**Auth refresh for non-technical operator:** When the XHS session expires, the operator clicks **"Login to XHS"** in the monitoring dashboard. The full flow is designed to require zero terminal access, zero SSH, and zero technical knowledge:
-
-1. Dashboard sends `POST /api/xhs/login` to the Dashboard Express server
-2. Server runs `docker exec xhs node scripts/xhs-login.js` — Playwright launches a headless browser and navigates to the XHS login page
-3. `xhs-login.js` automatically clicks through to the QR code sign-in screen (the click sequence is known and hardcoded — no operator interaction needed to reach the QR code)
-4. Server begins polling screenshots of the browser every 2 seconds and streaming them to the dashboard via SSE
-5. Dashboard displays the screenshot stream — operator sees the QR code and scans it with their phone
-6. Playwright detects the post-login redirect to the XHS home page, stops the screenshot stream, saves `auth.json` to the shared volume, returns success to the dashboard
+**Auth refresh for non-technical operator:** When the XHS session expires, the operator re-authenticates via the monitoring dashboard — no terminal access required. See `services/dashboard/docs/dashboard-design-doc.md` §5 for the full flow.
 7. Dashboard clears the auth alert
 
 **Why screenshot polling over noVNC:** noVNC requires a VNC server (e.g. x11vnc) and a virtual display (Xvfb) installed on the Lightsail instance — significant infrastructure overhead for a single use case. Screenshot polling requires nothing beyond Playwright's built-in `page.screenshot()`. The only interactive step in the XHS login flow is scanning the QR code with a phone — the operator never needs to click or type inside the browser. The navigation to the QR code screen is automated, making screenshot polling fully sufficient.

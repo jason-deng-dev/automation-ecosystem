@@ -27,3 +27,11 @@ export function bulkPush(){
 
 // 
 // update status of request product
+
+// rescrape: upsertProduct, check if url exists in DB compare info
+// rakuten_price, stock_status update if changed/skipo if not
+
+
+// logImport write success/fail/skipped per prodcut to import_log table after each Woocommerce push attempt
+
+// when rescraping, first scrape by ranking, then for items not updated increment missed_scrapes

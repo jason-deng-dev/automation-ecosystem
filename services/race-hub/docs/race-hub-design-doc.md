@@ -1,17 +1,3 @@
-**Project:** automation-ecosystem — Race Hub
-
-**Platform:** running.moximoxi.net — Japanese marathon platform for Chinese runners
-
-**GitHub:** [https://github.com/jason-deng-dev/automation-ecosystem](https://github.com/jason-deng-dev/automation-ecosystem) (`services/race-hub/`)
-
-**Author:** Jason Deng
-
-**Date:** March 2026
-
-**Status:** Not started
-
----
-
 ## 1. What This Is
 
 The Race Hub is a persistent Express server running as a Docker container on AWS Lightsail. It reads `races.json` from the shared Docker volume (written weekly by the Scraper container) and serves it to the WordPress site via REST API. A React SPA embedded in WordPress as a plugin fetches from this API and renders the race listings page.
@@ -217,54 +203,15 @@ The API always returns the full race payload — all `_zh` fields are included i
 
 ### 7.1 Distance Extraction from Unstructured Scraper Data
 
-**Challenge:** The scraper stores distance inside `info["Event/Eligibility"]` as inconsistent natural-language strings. There is no clean `distance` field — filtering by distance requires parsing these strings client-side in `extractDistance.js`.
+**Challenge:** The scraper stores distance inside `info["Event/Eligibility"]` as inconsistent natural-language strings — no clean `distance` field. Filtering by distance requires parsing these strings client-side in `extractDistance.js`.
 
 **Approach:**
 - On page load, after fetching `races.json`, run `extractDistance(races)` which maps each race to add a `distances: []` field
 - Scan the keys of `info["Event/Eligibility"]` for distance patterns
 - Categorise into buckets: **10K** (≤12km), **Half** (18–23km), **Full** (40–45km), **Ultra** (>45km), **Other** (no parseable distance)
 - Filter UI: quick-pick toggles (10K / Half / Full / Ultra) + custom km range input for uncategorised races
-
-**Parsing edge cases to handle (sourced from actual races.json scan):**
-
-*Units and spacing:*
-- `"16 km"` / `"5km"` / `"5 km"` — space between number and unit is optional
-- `"70k"` / `"KAI70k"` / `"14KM"` — `k` and `K` as shorthand for km
-- `"100mi (161km)"` — miles shorthand; prefer km equivalent if present, else convert (×1.60934)
-- `"500m"` / `"Parent-child run (500m)"` — metres, convert to km (÷1000)
-- `"Mini  2KM"` — multiple spaces between parts
-
-*Multiple values in one string:*
-- `"[Advanced class] 30km (GPS 24.5km)"` — two km values; pick the first (stated) not the GPS-corrected one
-- `"【50K】51.2km"` / `"【15K】16.7km"` — abbreviated label + exact value; use the exact numeric km
-- `"CASJ 90k - 86.7 km"` — abbreviated then exact; prefer exact
-
-*Named distances (no number):*
-- `"Full Marathon（Start time 8:30）"` / `"Full Marathon(42.195km)"` — infer 42.195 if no number present
-- `"Half Marathon"` / `"Half marathon (21.0975 km)"` — infer 21.0975 if no number present
-- `"Marathon―42.195KM"` — em-dash separator
-
-*Elevation and dates mixed in:*
-- `"20km/±2100m Sky TARO / May 4"` — strip elevation (`±`, `D+`, `/+`) and date portions, extract km only
-- `"3.5km/+700m Vertical TREKKING / May 3"` — same pattern
-- `"42.195km\n(certified)"` — newline/whitespace inside string, strip before parsing
-- `"【April 24】 FUJI100mi"` — full-width date bracket prefix, ignore date portion
-
-*Japanese formatting:*
-- Full-width brackets `【】` and parentheses `（）` — treat same as `[]` and `()`
-- Japanese comma `、` and middle dot `・` used as separators — ignore
-- `"15km (14.3km、D+361m)"` — Japanese comma in elevation notation
-
-*Distance after category label:*
-- `"Solo 18km"` — distance follows the category name, not precedes it
-- `"14KM: Pair"` — colon between distance and category
-
-*Time-based / non-distance keys:*
-- `"4-Hours Team"` / `"4-Hours Individual"` — time-based, no distance → classify race as Other
-- `"Fuji Hill Ride Tour – Plan A"` — bike event, no distance → Other
-- Keys with no parseable distance at all → skip, classify race as Other
-
-**Multi-distance races:** Show under all matching categories. `extractDistance` returns an array of all parsed distances per race; the filter uses `.some()`, so a race with both a 10K and a Full will match both buckets.
+- Multi-distance races appear under all matching buckets — `extractDistance` returns `distances: []` array, filter uses `.some()`
+- Edge cases (units, Japanese formatting, elevation mixed in, named distances) are documented in code comments inside `extractDistance.js`
 
 ---
 
