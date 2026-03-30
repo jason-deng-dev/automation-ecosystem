@@ -13,7 +13,8 @@ All source is TypeScript under `src/`. Key files:
 - `src/services/rakutenAPI.ts` — Rakuten API wrapper (keyword, genre, ranking fetch + normalization)
 - `src/services/pricing.ts` — margin formula (not yet built)
 - `src/services/woocommerce.ts` — WooCommerce REST API wrapper (not yet built)
-- `src/db/store.ts` — PostgreSQL product store (not yet built)
+- `src/db/pool.ts` — PostgreSQL connection pool (not yet built)
+- `src/db/queries.ts` — PostgreSQL product queries (not yet built)
 - `src/config/genres.ts` — Rakuten genre ID map
 - `src/config/config.ts` — per-category margin %, shipping estimate, JPY→CNY rate (not yet built)
 

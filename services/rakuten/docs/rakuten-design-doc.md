@@ -78,9 +78,14 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 - Used by rakutenAPI.ts to target specific product categories for ranking fetch
 - See Section 6 for full category structure
 
-#### db/store.ts (new)
+#### db/pool.ts (new)
 
-- PostgreSQL interface for permanent product storage
+- Creates and exports the PostgreSQL connection pool (pg `Pool`)
+- Imported by `queries.ts` — no query logic lives here
+
+#### db/queries.ts (new)
+
+- PostgreSQL interface for permanent product storage — imports pool from `pool.ts`
 - `getProductByUrl(url)` — check if product already exists (deduplication key)
 - `upsertProduct(product)` — insert new or update price/availability if changed
 - `getProductsByGenre(genreId)` — return stored products for a genre
@@ -187,42 +192,45 @@ TranslatePress translates on first view, caches in WordPress DB
 ### 4.2 PostgreSQL Schema
 
 ```sql
+CREATE DATABASE rakutenDB;
+
+CREATE TABLE categories (
+  id   SERIAL PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE subcategories (
+  id          SERIAL PRIMARY KEY,
+  name        TEXT,
+  genre_id    INTEGER,
+  category_id INTEGER REFERENCES categories(id)
+);
+
 CREATE TABLE products (
-  id               SERIAL PRIMARY KEY,
-  item_code        VARCHAR(255) UNIQUE NOT NULL,
-  rakuten_item_code VARCHAR(255),
-  name_ja          TEXT,
-  description_ja   TEXT,
-  images           JSONB,
-  rakuten_price    INTEGER,
-  sale_price       INTEGER,
-  cost_price       INTEGER,
-  shipping_estimate INTEGER,
-  margin_pct       DECIMAL(5,2),
-  genre_id         VARCHAR(50),
-  genre_name       VARCHAR(100),
-  category         VARCHAR(50),
-  stock_status     VARCHAR(20) DEFAULT 'instock',
-  rakuten_url      TEXT UNIQUE,
-  fetched_at       TIMESTAMP,
-  wc_product_id    INTEGER,
-  wc_pushed_at     TIMESTAMP,
-  created_at       TIMESTAMP DEFAULT NOW(),
-  updated_at       TIMESTAMP DEFAULT NOW(),
-  missed_scrapes   INTEGER DEFAULT 0
+  id             SERIAL PRIMARY KEY,
+  itemName       TEXT,
+  itemPrice      INTEGER,
+  itemCaption    TEXT,
+  itemURL        TEXT,
+  smallImageUrls JSONB,
+  mediumImageUrls JSONB,
+  reviewCount    INTEGER,
+  reviewAverage  DECIMAL(3,2),
+  shopName       TEXT,
+  shopCode       TEXT,
+  stock_status   BOOLEAN,
+  wc_product_id  TEXT,
+  wc_pushed_at   TIMESTAMP,
+  created_at     TIMESTAMP DEFAULT NOW(),
+  last_updated_at TIMESTAMP DEFAULT NOW(),
+  missed_scrapes INTEGER DEFAULT 0,
+  subcategory_id INTEGER REFERENCES subcategories(id)
 );
-
-CREATE TABLE import_log (
-  id            SERIAL PRIMARY KEY,
-  item_code     VARCHAR(255),
-  wc_product_id INTEGER,
-  status        VARCHAR(20), -- 'success', 'failed', 'skipped'
-  error_message TEXT,
-  imported_at   TIMESTAMP DEFAULT NOW()
-);
-
+```
 
 **Note:** No `name_zh`, `description_zh`, or `translated_at` columns — translation is handled entirely by TranslatePress in WordPress DB (MySQL), not in PostgreSQL.
+
+**Note:** `shipping_estimate` and `margin_pct` are not stored in PostgreSQL — they are calculated at push time via `pricing.ts` using per-category config and never need to be read back from the DB.
 
 ### 4.3 Pricing Formula
 
@@ -535,7 +543,8 @@ automation-ecosystem/rakuten/
 │   │   ├── pricing.ts            # Margin formula
 │   │   └── woocommerce.ts        # WooCommerce REST API wrapper
 │   ├── db/
-│   │   ├── store.ts              # PostgreSQL product store
+│   │   ├── pool.ts               # PostgreSQL connection pool
+│   │   ├── queries.ts            # PostgreSQL product queries
 │   │   └── schema.sql            # Table definitions
 │   └── config/
 │       └── genres.ts             # Rakuten genre ID map

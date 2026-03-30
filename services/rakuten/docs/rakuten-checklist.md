@@ -18,7 +18,7 @@ x
   - [x] Fill in missing genre IDs in `genres.ts`
 
 - [ ] PostgreSQL product store (`src/db/store.ts`)
-  - [ ] Run schema.sql — create products table
+  - [x] Run schema.sql — create products table
 
    - [ ] upsertProduct(product) — insert if new URL, update if price/availability changed, skip if unchanged
   - [ ] URL-based deduplication (rakuten_url as unique key — no TTL)
