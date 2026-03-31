@@ -18,18 +18,18 @@ x
   - [x] `config.ts` — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
   - [x] Fill in missing genre IDs in `genres.ts`
 
-- [ ] PostgreSQL product store
+- [x] PostgreSQL product store
   - [x] Write schema.sql — categories, subcategories, products tables
   - [x] Install pg
   - [x] `src/db/seed.ts` — creates tables + seeds categories/subcategories, runs against rakutenDB
   - [x] `src/db/pool.ts` — PostgreSQL connection pool
-  - [ ] `src/db/queries.ts`
+  - [x] `src/db/queries.ts`
     - [x] upsertProduct
-    - [ ] getProductByUrl
+    - [x] getProductByUrl
     - [x] getProductsByGenreId
     - [x] getProductsByCategory
-    - [ ] incrementMissedScrapes
-    - [ ] deleteStaleProducts
+    - [x] incrementMissedScrapes
+    - [x] deleteStaleProducts
 
 - [ ] Pricing (`src/services/pricing.ts`)
   - [ ] calculatePrice(product, category) — apply margin formula per design doc Section 4.3
