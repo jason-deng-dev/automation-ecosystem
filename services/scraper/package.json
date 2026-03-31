@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node run-scraper.js",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",

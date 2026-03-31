@@ -96,9 +96,8 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 #### pricing.ts (new)
 
-- `calculatePrice(rakutenPrice, options)` — applies margin formula
-- Returns `{ sale_price, cost_price, margin_pct, shipping_estimate }`
-- Configurable margin % and shipping estimate per category
+- `calculatePrice(price, category)` — applies markup formula: `(price * yenToYuan * (1 + markup)) + shipping`
+- Configurable markup % and shipping estimate per category, read from `shared_volume/rakuten/config.json`
 
 #### woocommerce.ts (new)
 
@@ -566,7 +565,7 @@ automation-ecosystem/rakuten/
 
 | File | Direction | Contains |
 |---|---|---|
-| `shared_volume/rakuten/config.json` | Dashboard writes → Rakuten reads | Per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold |
+| `shared_volume/rakuten/config.json` | Dashboard writes → Rakuten reads | Per-category markup %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold |
 | `shared_volume/rakuten/pipeline_state.json` | Rakuten writes → Dashboard reads | `{ state: "idle \| running \| failed" }` |
 | `shared_volume/rakuten/run_log.json` | Rakuten writes → Dashboard reads | Per-run: operation, category, products fetched/pushed, failures, stale products deleted |
 | `shared_volume/rakuten/product_stats.json` | Rakuten writes → Dashboard reads | Total cached, total pushed, per-category breakdown |

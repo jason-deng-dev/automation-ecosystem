@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
     "devPostGen": "node --watch src/generator.js",
     "start": "node scripts/run-scheduler.js"
   },
