@@ -16,6 +16,7 @@
 ---
 
 ## Phase 2 — Lightsail VPS Setup
+> Deferred — staying in code mode to finish rakuten CI and bot detection fixes first. Infrastructure work (Lightsail, Docker Hub, secrets) is a separate context switch.
 
 - [ ] Provision AWS Lightsail instance (Linux, Ubuntu 22.04, $10–20/mo plan)
 - [ ] SSH into instance and install Docker + Docker Compose
