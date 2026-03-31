@@ -84,12 +84,17 @@ export const getProductsByCategory = async(category: string) => {
 		WHERE categories.name = $1
 		`, [category])
 	return res.rows;
+};
 
-
+export const deleteStaleProducts = async() => {
+	const res = await pool.query(`
+		DELETE FROM products 
+		WHERE missed_scrapes >= 3
+		`)
+	return res.rowCount;
 
 };
 
-export const deleteStaleProducts = () => {};
-
 export const incrementMissedScrapes = () => {
+	
 }
