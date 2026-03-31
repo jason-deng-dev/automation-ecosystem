@@ -1,4 +1,4 @@
-            # automation-ecosystem
+# automation-ecosystem
 
 Automation infrastructure for [running.moximoxi.net](https://running.moximoxi.net) — a Japanese marathon platform for Chinese runners.
 
