@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Client } from "pg";
 const SQL = `
 DROP TABLE IF EXISTS products;
