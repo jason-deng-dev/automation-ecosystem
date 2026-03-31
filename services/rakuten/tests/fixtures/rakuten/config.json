@@ -1,10 +1,10 @@
 {
 	"markup": {
-		"Running Gear": 0,
-		"Training": 0,
-		"Nutrition & Supplements": 0,
-		"Recovery & Care": 0,
-		"Sportswear": 0
+		"Running Gear": 0.22,
+		"Training": 0.22,
+		"Nutrition & Supplements": 0.20,
+		"Recovery & Care": 0.20,
+		"Sportswear": 0.25
 	},
 	"shipping": {
 		"Running Gear": 120,
