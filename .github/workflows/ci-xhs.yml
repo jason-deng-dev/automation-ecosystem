@@ -1,0 +1,23 @@
+name: CI — xhs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'services/xhs/**'
+  pull_request:
+    paths:
+      - 'services/xhs/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: services/xhs
+      - run: npm test
+        working-directory: services/xhs
