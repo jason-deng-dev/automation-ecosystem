@@ -10,7 +10,6 @@ const category = {
 	Sportswear: [502027, 402463, 565743, 208118, 551942],
 };
 
-
 export const upsertProduct = async ({
 	itemName,
 	itemPrice,
@@ -42,23 +41,32 @@ export const upsertProduct = async ({
 			last_updated_at = NOW()
 		`,
 		[
-			itemName, itemPrice, itemCaption, itemUrl,
-			JSON.stringify(smallImageUrls), JSON.stringify(mediumImageUrls),
-			reviewCount, reviewAverage, shopName, shopCode, availability, genreId,
-		]
+			itemName,
+			itemPrice,
+			itemCaption,
+			itemUrl,
+			JSON.stringify(smallImageUrls),
+			JSON.stringify(mediumImageUrls),
+			reviewCount,
+			reviewAverage,
+			shopName,
+			shopCode,
+			availability,
+			genreId,
+		],
 	);
 };
 
-export const getProductByUrl =  async (url: string) => {
+export const getProductByUrl = async (url: string) => {
 	const res = await pool.query(
 		`
 		SELECT * FROM products 
 		WHERE itemURL = $1
-		`
-	, [url])
+		`,
+		[url],
+	);
 
-	return res.rows[0] ?? null
-
+	return res.rows[0] ?? null;
 };
 
 export const getProductsByGenreId = async (genreId: number) => {
@@ -68,33 +76,38 @@ export const getProductsByGenreId = async (genreId: number) => {
 		LEFT JOIN subcategories
 		ON products.subcategory_id = subcategories.id
 		WHERE subcategories.genre_id = $1;
-		`
-		, [genreId]
-	)
+		`,
+		[genreId],
+	);
 	return res.rows;
 };
 
-export const getProductsByCategory = async(category: string) => {
-	const res = await pool.query(`
+export const getProductsByCategory = async (category: string) => {
+	const res = await pool.query(
+		`
 		SELECT * FROM products
 		LEFT JOIN subcategories
 		ON products.subcategory_id = subcategories.id
 		LEFT JOIN categories
 		ON subcategories.category_id = categories.id
 		WHERE categories.name = $1
-		`, [category])
+		`,
+		[category],
+	);
 	return res.rows;
 };
 
-export const deleteStaleProducts = async() => {
+export const deleteStaleProducts = async () => {
 	const res = await pool.query(`
 		DELETE FROM products 
 		WHERE missed_scrapes >= 3
-		`)
+		`);
 	return res.rowCount;
-
 };
 
-export const incrementMissedScrapes = () => {
-	
-}
+export const incrementMissedScrapes = async () => {
+	await pool.query(`
+		UPDATE products
+		SET missed_scrapes = missed_scrapes + 1
+		`);
+};
