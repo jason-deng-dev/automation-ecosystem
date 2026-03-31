@@ -1,6 +1,10 @@
 import "dotenv/config";
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
-import fs from 'fs'
+import fs from "fs";
+import { calculatePrice } from "../services/pricing";
+import { DbItem } from "../utils";
+import { getSubcategoryNameByProductId } from "../db/queries";
+import wpCategoryIds from "../config/wpCategoryIds";
 
 const WooCommerce = new WooCommerceRestApi({
 	url: process.env.WP_URL!,
@@ -9,13 +13,7 @@ const WooCommerce = new WooCommerceRestApi({
 	version: "wc/v3",
 });
 
-const CATEGORIES = [
-	"Running Gear",
-	"Training",
-	"Nutrition & Supplements",
-	"Recovery & Care",
-	"Sportswear",
-];
+const CATEGORIES = ["Running Gear", "Training", "Nutrition & Supplements", "Recovery & Care", "Sportswear"];
 
 const SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Shoes", parent: "Running Gear" },
@@ -53,7 +51,6 @@ const SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Sportswear / Accessories", parent: "Sportswear" },
 ];
 
-// Returns map of category name → WC category ID
 async function setupCategories(): Promise<Record<string, number>> {
 	// Step 1 — create parent categories
 	const parentRes = await WooCommerce.post("products/categories/batch", {
@@ -77,7 +74,28 @@ async function setupCategories(): Promise<Record<string, number>> {
 		categoryIdMap[sub.name] = sub.id;
 	}
 
-
-    // { "Running Gear": 12, "Shoes": 34, ... }
+	// { "Running Gear": 12, "Shoes": 34, ... }
 	return categoryIdMap;
+}
+
+export async function pushProduct(product: DbItem, category: string) {
+	const price = calculatePrice(product.itemPrice, category);
+	const { name: subcategoryName } = await getSubcategoryNameByProductId(product.subcategory_id);
+
+	const data = {
+		name: product.itemName,
+		type: "simple",
+		regular_price: String(price),
+		description: product.itemCaption,
+		short_description: product.itemCaption,
+		categories: [
+			{
+				id: wpCategoryIds[subcategoryName],
+			},
+		],
+		images: product.mediumImageUrls.map(({ imageUrl }) => ({ src: imageUrl })),
+	};
+
+	const res = await WooCommerce.post("products", data);
+	return res.data.id;
 }

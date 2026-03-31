@@ -46,7 +46,7 @@ x
 - [ ] WooCommerce integration (`src/services/woocommerceAPI.ts`)
   - [x] setupCategories() — batch create parent categories then subcategories via WC REST API, returns name → WC ID map
   - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once by running setupCategories(), IDs are stable after creation
-  - [ ] pushProduct(product, category) — push single product via WooCommerce REST API, assign WC category + subcategory IDs, returns WC product ID → saved to wc_product_id in DB
+  - [x] pushProduct(product, category) — push single product via WooCommerce REST API, assign WC category + subcategory IDs, returns WC product ID → saved to wc_product_id in DB
   - [ ] removeProduct(wcProductId) — delete product from WooCommerce by WC product ID
   - [ ] bulkPush(products) — push multiple products, log each to import_log.json
   - [ ] Idempotency check by rakuten_url (not SKU)
