@@ -9,7 +9,7 @@
 - [x] Create `.github/workflows/` folder at repo root
 - [x] `ci-scraper.yml` — on push to `services/scraper/**`, run `npm test`
 - [x] `ci-xhs.yml` — on push to `services/xhs/**`, run `npm test`
-- [ ] Verify both workflows pass on GitHub (push a small change to trigger them)
+- [x] Verify both workflows pass on GitHub (push a small change to trigger them)
 - [ ] Write tests for `rakuten` service
 - [ ] `ci-rakuten.yml` — on push to `services/rakuten/**`, run `npm test`
 
