@@ -68,7 +68,7 @@ function mockAPICall() {
 				shopName: "アルペン楽天市場店",
 				shopCode: "alpen",
 				genreId: "509058",
-				tagIds: [Array],
+				tagIds: [],
 			},
 		},
 		{
@@ -90,8 +90,8 @@ function mockAPICall() {
 					"商品情報 ITEM DETAILS まるで羽のように軽い履き心地。KINVARA 15は、柔軟性とクッション性を兼ね備えた、デイリーランに最適なランニングシューズです。軽量で無駄のないデザインに、PWRRUNクッションとSRSソックライナーを搭載し、長距離でも快適に走れるサポート力を発揮します。",
 				itemUrl: "https://item.rakuten.co.jp/saucony/mens-kin-15/?rafcid=wsc_i_is_a59b19a1-7865-4250-ba83-cfced1d12053",
 				shopUrl: "https://www.rakuten.co.jp/saucony/?rafcid=wsc_i_is_a59b19a1-7865-4250-ba83-cfced1d12053",
-				smallImageUrls: [Array],
-				mediumImageUrls: [Array],
+				smallImageUrls: [],
+				mediumImageUrls: [],
 				affiliateUrl: "",
 				shopAffiliateUrl: "",
 				imageFlag: 1,
@@ -117,7 +117,7 @@ function mockAPICall() {
 				shopName: "Sauconyサッカニー公式楽天市場店",
 				shopCode: "saucony",
 				genreId: "509058",
-				tagIds: [Array],
+				tagIds: [],
 			},
 		},
 	];
