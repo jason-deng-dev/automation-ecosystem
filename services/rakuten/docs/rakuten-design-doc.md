@@ -564,6 +564,6 @@ automation-ecosystem/rakuten/
 |---|---|---|
 | `shared_volume/rakuten/config.json` | Dashboard writes → Rakuten reads | Per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold |
 | `shared_volume/rakuten/pipeline_state.json` | Rakuten writes → Dashboard reads | `{ state: "idle \| running \| failed" }` |
-| `shared_volume/rakuten/run_log.json` | Rakuten writes → Dashboard reads | Per-run: operation, category, products fetched/pushed, failures |
+| `shared_volume/rakuten/run_log.json` | Rakuten writes → Dashboard reads | Per-run: operation, category, products fetched/pushed, failures, stale products deleted |
 | `shared_volume/rakuten/product_stats.json` | Rakuten writes → Dashboard reads | Total cached, total pushed, per-category breakdown |
 | `shared_volume/rakuten/import_log.json` | Rakuten writes → Dashboard reads | Per-product WooCommerce push attempt and outcome |

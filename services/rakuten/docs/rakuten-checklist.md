@@ -61,7 +61,7 @@ x
   - [ ] Write run_log.json and product_stats.json to shared volume after each run
 
 - [ ] Shared volume output
-  - [ ] Write `rakuten/run_log.json` after each pipeline run (operation, category, products fetched/pushed, failures)
+  - [ ] Write `rakuten/run_log.json` after each pipeline run (operation, category, products fetched/pushed, failures, stale products deleted)
   - [ ] Write `rakuten/product_stats.json` after each run (total cached, total pushed, per-category breakdown)
   - [ ] Write `rakuten/import_log.json` per product WooCommerce push attempt and outcome
   - [ ] Read `rakuten/config.json` at runtime — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
