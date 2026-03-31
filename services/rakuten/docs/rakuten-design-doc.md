@@ -239,8 +239,10 @@ CREATE TABLE products (
 ### 4.3 Pricing Formula
 
 ```
-sale_price = ceil((rakuten_price + shipping_estimate) / (1 - margin_pct))
+sale_price = (rakuten_price * yenToYuan * (1 + markup)) + shipping_estimate
 ```
+
+**Note:** This is markup on cost (not margin on sale price) — confirmed by operator. A 20% markup means the sale price is 1.2× the converted cost, plus shipping.
 
 **Currency:** All sale prices are stored and displayed in CNY (Chinese Yuan). Rakuten prices are in JPY — conversion applies at calculation time using a configurable exchange rate.
 
@@ -248,7 +250,7 @@ sale_price = ceil((rakuten_price + shipping_estimate) / (1 - margin_pct))
 
 **Default values (placeholder — to be confirmed by operator):**
 
-|Category|Shipping Estimate (CNY)|Target Margin|
+|Category|Shipping Estimate (CNY)|Markup|
 |---|---|---|
 |Nutrition / Supplements|¥65|20%|
 |Running Gear|¥120|22%|
@@ -259,13 +261,15 @@ sale_price = ceil((rakuten_price + shipping_estimate) / (1 - margin_pct))
 **Example:**
 
 ```
-Rakuten price: ¥3,240 JPY → ~¥160 CNY (at ~0.049 rate)
+Rakuten price: ¥3,240 JPY
+Exchange rate: 0.049
 Shipping estimate: ¥65 CNY
-Margin: 20%
+Markup: 20%
 
-sale_price = ceil((160 + 65) / (1 - 0.20))
-           = ceil(225 / 0.80)
-           = ¥282 CNY
+sale_price = (3240 * 0.049 * 1.2) + 65
+           = (158.76 * 1.2) + 65
+           = 190.51 + 65
+           = ¥256 CNY
 ```
 
 ### 4.4 Express API Endpoints

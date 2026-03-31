@@ -31,9 +31,9 @@ x
     - [x] incrementMissedScrapes
     - [x] deleteStaleProducts
 
-- [ ] Pricing (`src/services/pricing.ts`)
-  - [ ] calculatePrice(product, category) — apply margin formula per design doc Section 4.3
-  - [ ] Load per-category config from pricing_config.ts
+- [x] Pricing (`src/services/pricing.ts`)
+  - [x] calculatePrice(price, category) — markup on cost formula: (price * yenToYuan * (1 + markup)) + shipping
+  - [x] Reads per-category markup + shipping + yenToYuan from shared volume config.json at startup
 
 - [ ] WooCommerce integration (`src/services/woocommerce.ts`)
   - [ ] pushProduct(product) — push single product via WooCommerce REST API
