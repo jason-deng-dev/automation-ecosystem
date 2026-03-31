@@ -189,4 +189,4 @@ interface RakutenDbQueryItem {
 	availability: number;
 }
 
-export { RakutenResponseItem, normalizeItems, RakutenDbQueryItem};
+export { RakutenResponseItem, normalizeItems, RakutenDbQueryItem, mockAPICall};

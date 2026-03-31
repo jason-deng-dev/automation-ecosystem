@@ -74,9 +74,3 @@ export const getProductsByRankingGenre = async (
 	}
 };
 
-
-
-
-(async ()=> {
-	console.log(await getProductsByRankingGenre(402463, 100));
-} )();
