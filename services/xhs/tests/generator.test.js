@@ -32,6 +32,7 @@ function makeMockClient(type) {
 		messages: {
 			create: vi.fn().mockResolvedValue({
 				content: [{ text: JSON.stringify(mockApiResponse[type]) }],
+				usage: { input_tokens: 100, output_tokens: 100 },
 			}),
 		},
 	};
@@ -43,9 +44,10 @@ function makeMockClientRace() {
 		messages: {
 			create: vi
 				.fn()
-				.mockResolvedValueOnce({ content: [{ text: raceName }] })
+				.mockResolvedValueOnce({ content: [{ text: raceName }], usage: { input_tokens: 100, output_tokens: 100 } })
 				.mockResolvedValueOnce({
 					content: [{ text: JSON.stringify(mockApiResponse.race) }],
+					usage: { input_tokens: 100, output_tokens: 100 },
 				}),
 		},
 	};
@@ -53,7 +55,7 @@ function makeMockClientRace() {
 
 afterAll(() => {
 	fs.writeFileSync(
-		path.resolve(__dirname, "../data/post_history.json"),
+		path.resolve(__dirname, "./fixtures/xhs/post_history.json"),
 		JSON.stringify([], null, 2),
 	);
 });
