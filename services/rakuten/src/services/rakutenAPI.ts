@@ -2,7 +2,7 @@ import "dotenv/config";
 import fs from 'fs';
 import { normalizeItems, RakutenResponseItem } from "../utils";
 
-const file = fs.readFileSync("/")
+
 
 export const getProductsByKeyword = async (keyword: string, count: number, sortMode: string = 'standard') => {
 	const translatedKeyword = keyword;

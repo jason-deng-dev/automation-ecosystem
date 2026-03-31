@@ -99,10 +99,11 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 - `calculatePrice(price, category)` — applies markup formula: `(price * yenToYuan * (1 + markup)) + shipping`
 - Configurable markup % and shipping estimate per category, read from `shared_volume/rakuten/config.json`
 
-#### woocommerce.ts (new)
+#### woocommerceAPI.ts (new)
 
 - Wraps WooCommerce REST API (Consumer Key + Consumer Secret auth)
-- `pushProduct(product)` — creates single WooCommerce product
+- `setupCategories()` — creates parent categories + subcategories via WC REST API on first run, returns a map of name → WC category ID used when pushing products
+- `pushProduct(product)` — creates single WooCommerce product, assigns WC category + subcategory IDs for filtering
 - `pushBulk(products)` — sequential bulk push with per-item result logging
 - `checkExists(sku)` — checks if product already exists by SKU before pushing
 - Maps internal product schema to WooCommerce product fields (Japanese text — TranslatePress handles translation)
@@ -548,7 +549,7 @@ automation-ecosystem/rakuten/
 │   ├── services/
 │   │   ├── rakutenAPI.ts         # Rakuten API wrapper
 │   │   ├── pricing.ts            # Margin formula
-│   │   └── woocommerce.ts        # WooCommerce REST API wrapper
+│   │   └── woocommerceAPI.ts        # WooCommerce REST API wrapper
 │   ├── db/
 │   │   ├── pool.ts               # PostgreSQL connection pool
 │   │   ├── queries.ts            # PostgreSQL product queries
@@ -566,6 +567,7 @@ automation-ecosystem/rakuten/
 | File | Direction | Contains |
 |---|---|---|
 | `shared_volume/rakuten/config.json` | Dashboard writes → Rakuten reads | Per-category markup %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold |
+| `src/config/wpCategoryIds.ts` | Static — generated once by setupCategories() | WooCommerce category name → ID map, hardcoded after initial run, IDs are stable |
 | `shared_volume/rakuten/pipeline_state.json` | Rakuten writes → Dashboard reads | `{ state: "idle \| running \| failed" }` |
 | `shared_volume/rakuten/run_log.json` | Rakuten writes → Dashboard reads | Per-run: operation, category, products fetched/pushed, failures, stale products deleted |
 | `shared_volume/rakuten/product_stats.json` | Rakuten writes → Dashboard reads | Total cached, total pushed, per-category breakdown |

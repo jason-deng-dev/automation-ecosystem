@@ -43,8 +43,10 @@ x
   - [x] pricing.test.ts — all 5 categories, edge cases (price=0, large price), invalid category → NaN
   - [x] utils.test.ts — normalizeItems field mapping, schema shape, strips non-schema fields
 
-- [ ] WooCommerce integration (`src/services/woocommerce.ts`)
-  - [ ] pushProduct(product) — push single product via WooCommerce REST API
+- [ ] WooCommerce integration (`src/services/woocommerceAPI.ts`)
+  - [x] setupCategories() — batch create parent categories then subcategories via WC REST API, returns name → WC ID map
+  - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once by running setupCategories(), IDs are stable after creation
+  - [ ] pushProduct(product) — push single product via WooCommerce REST API, assign WC category + subcategory IDs
   - [ ] bulkPush(products) — push multiple products, log each to import_log.json
   - [ ] Idempotency check by rakuten_url (not SKU)
 
