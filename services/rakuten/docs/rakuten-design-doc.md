@@ -87,8 +87,9 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 - PostgreSQL interface for permanent product storage — imports pool from `pool.ts`
 - `getProductByUrl(url)` — check if product already exists (deduplication key)
-- `upsertProduct(product)` — insert new or reset missed_scrapes to 0 if returned by ranking
-- `getProductsByGenre(genreId)` — return stored products for a genre
+- `upsertProduct(product)` — insert new product, or on URL conflict: update `itemPrice`, `availability`, `last_updated_at`, reset `missed_scrapes` to 0
+- `getProductsBySubcategory(subcategoryId)` — return stored products for a subcategory
+- `getProductsByCategory(categoryId)` — return stored products for a category
 - `incrementAllMissedScrapes()` — run before each scrape: increments `missed_scrapes` by 1 for all products
 - `upsertProduct(product)` — resets `missed_scrapes = 0` for any product returned by the ranking
 - `deleteStaleProducts()` — run after each scrape: deletes products where `missed_scrapes >= 3`

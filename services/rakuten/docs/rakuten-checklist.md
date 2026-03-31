@@ -23,7 +23,13 @@ x
   - [x] Install pg
   - [x] `src/db/seed.ts` — creates tables + seeds categories/subcategories, runs against rakutenDB
   - [x] `src/db/pool.ts` — PostgreSQL connection pool
-  - [ ] `src/db/queries.ts` — upsertProduct, getProductByUrl, getProductsByGenre, incrementAllMissedScrapes, deleteStaleProducts
+  - [ ] `src/db/queries.ts`
+    - [x] upsertProduct
+    - [ ] getProductByUrl
+    - [ ] getProductsBySubcategory
+    - [ ] getProductsByCategory
+    - [ ] incrementMissedScrapes
+    - [ ] deleteStaleProducts
 
 - [ ] Pricing (`src/services/pricing.ts`)
   - [ ] calculatePrice(product, category) — apply margin formula per design doc Section 4.3
