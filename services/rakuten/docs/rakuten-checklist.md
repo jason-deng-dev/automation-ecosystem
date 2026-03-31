@@ -21,7 +21,7 @@ x
 - [ ] PostgreSQL product store
   - [x] Write schema.sql — categories, subcategories, products tables
   - [x] Install pg
-  - [x] Run schema.sql against rakutenDB
+  - [x] `src/db/seed.ts` — creates tables + seeds categories/subcategories, runs against rakutenDB
   - [x] `src/db/pool.ts` — PostgreSQL connection pool
   - [ ] `src/db/queries.ts` — upsertProduct, getProductByUrl, getProductsByGenre, incrementAllMissedScrapes, deleteStaleProducts
 

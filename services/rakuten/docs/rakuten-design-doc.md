@@ -548,7 +548,8 @@ automation-ecosystem/rakuten/
 │   ├── db/
 │   │   ├── pool.ts               # PostgreSQL connection pool
 │   │   ├── queries.ts            # PostgreSQL product queries
-│   │   └── schema.sql            # Table definitions
+│   │   ├── seed.ts               # Creates tables + seeds categories/subcategories (replaces schema.sql)
+│   │   └── schema.sql            # Original table definitions (superseded by seed.ts)
 │   └── config/
 │       └── genres.ts             # Rakuten genre ID map
 ├── dist/                         # Compiled JS output (tsc)
