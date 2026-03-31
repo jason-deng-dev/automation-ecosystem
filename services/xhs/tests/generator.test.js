@@ -15,7 +15,7 @@ const mockApiResponse = JSON.parse(
 );
 const races = JSON.parse(
 	fs.readFileSync(
-		path.resolve(__dirname, "./fixtures/sample-races.json"),
+		path.resolve(__dirname, "./fixtures/scraper/races.json"),
 		"utf-8",
 	),
 );
