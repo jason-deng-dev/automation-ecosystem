@@ -46,7 +46,8 @@ x
 - [ ] WooCommerce integration (`src/services/woocommerceAPI.ts`)
   - [x] setupCategories() — batch create parent categories then subcategories via WC REST API, returns name → WC ID map
   - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once by running setupCategories(), IDs are stable after creation
-  - [ ] pushProduct(product) — push single product via WooCommerce REST API, assign WC category + subcategory IDs
+  - [ ] pushProduct(product, category) — push single product via WooCommerce REST API, assign WC category + subcategory IDs, returns WC product ID → saved to wc_product_id in DB
+  - [ ] removeProduct(wcProductId) — delete product from WooCommerce by WC product ID
   - [ ] bulkPush(products) — push multiple products, log each to import_log.json
   - [ ] Idempotency check by rakuten_url (not SKU)
 
@@ -68,6 +69,7 @@ x
 - [ ] Weekly auto-sync cron
   - [ ] Fetch top-ranked products per category via Ranking API
   - [ ] Re-scrape upsert — skip unchanged, update if price changed, insert if new URL
+  - [ ] For each stale product (missed_scrapes >= 3): call removeProduct(wc_product_id) → then deleteStaleProducts from DB
   - [ ] Write run_log.json and product_stats.json to shared volume after each run
 
 - [ ] Shared volume output

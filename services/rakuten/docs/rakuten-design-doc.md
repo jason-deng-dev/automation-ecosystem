@@ -223,7 +223,7 @@ CREATE TABLE products (
   shopName       TEXT,
   shopCode       TEXT,
   availability   INTEGER,
-  wc_product_id  TEXT,
+  wc_product_id  INTEGER,
   wc_pushed_at   TIMESTAMP,
   created_at     TIMESTAMP DEFAULT NOW(),
   last_updated_at TIMESTAMP DEFAULT NOW(),
