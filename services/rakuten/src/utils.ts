@@ -175,18 +175,18 @@ interface RakutenResponseItem {
 }
 
 interface RakutenDbQueryItem {
-	// itemName: string;
-	// itemPrice: number;
-	// itemCaption: string;
-	// itemUrl: string;
-	// smallImageUrls: Array<{ imageUrl: string }>;
-	// mediumImageUrls: Array<{ imageUrl: string }>;
-	// reviewCount: number;
-	// reviewAverage: number;
-	// shopName: string;
-	// shopCode: string;
-	// genreId: string;
-	// availability: number;
+	itemName: string;
+	itemPrice: number;
+	itemCaption: string;
+	itemUrl: string;
+	smallImageUrls: Array<{ imageUrl: string }>;
+	mediumImageUrls: Array<{ imageUrl: string }>;
+	reviewCount: number;
+	reviewAverage: number;
+	shopName: string;
+	shopCode: string;
+	genreId: string;
+	availability: number;
 }
 
 export { RakutenResponseItem, normalizeItems, RakutenDbQueryItem};
