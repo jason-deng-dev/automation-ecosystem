@@ -26,8 +26,8 @@ x
   - [ ] `src/db/queries.ts`
     - [x] upsertProduct
     - [ ] getProductByUrl
-    - [ ] getProductsBySubcategory
-    - [ ] getProductsByCategory
+    - [x] getProductsByGenreId
+    - [x] getProductsByCategory
     - [ ] incrementMissedScrapes
     - [ ] deleteStaleProducts
 

@@ -10,7 +10,7 @@ const category = {
 	Sportswear: [502027, 402463, 565743, 208118, 551942],
 };
 
-// pool is connection to our db
+
 export const upsertProduct = async ({
 	itemName,
 	itemPrice,
@@ -49,8 +49,47 @@ export const upsertProduct = async ({
 	);
 };
 
-export const getProductByUrl = () => {};
+export const getProductByUrl =  async (url: string) => {
+	const res = await pool.query(
+		`
+		SELECT * FROM products 
+		WHERE itemURL = $1
+		`
+	, [url])
 
-export const getProductsByGenre = () => {};
+	return res.rows[0] ?? null
+
+};
+
+export const getProductsByGenreId = async (genreId: number) => {
+	const res = await pool.query(
+		`
+		SELECT * FROM products
+		LEFT JOIN subcategories
+		ON products.subcategory_id = subcategories.id
+		WHERE subcategories.genre_id = $1;
+		`
+		, [genreId]
+	)
+	return res.rows;
+};
+
+export const getProductsByCategory = async(category: string) => {
+	const res = await pool.query(`
+		SELECT * FROM products
+		LEFT JOIN subcategories
+		ON products.subcategory_id = subcategories.id
+		LEFT JOIN categories
+		ON subcategories.category_id = categories.id
+		WHERE categories.name = $1
+		`, [category])
+	return res.rows;
+
+
+
+};
 
 export const deleteStaleProducts = () => {};
+
+export const incrementMissedScrapes = () => {
+}
