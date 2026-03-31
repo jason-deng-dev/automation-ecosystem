@@ -1,6 +1,7 @@
 name: CI — scraper
 
 on:
+  workflow_dispatch:  # adds a "Run workflow" button on GitHub
   push:
     paths:
       - 'services/scraper/**'
