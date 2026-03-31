@@ -1,4 +1,4 @@
-function mockAPICall() {
+export function mockAPICall() {
 	return [
 		{
 			Item: {
@@ -123,7 +123,7 @@ function mockAPICall() {
 	];
 }
 
-function normalizeItems(items: RakutenResponseItem[]) {
+export function normalizeItems(items: RakutenResponseItem[]) {
 	return items.map(
 		({
 			Item: {
@@ -157,7 +157,7 @@ function normalizeItems(items: RakutenResponseItem[]) {
 	);
 }
 
-interface RakutenResponseItem {
+export interface RakutenResponseItem {
 	Item: {
 		itemName: string;
 		itemPrice: number | string;
@@ -174,7 +174,7 @@ interface RakutenResponseItem {
 	};
 }
 
-interface RakutenDbQueryItem {
+export interface RakutenDbQueryItem {
 	itemName: string;
 	itemPrice: number;
 	itemCaption: string;
@@ -189,4 +189,25 @@ interface RakutenDbQueryItem {
 	availability: number;
 }
 
-export { RakutenResponseItem, normalizeItems, RakutenDbQueryItem, mockAPICall};
+export interface DbItem {
+	id: number;
+	itemName: string;
+	itemPrice: number;
+	itemCaption: string;
+	itemUrl: string;
+	smallImageUrls: Array<{ imageUrl: string }>;
+	mediumImageUrls: Array<{ imageUrl: string }>;
+	reviewCount: number;
+	reviewAverage: number;
+	shopName: string;
+	shopCode: string;
+	availability: number;
+	wc_product_id: number | null;
+	wc_pushed_at: Date | null;
+	created_at: Date;
+	last_updated_at: Date;
+	missed_scrapes: number;
+	subcategory_id: number;
+}
+
+
