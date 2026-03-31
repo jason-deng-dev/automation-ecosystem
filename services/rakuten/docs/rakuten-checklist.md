@@ -34,6 +34,14 @@ x
 - [x] Pricing (`src/services/pricing.ts`)
   - [x] calculatePrice(price, category) — markup on cost formula: (price * yenToYuan * (1 + markup)) + shipping
   - [x] Reads per-category markup + shipping + yenToYuan from shared volume config.json at startup
+  - [x] Rounds up to nearest 5 CNY
+
+- [x] Tests (`tests/`)
+  - [x] Install Vitest
+  - [x] vitest.config.js — sets DATA_DIR to tests/fixtures for CI
+  - [x] tests/fixtures/rakuten/config.json — test fixture with realistic markup values
+  - [x] pricing.test.ts — all 5 categories, edge cases (price=0, large price), invalid category → NaN
+  - [x] utils.test.ts — normalizeItems field mapping, schema shape, strips non-schema fields
 
 - [ ] WooCommerce integration (`src/services/woocommerce.ts`)
   - [ ] pushProduct(product) — push single product via WooCommerce REST API
