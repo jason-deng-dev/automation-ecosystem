@@ -22,7 +22,7 @@ CREATE TABLE
         itemName TEXT,
         itemPrice INTEGER,
         itemCaption TEXT,
-        itemURL TEXT,
+        itemURL TEXT UNIQUE,
         smallImageUrls JSONB,
         mediumImageUrls JSONB,
         reviewCount INTEGER,
