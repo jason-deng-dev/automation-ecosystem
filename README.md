@@ -1,4 +1,4 @@
-# automation-ecosystem
+            # automation-ecosystem
 
 Automation infrastructure for [running.moximoxi.net](https://running.moximoxi.net) — a Japanese marathon platform for Chinese runners.
 
@@ -22,7 +22,7 @@ All five services run on a single AWS Lightsail VPS managed by one `docker-compo
 
 ## Architecture
 
-![Ecosystem Architecture](docs/architecture/ecosystem/image.png)
+![Ecosystem Architecture](docs/diagram/ecosystem/image.png)
 
 ```
 ┌──────────────────────────────── AWS Lightsail VPS ──────────────────────────────────────┐
