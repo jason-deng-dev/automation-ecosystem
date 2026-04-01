@@ -133,3 +133,13 @@ export const getSubcategoryNameByProductId = async (product_id: number) => {
 	);
 	return res.rows[0];
 };
+
+export const updateWoocommerceProductId = async (product_id:number, woocommerce_product_id:number)=> {
+	await pool.query(
+		`
+		UPDATE products
+		SET wc_product_id = $1, wc_pushed_at = NOW()
+		WHERE id = $2
+		`, [woocommerce_product_id, product_id]
+	)
+}
