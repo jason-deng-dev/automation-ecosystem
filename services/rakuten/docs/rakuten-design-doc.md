@@ -444,7 +444,29 @@ WooCommerce search finds products natively (Chinese names stored, Chinese keywor
 - On completion: "Your product is ready — [View Product]" link to WooCommerce product page
 - On failure: "We couldn't find that product on Rakuten. Try a different search term."
 
-### 9.4 Implementation Notes
+### 9.4 Claude Quality Check
+
+Before fetching from Rakuten, the keyword is validated and categorized via two sequential Claude API calls:
+
+**Stage 1 — Validity check:**
+- Input: raw keyword (in Chinese, as submitted by customer)
+- Prompt: ask Claude if the keyword is relevant to running, fitness, or sports nutrition
+- Output: yes / no
+- If no → abort early, return error to customer ("We don't carry that type of product")
+- Rationale: fail fast before any Rakuten API call, no wasted tokens on category lookup for invalid requests
+
+**Stage 2 — Category assignment (only if stage 1 passes):**
+- Input: same keyword
+- Prompt: ask Claude which of our subcategories best fits this keyword (provide the full subcategory list)
+- Output: subcategory name (must match a name in our subcategory map)
+- Used to assign `subcategory_id` when inserting the product into PostgreSQL
+
+**Why Claude for this:**
+- Keyword search returns products from any Rakuten genre — genre ID alone can't map to our category tree
+- A quality gate is required regardless to prevent off-theme products entering the store
+- Combining validity + category assignment in two focused calls is cheaper than one large call with complex output
+
+### 9.5 Implementation Notes
 
 - WordPress shortcode added to WooCommerce search results page — no custom storefront needed
 - The progress indicator is a small embedded JS snippet that connects to the SSE stream
