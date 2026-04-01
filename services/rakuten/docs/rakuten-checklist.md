@@ -24,12 +24,14 @@ x
   - [x] `src/db/seed.ts` — creates tables + seeds categories/subcategories, runs against rakutenDB
   - [x] `src/db/pool.ts` — PostgreSQL connection pool
   - [x] `src/db/queries.ts`
-    - [x] upsertProduct — returns array of newly inserted itemURLs (RETURNING itemURL, xmax=0 filter)
-    - [x] getProductByUrls(URLs: string[]) — fetch multiple products by URL array (WHERE itemURL = ANY($1))
+    - [x] upsertProduct(product) — returns [itemURL] if inserted, [] if updated (RETURNING itemURL, xmax=0 filter)
+    - [x] upsertProducts(products[]) — loops upsertProduct, returns flat array of newly inserted URLs
+    - [x] getProductByUrls(URLs: string[]) — fetch multiple products by URL array, joins categories to return categoryName
     - [x] getProductsByGenreId
     - [x] getProductsByCategory
     - [x] incrementMissedScrapes
     - [x] deleteStaleProducts
+    - [x] updateWoocommerceProductId(product_id, wc_product_id) — sets wc_product_id + wc_pushed_at = NOW()
 
 - [x] Pricing (`src/services/pricing.ts`) → §4.3 Pricing Formula
   - [x] calculatePrice(price, category) — markup on cost formula: (price * yenToYuan * (1 + markup)) + shipping
@@ -46,9 +48,9 @@ x
 - [ ] WooCommerce integration (`src/services/woocommerceAPI.ts`) → §5 WooCommerce Integration, §3.2
   - [x] setupCategories() — batch create parent categories then subcategories via WC REST API, returns name → WC ID map
   - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once by running setupCategories(), IDs are stable after creation
-  - [x] pushProduct(product, category) — push single product via WooCommerce REST API, assign WC category + subcategory IDs, returns WC product ID → saved to wc_product_id in DB
+  - [x] pushProduct(product) — push single product via WooCommerce REST API, derives category from product.categoryName, returns WC product ID
+  - [x] pushProducts(products[]) — loops pushProduct, calls updateWoocommerceProductId after each successful push
   - [ ] removeProduct(wcProductId) — delete product from WooCommerce by WC product ID
-  - [ ] bulkPush(products) — push multiple products, log each to import_log.json
   - [ ] Idempotency check by rakuten_url (not SKU)
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
