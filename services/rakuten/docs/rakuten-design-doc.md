@@ -28,7 +28,7 @@ Product ingestion needs to be:
 ### 1.4 Non-Goals
 
 - Custom React SPA storefront — WooCommerce is the storefront
-- Pipeline-level translation (deepl.js) — TranslatePress handles this on the WordPress side
+- Pipeline-level translation for bulk products — TranslatePress handles this lazily on the WordPress side. **Exception:** the product request flow translates name + description in the pipeline (DeepL JA → ZH) before pushing, since these products are guaranteed to be viewed immediately (see §9)
 - Real-time price sync after initial WooCommerce import (v1 is import-only, re-scrape updates changed prices)
 - Sourcing products from marketplaces other than Rakuten in v1
 
@@ -412,21 +412,28 @@ When a customer searches the WooCommerce store and can't find a product, a promi
 
 ### 9.2 Flow
 
+**Approach:** Always fetch X products fresh from Rakuten — no DB fill calculation. Products aren't indexed by keyword in PostgreSQL so there's no reliable way to count existing matches for a given search term. Rakuten's search handles relevance; we push whatever it returns.
+
+**Translation:** Unlike bulk products (TranslatePress lazy on first customer view), request flow products are pipeline-translated via DeepL (JA → ZH) before pushing to WooCommerce. These products are guaranteed to be viewed immediately so lazy translation would leave the customer seeing Japanese on arrival. Pipeline translation also means WooCommerce stores Chinese names, so `/shop/?s={keywordZH}` finds them natively — no TranslatePress search integration needed.
+
 ```
-Customer submits product request (keyword)
+Customer submits product request (keyword in Chinese)
     ↓  POST /api/request-product
 Express API:
-  1. Search Rakuten by keyword
-  2. Normalize top result
-  3. Calculate price via pricing formula
-  4. Push to WooCommerce via REST API (image sideloading is the bottleneck)
-  5. Store in PostgreSQL
+  1. Translate keyword ZH → JA via DeepL (Rakuten Search API needs Japanese)
+  2. Fetch X products from Rakuten Keyword Search API
+  3. For each product:
+      a. Check rakuten_url in PostgreSQL (idempotency — skip if already exists)
+      b. New product → normalize → calculate price
+      c. Translate name + description JA → ZH via DeepL
+      d. Push to WooCommerce (with Chinese name/description)
+      e. Store in PostgreSQL
+      f. Emit SSE progress update
     ↓  ~1-2 minutes total
-Return WooCommerce product URL
+SSE "done" event sends link: /shop/?s={keywordZH}
     ↓
-On-page progress indicator → "Ready!" with link to product
-Customer clicks through to WooCommerce product page
-TranslatePress translates on first view, caches in WordPress DB
+On-page indicator → "Products are ready!" → customer clicks through to pre-searched results page
+WooCommerce search finds products natively (Chinese names stored, Chinese keyword searched)
 ```
 
 ### 9.3 On-Page Progress Indicator
@@ -441,6 +448,9 @@ TranslatePress translates on first view, caches in WordPress DB
 
 - WordPress shortcode added to WooCommerce search results page — no custom storefront needed
 - The progress indicator is a small embedded JS snippet that connects to the SSE stream
+- Pipeline translation (DeepL) only applies to the request flow — bulk products still use TranslatePress lazy translation since they may never be viewed
+- Two DeepL calls per request: (1) keyword ZH → JA for Rakuten search, (2) product name + description JA → ZH before WooCommerce push
+- WooCommerce search works natively because Chinese names are stored directly — no TranslatePress search integration required
 
 ---
 
