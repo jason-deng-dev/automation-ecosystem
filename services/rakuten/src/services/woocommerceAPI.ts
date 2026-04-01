@@ -51,7 +51,45 @@ const SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Sportswear / Accessories", parent: "Sportswear" },
 ];
 
-async function setupCategories(): Promise<Record<string, number>> {
+// Parent category WC IDs — stable after initial setupCategories() run
+const PARENT_CATEGORY_IDS: Record<string, number> = {
+	"Running Gear": 252,
+	"Training": 253,
+	"Nutrition & Supplements": 254,
+	"Recovery & Care": 255,
+	"Sportswear": 256,
+};
+
+const NEW_SUBCATEGORIES: { name: string; parent: string }[] = [
+	{ name: "Sports Sunglasses", parent: "Sportswear" },
+	{ name: "Face Cover / Neck Cover", parent: "Sportswear" },
+	{ name: "Windbreaker", parent: "Sportswear" },
+	{ name: "Sports Towel", parent: "Sportswear" },
+	{ name: "Arm Covers", parent: "Sportswear" },
+	{ name: "Middle/Long Distance Running Shoes", parent: "Running Gear" },
+	{ name: "Short Distance Running Shoes", parent: "Running Gear" },
+	{ name: "Yoga Wear", parent: "Training" },
+	{ name: "Yoga Mat", parent: "Training" },
+];
+
+export async function setupNewCategories(): Promise<Record<string, number>> {
+	const res = await WooCommerce.post("products/categories/batch", {
+		create: NEW_SUBCATEGORIES.map(({ name, parent }) => ({
+			name,
+			parent: PARENT_CATEGORY_IDS[parent],
+		})),
+	});
+
+	const idMap: Record<string, number> = {};
+	for (const sub of res.data.create) {
+		idMap[sub.name] = sub.id;
+	}
+	// Copy these IDs into wpCategoryIds.ts
+	console.log(idMap);
+	return idMap;
+}
+
+export async function setupCategories(): Promise<Record<string, number>> {
 	// Step 1 — create parent categories
 	const parentRes = await WooCommerce.post("products/categories/batch", {
 		create: CATEGORIES.map((name) => ({ name })),
