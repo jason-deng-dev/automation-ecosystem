@@ -14,9 +14,10 @@ x
   - [x] normalizeItem(rawItem) — map Rakuten API fields to internal product schema (moved to utils.ts)
   - [x] Add `availability` field to Rakuten API response + normalizeItems — maps to `stock_status` in DB
 
-- [x] Config (`src/config/`) → §4.3 Pricing Formula, §6 Genre Map
-  - [x] `config.ts` — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
-  - [x] Fill in missing genre IDs in `genres.ts`
+- [x] Config → §4.3 Pricing Formula, §6 Genre Map, §11.6 Genre Map Growth
+  - [x] `shared_volume/rakuten/config.json` — per-category markup %, shipping estimate, JPY→CNY rate, fetchPerCategory, SearchFillThreshold, categories (genre ID map)
+  - [x] `src/config/genres.ts` — kept as reference only; `categories` map moved to shared volume config
+  - [x] `src/config/wpCategoryIds.ts` — WooCommerce category name → ID map, hardcoded after initial setupCategories() run
 
 - [x] PostgreSQL product store → §4.2 Schema, §3.2 db/queries.ts
   - [x] Write schema.sql — categories, subcategories, products tables
@@ -81,6 +82,10 @@ x
   - [ ] Re-scrape upsert — skip unchanged, update if price changed, insert if new URL
   - [ ] For each stale product (missed_scrapes >= 3): call removeProduct(wc_product_id) → then deleteStaleProducts from DB
   - [ ] Write run_log.json and product_stats.json to shared volume after each run
+
+- [x] Genre map stays static in `src/config/genres.ts` → §11.6
+  - Genre map considered for shared_volume config but reverted — Claude keyword flow returns a genre ID directly, so runtime expansion is not needed
+  - `runRankingPopulate.ts` imports `categories` from `genres.ts`
 
 - [ ] Shared volume output → §13 Shared Volume
   - [ ] Write `rakuten/run_log.json` after each pipeline run (operation, category, products fetched/pushed, failures, stale products deleted)

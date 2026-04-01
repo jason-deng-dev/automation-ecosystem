@@ -455,16 +455,20 @@ Before fetching from Rakuten, the keyword is validated and categorized via two s
 - If no → abort early, return error to customer ("We don't carry that type of product")
 - Rationale: fail fast before any Rakuten API call, no wasted tokens on category lookup for invalid requests
 
-**Stage 2 — Category assignment (only if stage 1 passes):**
-- Input: same keyword
-- Prompt: ask Claude which of our subcategories best fits this keyword (provide the full subcategory list)
-- Output: subcategory name (must match a name in our subcategory map)
-- Used to assign `subcategory_id` when inserting the product into PostgreSQL
+**Stage 2 — Genre assignment (only if stage 1 passes):**
+- Input: same keyword + full genre name/ID map from `genres.ts`
+- Prompt: ask Claude which genre ID best fits this keyword (provide the full flat map of genre name → ID)
+- Output: a single genre ID (must match a value in our genre map)
+- That genre ID is passed directly to `upsertProduct` — which resolves `subcategory_id` via `WHERE genre_id = $N`, the same path as the ranking flow. No special handling needed.
+
+**Why returning a genre ID (not subcategory name):**
+- `upsertProduct` already resolves subcategory via genre_id — returning a genre ID means the keyword flow reuses the exact same upsert path as the ranking flow, no changes needed
+- Claude gets the full genre map (name + ID pairs), so it can make a semantically meaningful assignment while returning a value the DB can directly use
 
 **Why Claude for this:**
-- Keyword search returns products from any Rakuten genre — genre ID alone can't map to our category tree
+- Keyword search returns products from any Rakuten genre — we need to assign them to our taxonomy
 - A quality gate is required regardless to prevent off-theme products entering the store
-- Combining validity + category assignment in two focused calls is cheaper than one large call with complex output
+- Combining validity + genre assignment in two focused calls is cheaper than one large call with complex output
 
 ### 9.5 Implementation Notes
 
@@ -544,7 +548,15 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Solution:** On import, images are passed via WooCommerce's `images[].src` field — WooCommerce sideloads them into the WordPress media library automatically. Product images become self-contained in WordPress.
 
-### 11.6 Stale Product Refresh at Scale
+### 11.6 Genre Map Stays Static in genres.ts
+
+**Challenge considered:** Moving the genre map to `shared_volume/rakuten/config.json` to allow runtime expansion via the dashboard — so new Rakuten genre IDs could be added without a redeploy.
+
+**Why we didn't do it:** The keyword request flow uses Claude to validate and categorize requests. Claude receives the full genre name/ID map from `genres.ts` and returns the single best-fit genre ID. This means the keyword flow doesn't need runtime genre map expansion at all — Claude maps the customer's request to an existing genre ID, and the existing `upsertProduct` flow (which resolves `subcategory_id` via `WHERE genre_id = $N`) works unchanged.
+
+**Decision:** Genre map stays hardcoded in `src/config/genres.ts`. This keeps config.json focused on operator-tunable parameters (markup, shipping, exchange rate). Adding new genre IDs still requires a code change, but the Claude quality gate ensures thematic correctness so genre expansion is a deliberate curation decision, not something that needs to happen at runtime.
+
+### 11.7 Stale Product Refresh at Scale
 
 **Challenge:** The weekly re-scrape uses the Ranking API, which only returns the current top N products per genre. Products already in the DB that fall off the ranking have no scalable way to get their price/availability refreshed — calling the Search API one-by-one per stored product becomes untenable at hundreds or thousands of products (1 req/sec rate limit, blocking the weekly job).
 
@@ -561,9 +573,9 @@ See `docs/rakuten-checklist.md` for current build status.
 - **Deduplication key:** `rakuten_url` — stable, unique per Rakuten listing.
 - **Primary fetch method:** Ranking API (top N per genre) — replaces genre search for bulk push.
 - **Re-scrape logic:** URL-based upsert — skip if unchanged, update if price/availability changed, insert if new.
+- **Genre map location:** Stays hardcoded in `genres.ts`. Moving to shared_volume config was considered but rejected — the Claude keyword flow returns a genre ID directly from the existing map, so runtime expansion is unnecessary. New genres are added via code as a deliberate curation decision. See §11.6.
 
 ### Still Open
-- **Missing genre IDs in genres.js:** Need to populate incomplete entries before launch.
 - **WooCommerce REST API credentials:** Consumer Key + Secret not yet generated on running.moximoxi.net.
 - **Top N per genre:** How many products to pull per genre for initial bulk push — not yet decided.
 - **Exchange rate source:** JPY → CNY rate — hardcoded in config or fetched from an exchange rate API?
