@@ -3,7 +3,7 @@ import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import fs from "fs";
 import { calculatePrice } from "../services/pricing";
 import { DbItem } from "../utils";
-import { getSubcategoryNameByProductId, updateWoocommerceProductId} from "../db/queries";
+import { getSubcategoryNameByProductId, updateWoocommerceProductId } from "../db/queries";
 import wpCategoryIds from "../config/wpCategoryIds";
 
 const WooCommerce = new WooCommerceRestApi({
@@ -95,21 +95,17 @@ async function pushProduct(product: DbItem) {
 		],
 		images: product.mediumImageUrls.map(({ imageUrl }) => ({ src: imageUrl })),
 	};
-	try {
-		const res = await WooCommerce.post("products", data);
-		return res.data.id;
-	} catch(err) {
-
-	}
-	
-	
+	const res = await WooCommerce.post("products", data);
+	return res.data.id;
 }
 
 export async function pushProducts(products: DbItem[]) {
-	for (const product of products){
-		try 
-		const wcId = await pushProduct(product)
-		await updateWoocommerceProductId(product.id, wcId)
+	for (const product of products) {
+		try {
+			const wcId = await pushProduct(product);
+			await updateWoocommerceProductId(product.id, wcId);
+		} catch (err) {
+			console.log(err);
+		}
 	}
-	
 }
