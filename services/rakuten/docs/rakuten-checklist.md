@@ -17,7 +17,8 @@ x
 - [x] Config → §4.3 Pricing Formula, §6 Genre Map, §11.6
   - [x] `shared_volume/rakuten/config.json` — per-category markup %, shipping estimate, JPY→CNY rate, fetchPerCategory, SearchFillThreshold
   - [x] `src/config/genres.ts` — Rakuten genre ID map; `categories` (category → genre ID[]) and `allGenres` (flat name → ID map for Claude) exported
-  - [x] `src/config/wpCategoryIds.ts` — WooCommerce category name → ID map, hardcoded after initial setupCategories() run; new subcategories have placeholder 0 IDs until setupNewCategories() is run
+  - [x] `src/config/wpCategoryIds.ts` — WooCommerce category name → ID map, hardcoded after setupCategories() + setupNewCategories() runs
+  - Genre map stays static in genres.ts — Claude keyword flow returns a genre ID directly, runtime expansion not needed (see §11.6)
 
 - [x] PostgreSQL product store → §4.2 Schema, §3.2 db/queries.ts
   - [x] Write schema.sql — categories, subcategories, products tables
@@ -46,19 +47,25 @@ x
   - [x] pricing.test.ts — all 5 categories, edge cases (price=0, large price), invalid category → NaN
   - [x] utils.test.ts — normalizeItems field mapping, schema shape, strips non-schema fields
 
-- [ ] WooCommerce integration (`src/services/woocommerceAPI.ts`) → §5 WooCommerce Integration, §3.2
+- [x] WooCommerce integration (`src/services/woocommerceAPI.ts`) → §5 WooCommerce Integration, §3.2
   - [x] setupCategories() — batch create parent categories then subcategories via WC REST API, returns name → WC ID map
   - [x] setupNewCategories() — creates 9 new subcategories using hardcoded parent IDs; logs ID map to copy into wpCategoryIds.ts
-  - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once by running setupCategories(), IDs are stable after creation
+  - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once, IDs are stable
   - [x] pushProduct(product) — push single product via WooCommerce REST API, derives category from product.categoryName, returns WC product ID
   - [x] pushProducts(products[]) — loops pushProduct, calls updateWoocommerceProductId after each successful push
-  - [ ] removeProduct(wcProductId) — delete product from WooCommerce by WC product ID
-  - [ ] Idempotency check by rakuten_url (not SKU)
+
+---
+
+- [ ] Re-seed DB with new subcategories — run `npm run db` to apply seed.ts changes (9 new subcategories added)
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
-  - [ ] Fetch top-ranked products per category via Ranking API
-  - [ ] Normalize → price → upsert into PostgreSQL
-  - [ ] Push all to WooCommerce
+  - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre (fetchPerCategory / num subcategories), upsert, push
+  - [ ] Set markup values in `shared_volume/rakuten/config.json` (currently 0)
+  - [ ] Run initial bulk push across all categories
+
+- [ ] WooCommerce remaining → §5
+  - [ ] removeProduct(wcProductId) — delete product from WooCommerce by WC product ID
+  - [ ] Idempotency check by rakuten_url before push (skip if already in WooCommerce)
 
 - [ ] Configure TranslatePress + DeepL on running.moximoxi.net → §7 Translation
   - [ ] Install TranslatePress plugin
@@ -72,6 +79,8 @@ x
     unlike bulk products (TranslatePress lazy), these are guaranteed to be viewed immediately.
     This also means WooCommerce search by Chinese keyword works natively without any TranslatePress search integration.
   - Result: SSE "done" event sends `/shop/?s={keywordZH}` — customer lands on pre-searched results page.
+  - [ ] Claude stage 1 — validate keyword relevance (yes/no)
+  - [ ] Claude stage 2 — feed full `allGenres` map, return best-fit genre ID
   - [ ] DeepL ZH → JA keyword translation (customer searches in Chinese, Rakuten needs Japanese)
   - [ ] DeepL JA → ZH translation of product name + description before WooCommerce push
   - [ ] POST /api/request-product endpoint — translate keyword → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → translate name+desc → push WC → store DB → emit SSE progress
@@ -83,10 +92,6 @@ x
   - [ ] Re-scrape upsert — skip unchanged, update if price changed, insert if new URL
   - [ ] For each stale product (missed_scrapes >= 3): call removeProduct(wc_product_id) → then deleteStaleProducts from DB
   - [ ] Write run_log.json and product_stats.json to shared volume after each run
-
-- [x] Genre map stays static in `src/config/genres.ts` → §11.6
-  - Genre map considered for shared_volume config but reverted — Claude keyword flow returns a genre ID directly, so runtime expansion is not needed
-  - `runRankingPopulate.ts` imports `categories` from `genres.ts`
 
 - [ ] Shared volume output → §13 Shared Volume
   - [ ] Write `rakuten/run_log.json` after each pipeline run (operation, category, products fetched/pushed, failures, stale products deleted)
