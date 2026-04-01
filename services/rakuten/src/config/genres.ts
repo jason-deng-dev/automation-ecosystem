@@ -46,7 +46,7 @@ const sportsApparelGenres = {
     Windbreaker: 565741,
     'Sports Towel': 505980,
     'Arm Covers': 568211,
-    'Bibs/Vests': 1,
+    // Bibs/Vests: TODO — real Rakuten genre ID needed
 };
 
 const relaxAndMassageProducts = {
@@ -71,11 +71,22 @@ const consumableGenres = {
 }
 
 const categories = {
-    'Running Gear': [565768, 565767, 565769, 568476, 564507, 568475],
-    'Training': [565772, 201869, 565771, 567756, 205074, 407916, 568218],
+    'Running Gear': [565768, 565767, 565769, 568476, 564507, 568475, 565780, 565779],
+    'Training': [565772, 201869, 565771, 567756, 205074, 407916, 568218, 501880, 204688],
     'Nutrition & Supplements': [559936, 567603, 567604, 201485, 302658, 402614, 567605, 402589, 208149, 567611],
     'Recovery & Care': [214828, 214822, 204750, 565744],
-    'Sportswear': [502027, 402463, 565743, 208118, 551942],
+    'Sportswear': [502027, 402463, 565743, 208118, 551942, 208124, 568384, 565741, 505980, 568211],
 };
 
-export {categories}
+// Flat name → ID map passed to Claude for keyword genre assignment
+const allGenres: Record<string, number> = {
+    ...runningAndMarathonGenres,
+    ...fitnessAndTrainingGenres,
+    ...trackAndFieldGenres,
+    ...yogaAndPilatesGenres,
+    ...consumableGenres,
+    ...relaxAndMassageProducts,
+    ...sportsApparelGenres,
+};
+
+export { categories, allGenres };

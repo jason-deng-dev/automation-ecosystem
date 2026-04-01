@@ -76,4 +76,13 @@ VALUES
     ('Men Apparel', 402463, 5),
     ('Sports Underwear', 565743, 5),
     ('Sports Bag', 208118, 5),
-    ('Sportswear / Accessories', 551942, 5);
+    ('Sportswear / Accessories', 551942, 5),
+    ('Sports Sunglasses', 208124, 5),
+    ('Face Cover / Neck Cover', 568384, 5),
+    ('Windbreaker', 565741, 5),
+    ('Sports Towel', 505980, 5),
+    ('Arm Covers', 568211, 5),
+    ('Middle/Long Distance Running Shoes', 565780, 1),
+    ('Short Distance Running Shoes', 565779, 1),
+    ('Yoga Wear', 501880, 2),
+    ('Yoga Mat', 204688, 2);
