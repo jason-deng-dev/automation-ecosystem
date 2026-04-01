@@ -48,9 +48,7 @@ x
   - [x] utils.test.ts — normalizeItems field mapping, schema shape, strips non-schema fields
 
 - [x] WooCommerce integration (`src/services/woocommerceAPI.ts`) → §5 WooCommerce Integration, §3.2
-  - [x] setupCategories() — batch create parent categories then subcategories via WC REST API, returns name → WC ID map
-  - [x] setupNewCategories() — creates 9 new subcategories using hardcoded parent IDs; logs ID map to copy into wpCategoryIds.ts
-  - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once, IDs are stable
+  - [x] setupCategories() — batch create parent categories + all subcategories via WC REST API, logs name → WC ID map to paste into wpCategoryIds.ts
   - [x] pushProduct(product) — push single product via WooCommerce REST API, derives category from product.categoryName, returns WC product ID
   - [x] pushProducts(products[]) — loops pushProduct, calls updateWoocommerceProductId after each successful push
 
@@ -58,13 +56,12 @@ x
 
 - [x] Re-seed DB with new subcategories — run `npm run db` to apply seed.ts changes (9 new subcategories added)
 
-- [ ] WooCommerce cleanup + genre map expansion (do before initial bulk push)
+- [x] WooCommerce cleanup + genre map expansion
   - [x] Manually delete all products + categories from WooCommerce admin
-  - [ ] `src/scripts/runKeywordScrape.ts` — scrape Rakuten across a large list of relevant keywords, collect all unique genreIds per keyword, write output to file
-  - [ ] Review output — identify genre IDs not yet in genres.ts, name them from the keywords they surfaced under
-  - [ ] Update `genres.ts` + `seed.ts` + `schema.sql` with new genres, mapped to correct categories
+  - [x] `src/scripts/runKeywordScrape.ts` — scrape 68 keywords × 30 products, output genreId → keywords map
+  - [x] Review output — 31 new subcategories identified and added to genres.ts, seed.ts, schema.sql, woocommerceAPI.ts
   - [ ] Re-seed DB (`npm run db`)
-  - [ ] Re-run `setupCategories()` with full updated SUBCATEGORIES list → update `wpCategoryIds.ts` with new IDs
+  - [ ] Run `setupCategories()` with full SUBCATEGORIES list → paste logged ID map into `wpCategoryIds.ts`
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre (fetchPerCategory / num subcategories), upsert, push
