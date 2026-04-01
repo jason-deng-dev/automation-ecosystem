@@ -208,6 +208,7 @@ export interface DbItem {
 	last_updated_at: Date;
 	missed_scrapes: number;
 	subcategory_id: number;
+	categoryName: string,
 }
 
 

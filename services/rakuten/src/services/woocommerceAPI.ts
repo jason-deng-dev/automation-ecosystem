@@ -3,7 +3,7 @@ import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import fs from "fs";
 import { calculatePrice } from "../services/pricing";
 import { DbItem } from "../utils";
-import { getSubcategoryNameByProductId } from "../db/queries";
+import { getSubcategoryNameByProductId, updateWoocommerceProductId} from "../db/queries";
 import wpCategoryIds from "../config/wpCategoryIds";
 
 const WooCommerce = new WooCommerceRestApi({
@@ -78,8 +78,8 @@ async function setupCategories(): Promise<Record<string, number>> {
 	return categoryIdMap;
 }
 
-export async function pushProduct(product: DbItem, category: string) {
-	const price = calculatePrice(product.itemPrice, category);
+async function pushProduct(product: DbItem) {
+	const price = calculatePrice(product.itemPrice, product.categoryName);
 	const { name: subcategoryName } = await getSubcategoryNameByProductId(product.subcategory_id);
 
 	const data = {
@@ -95,7 +95,21 @@ export async function pushProduct(product: DbItem, category: string) {
 		],
 		images: product.mediumImageUrls.map(({ imageUrl }) => ({ src: imageUrl })),
 	};
+	try {
+		const res = await WooCommerce.post("products", data);
+		return res.data.id;
+	} catch(err) {
 
-	const res = await WooCommerce.post("products", data);
-	return res.data.id;
+	}
+	
+	
+}
+
+export async function pushProducts(products: DbItem[]) {
+	for (const product of products){
+		try 
+		const wcId = await pushProduct(product)
+		await updateWoocommerceProductId(product.id, wcId)
+	}
+	
 }
