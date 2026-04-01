@@ -2,6 +2,8 @@ import pool from "./pool";
 import { RakutenDbQueryItem } from "../utils";
 import { categories } from "../config/genres";
 
+
+
 export const upsertProduct = async ({
 	itemName,
 	itemPrice,
@@ -48,12 +50,18 @@ export const upsertProduct = async ({
 			genreId,
 		],
 	);
-	return res.rows.filter((row) => {
-		if (row.inserted === true) {
-			return row.itemURL
-		}
-	});
+	const row = res.rows[0];
+	return row.inserted ? [row.itemURL]:[];
 };
+
+export const upsertProducts = async(products: RakutenDbQueryItem[]) => {
+	const urls:string[] = []
+	for (const product of products){
+		const urlArr = await upsertProduct(product)
+		urls.push(...urlArr)
+	}
+	return urls
+}
 
 export const getProductByUrls = async (URLs: string[]) => {
 	const res = await pool.query(
