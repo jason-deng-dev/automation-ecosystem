@@ -14,10 +14,10 @@ x
   - [x] normalizeItem(rawItem) — map Rakuten API fields to internal product schema (moved to utils.ts)
   - [x] Add `availability` field to Rakuten API response + normalizeItems — maps to `stock_status` in DB
 
-- [x] Config → §4.3 Pricing Formula, §6 Genre Map, §11.6 Genre Map Growth
-  - [x] `shared_volume/rakuten/config.json` — per-category markup %, shipping estimate, JPY→CNY rate, fetchPerCategory, SearchFillThreshold, categories (genre ID map)
-  - [x] `src/config/genres.ts` — kept as reference only; `categories` map moved to shared volume config
-  - [x] `src/config/wpCategoryIds.ts` — WooCommerce category name → ID map, hardcoded after initial setupCategories() run
+- [x] Config → §4.3 Pricing Formula, §6 Genre Map, §11.6
+  - [x] `shared_volume/rakuten/config.json` — per-category markup %, shipping estimate, JPY→CNY rate, fetchPerCategory, SearchFillThreshold
+  - [x] `src/config/genres.ts` — Rakuten genre ID map; `categories` (category → genre ID[]) and `allGenres` (flat name → ID map for Claude) exported
+  - [x] `src/config/wpCategoryIds.ts` — WooCommerce category name → ID map, hardcoded after initial setupCategories() run; new subcategories have placeholder 0 IDs until setupNewCategories() is run
 
 - [x] PostgreSQL product store → §4.2 Schema, §3.2 db/queries.ts
   - [x] Write schema.sql — categories, subcategories, products tables
@@ -48,6 +48,7 @@ x
 
 - [ ] WooCommerce integration (`src/services/woocommerceAPI.ts`) → §5 WooCommerce Integration, §3.2
   - [x] setupCategories() — batch create parent categories then subcategories via WC REST API, returns name → WC ID map
+  - [x] setupNewCategories() — creates 9 new subcategories using hardcoded parent IDs; logs ID map to copy into wpCategoryIds.ts
   - [x] Category ID map hardcoded in `src/config/wpCategoryIds.ts` — generated once by running setupCategories(), IDs are stable after creation
   - [x] pushProduct(product) — push single product via WooCommerce REST API, derives category from product.categoryName, returns WC product ID
   - [x] pushProducts(products[]) — loops pushProduct, calls updateWoocommerceProductId after each successful push
@@ -77,7 +78,7 @@ x
   - [ ] SSE progress stream (GET /api/request-product/status/:requestId) — emit after each product pushed
   - [ ] Embed progress indicator widget on WooCommerce search results page (shortcode or plugin)
 
-- [ ] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.6 Stale Product Refresh
+- [ ] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.7 Stale Product Refresh
   - [ ] Fetch top-ranked products per category via Ranking API
   - [ ] Re-scrape upsert — skip unchanged, update if price changed, insert if new URL
   - [ ] For each stale product (missed_scrapes >= 3): call removeProduct(wc_product_id) → then deleteStaleProducts from DB

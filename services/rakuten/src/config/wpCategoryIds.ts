@@ -37,16 +37,15 @@ const wpCategoryIds: Record<string, number> = {
 	"Sports Underwear": 287,
 	"Sports Bag": 288,
 	"Sportswear / Accessories": 289,
-	// New subcategories — re-run setupCategories() to get real WC IDs
-	"Sports Sunglasses": 0,
-	"Face Cover / Neck Cover": 0,
-	"Windbreaker": 0,
-	"Sports Towel": 0,
-	"Arm Covers": 0,
-	"Middle/Long Distance Running Shoes": 0,
-	"Short Distance Running Shoes": 0,
-	"Yoga Wear": 0,
-	"Yoga Mat": 0,
+	"Sports Sunglasses": 290,
+	"Face Cover / Neck Cover": 291,
+	"Windbreaker": 292,
+	"Sports Towel": 293,
+	"Arm Covers": 294,
+	"Middle/Long Distance Running Shoes": 295,
+	"Short Distance Running Shoes": 296,
+	"Yoga Wear": 297,
+	"Yoga Mat": 298,
 };
 
 export default wpCategoryIds;

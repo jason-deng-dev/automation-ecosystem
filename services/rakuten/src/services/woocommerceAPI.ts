@@ -72,7 +72,7 @@ const NEW_SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Yoga Mat", parent: "Training" },
 ];
 
-export async function setupNewCategories(): Promise<Record<string, number>> {
+async function setupNewCategories(): Promise<Record<string, number>> {
 	const res = await WooCommerce.post("products/categories/batch", {
 		create: NEW_SUBCATEGORIES.map(({ name, parent }) => ({
 			name,
@@ -89,7 +89,7 @@ export async function setupNewCategories(): Promise<Record<string, number>> {
 	return idMap;
 }
 
-export async function setupCategories(): Promise<Record<string, number>> {
+async function setupCategories(): Promise<Record<string, number>> {
 	// Step 1 — create parent categories
 	const parentRes = await WooCommerce.post("products/categories/batch", {
 		create: CATEGORIES.map((name) => ({ name })),
