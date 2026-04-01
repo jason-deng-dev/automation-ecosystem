@@ -16,7 +16,7 @@ export const upsertProduct = async ({
 	genreId,
 	availability,
 }: RakutenDbQueryItem) => {
-	await pool.query(
+	const res = await pool.query(
 		`
 		INSERT INTO products (
 			itemName, itemPrice, itemCaption, itemURL,
@@ -31,6 +31,7 @@ export const upsertProduct = async ({
 			availability = EXCLUDED.availability,
 			missed_scrapes = 0,
 			last_updated_at = NOW()
+		RETURNING itemURL, (xmax = 0) AS inserted
 		`,
 		[
 			itemName,
@@ -47,18 +48,23 @@ export const upsertProduct = async ({
 			genreId,
 		],
 	);
+	return res.rows.filter((row) => {
+		if (row.inserted === true) {
+			return row.itemURL
+		}
+	});
 };
 
-export const getProductByUrl = async (url: string) => {
+export const getProductByUrls = async (URLs: string[]) => {
 	const res = await pool.query(
 		`
 		SELECT * FROM products 
-		WHERE itemURL = $1
+		WHERE itemURL = ANY($1)
 		`,
-		[url],
+		[URLs],
 	);
 
-	return res.rows[0] ?? null;
+	return res.rows;
 };
 
 export const getProductsByGenreId = async (genreId: number) => {
