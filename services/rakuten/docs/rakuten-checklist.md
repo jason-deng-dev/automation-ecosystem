@@ -56,7 +56,15 @@ x
 
 ---
 
-- [ ] Re-seed DB with new subcategories — run `npm run db` to apply seed.ts changes (9 new subcategories added)
+- [x] Re-seed DB with new subcategories — run `npm run db` to apply seed.ts changes (9 new subcategories added)
+
+- [ ] WooCommerce cleanup + genre map expansion (do before initial bulk push)
+  - [x] Manually delete all products + categories from WooCommerce admin
+  - [ ] `src/scripts/runKeywordScrape.ts` — scrape Rakuten across a large list of relevant keywords, collect all unique genreIds per keyword, write output to file
+  - [ ] Review output — identify genre IDs not yet in genres.ts, name them from the keywords they surfaced under
+  - [ ] Update `genres.ts` + `seed.ts` + `schema.sql` with new genres, mapped to correct categories
+  - [ ] Re-seed DB (`npm run db`)
+  - [ ] Re-run `setupCategories()` with full updated SUBCATEGORIES list → update `wpCategoryIds.ts` with new IDs
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre (fetchPerCategory / num subcategories), upsert, push
@@ -79,15 +87,13 @@ x
     unlike bulk products (TranslatePress lazy), these are guaranteed to be viewed immediately.
     This also means WooCommerce search by Chinese keyword works natively without any TranslatePress search integration.
   - Result: SSE "done" event sends `/shop/?s={keywordZH}` — customer lands on pre-searched results page.
-  - [ ] Claude stage 1 — validate keyword relevance (yes/no)
-  - [ ] Claude stage 2 — feed full `allGenres` map, return best-fit genre ID
   - [ ] DeepL ZH → JA keyword translation (customer searches in Chinese, Rakuten needs Japanese)
   - [ ] DeepL JA → ZH translation of product name + description before WooCommerce push
   - [ ] POST /api/request-product endpoint — translate keyword → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → translate name+desc → push WC → store DB → emit SSE progress
   - [ ] SSE progress stream (GET /api/request-product/status/:requestId) — emit after each product pushed
   - [ ] Embed progress indicator widget on WooCommerce search results page (shortcode or plugin)
 
-- [ ] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.7 Stale Product Refresh
+- [ ] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.8 Stale Product Refresh
   - [ ] Fetch top-ranked products per category via Ranking API
   - [ ] Re-scrape upsert — skip unchanged, update if price changed, insert if new URL
   - [ ] For each stale product (missed_scrapes >= 3): call removeProduct(wc_product_id) → then deleteStaleProducts from DB
@@ -105,3 +111,11 @@ x
   - [ ] Pipeline state written to shared volume for dashboard health card (idle | running | failed)
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3
+
+---
+
+## Nice to Have (if time allows after launch)
+
+- [ ] Claude quality check on keyword request flow → §9.4
+  - [ ] Stage 1 — validate keyword relevance (yes/no), abort early if off-theme
+  - [ ] Stage 2 — feed `allGenres` map, return best-fit genre ID as fallback for unknown genres

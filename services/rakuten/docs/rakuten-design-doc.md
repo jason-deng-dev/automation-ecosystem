@@ -68,7 +68,7 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 #### rakutenAPI.ts
 
-- `getProductsByKeyword(keyword, count, sortMode)` — Ichiba Item Search API (used for product request flow)
+- `getProductsByKeyword(keyword, count, sortMode)` — Ichiba Item Search API (used for product request flow); max `hits` = 30
 - `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
 - Returns normalized product objects (normalization handled internally)
 
@@ -446,29 +446,16 @@ WooCommerce search finds products natively (Chinese names stored, Chinese keywor
 
 ### 9.4 Claude Quality Check
 
-Before fetching from Rakuten, the keyword is validated and categorized via two sequential Claude API calls:
+After the keyword scrape expanded `genres.ts` to cover the vast majority of store-relevant products, a Claude quality check is no longer on the critical path. The keyword flow will handle genre assignment by matching against the comprehensive `allGenres` map directly.
 
-**Stage 1 — Validity check:**
-- Input: raw keyword (in Chinese, as submitted by customer)
-- Prompt: ask Claude if the keyword is relevant to running, fitness, or sports nutrition
-- Output: yes / no
-- If no → abort early, return error to customer ("We don't carry that type of product")
-- Rationale: fail fast before any Rakuten API call, no wasted tokens on category lookup for invalid requests
+**Claude quality check — deferred (add if time allows after launch):**
 
-**Stage 2 — Genre assignment (only if stage 1 passes):**
-- Input: same keyword + full genre name/ID map from `genres.ts`
-- Prompt: ask Claude which genre ID best fits this keyword (provide the full flat map of genre name → ID)
-- Output: a single genre ID (must match a value in our genre map)
-- That genre ID is passed directly to `upsertProduct` — which resolves `subcategory_id` via `WHERE genre_id = $N`, the same path as the ranking flow. No special handling needed.
+If implemented, it would be two sequential calls:
 
-**Why returning a genre ID (not subcategory name):**
-- `upsertProduct` already resolves subcategory via genre_id — returning a genre ID means the keyword flow reuses the exact same upsert path as the ranking flow, no changes needed
-- Claude gets the full genre map (name + ID pairs), so it can make a semantically meaningful assignment while returning a value the DB can directly use
+- **Stage 1 — Validity check:** ask Claude if the keyword is relevant to running, fitness, or sports nutrition. Abort early if no — prevents off-theme products and saves the Rakuten API call.
+- **Stage 2 — Genre assignment:** feed `allGenres` map, Claude returns the best-fit genre ID. Used as a fallback for keywords that surface a genre ID not in our map.
 
-**Why Claude for this:**
-- Keyword search returns products from any Rakuten genre — we need to assign them to our taxonomy
-- A quality gate is required regardless to prevent off-theme products entering the store
-- Combining validity + genre assignment in two focused calls is cheaper than one large call with complex output
+**Why deferred:** After the keyword scrape, `allGenres` covers nearly all realistic customer requests. The edge case rate (unknown genre ID) is low enough that launching without Claude and adding it later is the right call.
 
 ### 9.5 Implementation Notes
 
@@ -556,7 +543,17 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Decision:** Genre map stays hardcoded in `src/config/genres.ts`. This keeps config.json focused on operator-tunable parameters (markup, shipping, exchange rate). Adding new genre IDs still requires a code change, but the Claude quality gate ensures thematic correctness so genre expansion is a deliberate curation decision, not something that needs to happen at runtime.
 
-### 11.7 Stale Product Refresh at Scale
+### 11.7 Genre Map Expansion via Keyword Scrape
+
+**Challenge:** Before the initial bulk push, the genre map in `genres.ts` needs to be as comprehensive as possible so the Claude quality check on the keyword flow is a safety net rather than the primary path.
+
+**Solution:** Run a one-off keyword scrape across a large list of store-relevant keywords (running shoes, protein, compression socks, etc.) before the initial bulk push. A processing script collects all unique `genreId` values returned by Rakuten, cross-references against existing genres in `genres.ts`, and outputs unknown IDs grouped by the keywords that surfaced them. This makes it easy to name and categorize new genre IDs from context. The updated `genres.ts` and `seed.ts` are committed, the DB is re-seeded, and WooCommerce categories are recreated fresh from the complete list.
+
+**Why before initial bulk push:** Doing this after products are already in WooCommerce would require deleting and re-pushing everything when categories change. Doing it first means the category structure is stable before any product data is committed to WooCommerce.
+
+**Claude as fallback:** After the scrape, `allGenres` in `genres.ts` covers the vast majority of keyword requests. The Claude quality check (stage 2 — genre assignment) only fires for keywords that surface a genre ID not yet in the map, acting as a graceful fallback rather than the primary routing mechanism.
+
+### 11.8 Stale Product Refresh at Scale
 
 **Challenge:** The weekly re-scrape uses the Ranking API, which only returns the current top N products per genre. Products already in the DB that fall off the ranking have no scalable way to get their price/availability refreshed — calling the Search API one-by-one per stored product becomes untenable at hundreds or thousands of products (1 req/sec rate limit, blocking the weekly job).
 

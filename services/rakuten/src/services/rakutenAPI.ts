@@ -17,12 +17,12 @@ export const getProductsByKeyword = async (keyword: string, count: number, sortM
 		});
 		const resJson = await res.json();
 		const items = resJson.Items;
+		if (!items) {
+			console.log("No items:", resJson.error_description ?? resJson);
+			return null;
+		}
 		const normalizedItem = normalizeItems(items);
 		return normalizedItem;
-		
-
-
-		
 	} catch (err) {
 		console.log(err);
 	}
@@ -44,6 +44,7 @@ export const getProductsByGenresId = async (
 		});
 		const resJson = await res.json();
 		const items = resJson.Items;
+		if (!items) return null;
 		const normalizedItem = normalizeItems(items)
 		return normalizedItem;
 	} catch (err) {
@@ -67,6 +68,7 @@ export const getProductsByRankingGenre = async (
 		});
 		const resJson = await res.json();
 		const items = resJson.Items;
+		if (!items) return null;
 		const normalizedItem = normalizeItems(items)
 		return normalizedItem;
 	} catch (err) {
