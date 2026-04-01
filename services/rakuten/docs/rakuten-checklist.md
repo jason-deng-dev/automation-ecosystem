@@ -60,7 +60,7 @@ x
   - [x] Manually delete all products + categories from WooCommerce admin
   - [x] `src/scripts/runKeywordScrape.ts` — scrape 68 keywords × 30 products, output genreId → keywords map
   - [x] Review output — 31 new subcategories identified and added to genres.ts, seed.ts, schema.sql, woocommerceAPI.ts
-  - [ ] Re-seed DB (`npm run db`)
+  - [x] Re-seed DB (`npm run db`)
   - [ ] Run `setupCategories()` with full SUBCATEGORIES list → paste logged ID map into `wpCategoryIds.ts`
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
