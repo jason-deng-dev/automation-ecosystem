@@ -51,7 +51,7 @@ export const upsertProduct = async ({
 		],
 	);
 	const row = res.rows[0];
-	return row.inserted ? [row.itemURL]:[];
+	return row.inserted ? [row.itemurl]:[];
 };
 
 export const upsertProducts = async(products: RakutenDbQueryItem[]) => {
