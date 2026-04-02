@@ -88,7 +88,7 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 - PostgreSQL interface for permanent product storage — imports pool from `pool.ts`
 - `getProductByUrl(url)` — check if product already exists (deduplication key)
 - `upsertProduct(product)` — insert new product, or on URL conflict: update `itemPrice`, `availability`, `last_updated_at`, reset `missed_scrapes` to 0
-- `getProductsByGenreId(genreId)` — return stored products for a genre via subcategories JOIN
+- `getProductsByGenreId(genreId)` — return stored products for a genre via subcategories JOIN (`WHERE $1 = ANY(genre_ids)`)
 - `getProductsByCategory(categoryId)` — return stored products for a category
 - `incrementAllMissedScrapes()` — run before each scrape: increments `missed_scrapes` by 1 for all products
 - `upsertProduct(product)` — resets `missed_scrapes = 0` for any product returned by the ranking
@@ -206,7 +206,7 @@ CREATE TABLE categories (
 CREATE TABLE subcategories (
   id          SERIAL PRIMARY KEY,
   name        TEXT,
-  genre_id    INTEGER,
+  genre_ids   INTEGER[],
   category_id INTEGER REFERENCES categories(id)
 );
 
@@ -553,11 +553,21 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Claude as fallback:** After the scrape, `allGenres` in `genres.ts` covers the vast majority of keyword requests. The Claude quality check (stage 2 — genre assignment) only fires for keywords that surface a genre ID not yet in the map, acting as a graceful fallback rather than the primary routing mechanism.
 
-### 11.8 Stale Product Refresh at Scale
+### 11.8 Subcategories Need Multiple Genre IDs
+
+**Challenge:** Rakuten's genre tree is deep — each subcategory we defined maps to one "canonical" genre ID (e.g. Triathlon = 568218), but Rakuten products actually live in deeper sub-genre nodes (e.g. Triathlon goggles = 402369). When a product's `genreId` doesn't match the seeded `genre_id`, `upsertProduct` sets `subcategory_id = NULL` via the subquery `(SELECT id FROM subcategories WHERE genre_id = $N)`, causing `pushProduct` to crash trying to look up a NULL subcategory.
+
+**Discovery:** A keyword scrape across 79 Japanese keywords × 30 products surfaced 327 unique genre IDs from Rakuten. Only 41 of these matched our seeded IDs — leaving 286 unmatched sub-genre nodes.
+
+**Solution:** Migrate `genre_id INTEGER` → `genre_ids INTEGER[]` on the subcategories table. All lookup queries use `WHERE $N = ANY(genre_ids)` instead of `WHERE genre_id = $N`. The seed populates each subcategory with all known genre IDs that belong to it (sourced from `scrape_output.json`).
+
+**Files changed:** `seed.ts`, `schema.sql`, `queries.ts` (upsertProduct subquery + getProductsByGenreId).
+
+### 11.9 Stale Product Refresh at Scale
 
 **Challenge:** The weekly re-scrape uses the Ranking API, which only returns the current top N products per genre. Products already in the DB that fall off the ranking have no scalable way to get their price/availability refreshed — calling the Search API one-by-one per stored product becomes untenable at hundreds or thousands of products (1 req/sec rate limit, blocking the weekly job).
 
-**Solution:** Add a `missed_scrapes` counter to each product in PostgreSQL. Each weekly ranking run increments the counter for any product not returned by the ranking. At 3 consecutive missed scrapes, the product is hard-deleted from both PostgreSQL and WooCommerce. No separate refresh pass is needed — if a product is popular enough to return to stock, it will re-appear in the Ranking API results and be re-imported naturally as a new product.
+**Solution (§11.9):** Add a `missed_scrapes` counter to each product in PostgreSQL. Each weekly ranking run increments the counter for any product not returned by the ranking. At 3 consecutive missed scrapes, the product is hard-deleted from both PostgreSQL and WooCommerce. No separate refresh pass is needed — if a product is popular enough to return to stock, it will re-appear in the Ranking API results and be re-imported naturally as a new product.
 
 ---
 

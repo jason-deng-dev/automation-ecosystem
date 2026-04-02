@@ -26,7 +26,7 @@ export const upsertProduct = async ({
 			shopName, shopCode, availability, subcategory_id
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-			(SELECT id FROM subcategories WHERE genre_id = $12)
+			(SELECT id FROM subcategories WHERE $12 = ANY(genre_ids))
 		)
 		ON CONFLICT (itemURL) DO UPDATE SET
 			itemPrice = EXCLUDED.itemPrice,
@@ -86,7 +86,7 @@ export const getProductsByGenreId = async (genreId: number) => {
 		SELECT * FROM products
 		LEFT JOIN subcategories
 		ON products.subcategory_id = subcategories.id
-		WHERE subcategories.genre_id = $1;
+		WHERE $1 = ANY(subcategories.genre_ids);
 		`,
 		[genreId],
 	);

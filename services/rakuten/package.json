@@ -9,7 +9,8 @@
 		"build": "tsc",
 		"start": "node dist/app.js",
 		"db": "tsx src/db/seed.ts",
-		"setup-categories": "tsx src/scripts/setupCategories.ts"
+		"setup-categories": "tsx src/scripts/setupCategories.ts",
+		"keyword-search": "tsx src/scripts/runKeywordPopulate"
 	},
 	"keywords": [],
 	"author": "",

@@ -61,7 +61,15 @@ x
   - [x] `src/scripts/runKeywordScrape.ts` — scrape 68 keywords × 30 products, output genreId → keywords map
   - [x] Review output — 31 new subcategories identified and added to genres.ts, seed.ts, schema.sql, woocommerceAPI.ts
   - [x] Re-seed DB (`npm run db`)
-  - [ ] Run `setupCategories()` with full SUBCATEGORIES list → paste logged ID map into `wpCategoryIds.ts`
+  - [x] Run `setupCategories()` with full SUBCATEGORIES list → paste logged ID map into `wpCategoryIds.ts`
+  - [x] Fix HTML-encoded `&amp;` in `wpCategoryIds.ts` — 3 keys corrected
+  - [x] Fix ambiguous `Wear`/`Shoes` WC IDs — split into `Training Wear` (322) / `Wear` (305) and `Training Shoes` (323) / `Shoes` (304)
+
+- [ ] `genre_id` → `genre_ids INTEGER[]` migration — subcategories need multiple genre IDs (e.g. Triathlon has 568218 in seed but products return 402369)
+  - [x] Update `seed.ts` — `genre_id INTEGER` → `genre_ids INTEGER[]`, all values become arrays; all 286 unmatched scrape IDs mapped to subcategories
+  - [x] Update `schema.sql` — same column change + full ARRAY[] values
+  - [x] Update `queries.ts` — `WHERE genre_id = $12` → `WHERE $12 = ANY(genre_ids)` and `getProductsByGenreId` query
+  - [ ] Re-seed DB (`npm run db`)
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre (fetchPerCategory / num subcategories), upsert, push
