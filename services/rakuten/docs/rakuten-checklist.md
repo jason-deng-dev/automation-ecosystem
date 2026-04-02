@@ -36,9 +36,9 @@ x
     - [x] updateWoocommerceProductId(product_id, wc_product_id) — sets wc_product_id + wc_pushed_at = NOW()
 
 - [x] Pricing (`src/services/pricing.ts`) → §4.3 Pricing Formula
-  - [x] calculatePrice(price, category) — markup on cost formula: (price * yenToYuan * (1 + markup)) + shipping
-  - [x] Reads per-category markup + shipping + yenToYuan from shared volume config.json at startup
-  - [x] Rounds up to nearest 5 CNY
+  - [x] calculatePrice(price, category) — formula: `price * (1 + markup) * yenToYuan`, rounded up to nearest 5 CNY
+  - [x] Reads per-category markup + yenToYuan from shared volume config.json at startup (shipping removed — handled at WooCommerce checkout)
+  - [x] Strip `?_ex=` query param from Rakuten image URLs in `normalizeItems` — serves full-res images to WooCommerce
 
 - [x] Tests (`tests/`) → no design doc section
   - [x] Install Vitest
