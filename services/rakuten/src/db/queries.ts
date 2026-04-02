@@ -66,7 +66,15 @@ export const upsertProducts = async(products: RakutenDbQueryItem[]) => {
 export const getProductByUrls = async (URLs: string[]) => {
 	const res = await pool.query(
 		`
-		SELECT products.*, categories.name AS "categoryName" 
+		SELECT
+			products.id, products.itemprice AS "itemPrice", products.itemname AS "itemName",
+			products.itemcaption AS "itemCaption", products.itemurl AS "itemUrl",
+			products.smallimageurls AS "smallImageUrls", products.mediumimageurls AS "mediumImageUrls",
+			products.reviewcount AS "reviewCount", products.reviewaverage AS "reviewAverage",
+			products.shopname AS "shopName", products.shopcode AS "shopCode",
+			products.availability, products.wc_product_id, products.wc_pushed_at,
+			products.created_at, products.last_updated_at, products.missed_scrapes,
+			products.subcategory_id, categories.name AS "categoryName"
 		FROM products
 		LEFT JOIN subcategories
 		ON products.subcategory_id = subcategories.id
