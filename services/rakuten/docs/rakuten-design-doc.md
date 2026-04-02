@@ -535,6 +535,8 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Solution:** On import, images are passed via WooCommerce's `images[].src` field — WooCommerce sideloads them into the WordPress media library automatically. Product images become self-contained in WordPress.
 
+**Note:** Rakuten's API returns image URLs with a `?_ex=128x128` query param that caps resolution at 128×128. The `?_ex=...` param is stripped in `normalizeItems` before the URL is stored or pushed — this gives WooCommerce the full-resolution image from Rakuten's CDN.
+
 ### 11.6 Genre Map Stays Static in genres.ts
 
 **Challenge considered:** Moving the genre map to `shared_volume/rakuten/config.json` to allow runtime expansion via the dashboard — so new Rakuten genre IDs could be added without a redeploy.

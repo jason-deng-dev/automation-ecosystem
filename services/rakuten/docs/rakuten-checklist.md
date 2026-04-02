@@ -72,6 +72,7 @@ x
   - [x] Re-seed DB (`npm run db`)
   - [x] Fix pg camelCase column aliasing in `getProductByUrls` — PostgreSQL lowercases unquoted identifiers, aliased back to match `DbItem`
   - [x] End-to-end pipeline verified — product pushed to WooCommerce with correct category, images, and price
+  - [x] Fix image resolution — strip `?_ex=128x128` query param in `normalizeItems` so full-res images are stored and pushed to WooCommerce
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre (fetchPerCategory / num subcategories), upsert, push
