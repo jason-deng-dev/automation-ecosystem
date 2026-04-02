@@ -239,37 +239,28 @@ CREATE TABLE products (
 ### 4.3 Pricing Formula
 
 ```
-sale_price = (rakuten_price * yenToYuan * (1 + markup)) + shipping_estimate
+sale_price = rakuten_price * yenToYuan * (1 + markup)
 ```
 
-**Note:** This is markup on cost (not margin on sale price) — confirmed by operator. A 20% markup means the sale price is 1.2× the converted cost, plus shipping.
+**Current config (v1):** Markup = 0%, shipping not included in sticker price. Sticker price is purely the JPY → CNY conversion.
 
 **Currency:** All sale prices are stored and displayed in CNY (Chinese Yuan). Rakuten prices are in JPY — conversion applies at calculation time using a configurable exchange rate.
 
-**Shipping estimate covers two legs:** Japan domestic (Rakuten → company) + international (Japan → China). Rakuten provides no weight data, so estimates are flat per category.
+**Shipping:** Handled separately at WooCommerce checkout — not baked into sticker price. Baking shipping per-product overcharges customers who buy multiple items (they pay one shipment, not one per product). Instead:
+- WooCommerce is configured with a flat shipping rate per order
+- Checkout page includes a shipping policy note: estimated shipping by category (e.g. shoes ~¥X, supplements ~¥Y), with a caveat that actual shipping may require follow-up if order weight is high
+- Operator contacts customer to collect additional shipping if actual cost exceeds estimate
 
-**Default values (placeholder — to be confirmed by operator):**
+**Markup:** Currently 0% — operator decision, to be revisited. Formula supports per-category markup via `config.json` when ready.
 
-|Category|Shipping Estimate (CNY)|Markup|
-|---|---|---|
-|Nutrition / Supplements|¥65|20%|
-|Running Gear|¥120|22%|
-|Recovery & Care|¥65|20%|
-|Sportswear|¥150|25%|
-|Training Equipment|¥150|22%|
-
-**Example:**
+**Example (current):**
 
 ```
 Rakuten price: ¥3,240 JPY
 Exchange rate: 0.049
-Shipping estimate: ¥65 CNY
-Markup: 20%
+Markup: 0%
 
-sale_price = (3240 * 0.049 * 1.2) + 65
-           = (158.76 * 1.2) + 65
-           = 190.51 + 65
-           = ¥256 CNY
+sale_price = 3240 * 0.049 * 1.0 = ¥159 CNY
 ```
 
 ### 4.4 Express API Endpoints
@@ -407,7 +398,7 @@ Translation is handled entirely by TranslatePress + Google Translate on the Word
 |Deduplication key|`rakuten_url`|`item_code`, `sku`|URL is stable and unique per Rakuten listing; also used as canonical product identity for re-scrape|
 |Re-scrape strategy|Check URL → compare price/availability → update if changed|Full re-fetch, ignore existing|Minimizes Rakuten API calls; only pushes WooCommerce updates when something actually changed|
 |Frontend|WooCommerce storefront + TranslatePress|Custom React SPA|WooCommerce has 24/7 support, built-in security, maintainable by any WordPress developer after handoff|
-|Shipping at checkout|Preset per genre with adjustment caveat|Calculated at push time|Rakuten provides no weight data; category-based estimate shown with caveat that actual shipping may differ|
+|Shipping at checkout|Flat rate per order in WooCommerce + policy note at checkout|Baked into sticker price per product|Per-product shipping overcharges multi-item orders; flat rate + transparent policy is fairer and simpler|
 
 ---
 

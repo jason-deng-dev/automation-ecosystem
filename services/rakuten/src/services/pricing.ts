@@ -8,10 +8,8 @@ import { categories } from '../config/genres';
 const configs = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/rakuten/config.json`, 'utf-8'));
 const margins = configs.markup
 const yenToYuan = configs.YenToYuan
-const shipping = configs.shipping
 
 export function calculatePrice(price:number, category:string) {
-    const price_yen = ((price) * (1 + margins[category])) 
-    const price_shipping_yuan = price_yen * yenToYuan + shipping[category]
-    return Math.ceil(price_shipping_yuan/5)*5 
+    const priceYuan = price * (1 + margins[category]) * yenToYuan
+    return Math.ceil(priceYuan/5)*5
 }

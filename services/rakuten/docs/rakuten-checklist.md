@@ -76,7 +76,9 @@ x
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre (fetchPerCategory / num subcategories), upsert, push
-  - [ ] Set markup values in `shared_volume/rakuten/config.json` (currently 0)
+  - [ ] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
+  - [ ] Configure flat shipping rate per order in WooCommerce settings
+  - [ ] Add shipping policy note to WooCommerce checkout page — category-based estimates + caveat for heavy orders
   - [ ] Run initial bulk push across all categories
 
 - [ ] WooCommerce remaining → §5
