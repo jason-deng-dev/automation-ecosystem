@@ -366,25 +366,32 @@ See `src/config/genres.ts` for the full genre ID map.
 
 ## 7. Translation — TranslatePress
 
-Translation is handled entirely by TranslatePress + DeepL on the WordPress side. The Express pipeline pushes Japanese product text to WooCommerce as-is.
+Translation is handled entirely by TranslatePress + Google Translate on the WordPress side. The Express pipeline pushes Japanese product text to WooCommerce as-is.
 
 **Flow:**
-1. Product pushed to WooCommerce with `name_ja` and `description_ja` (Japanese)
+1. Product pushed to WooCommerce with Japanese name and description
 2. First customer visits the product page
-3. TranslatePress detects the page hasn't been translated → calls DeepL (JA → ZH-HANS)
+3. TranslatePress detects the page hasn't been translated → calls Google Translate API (JA → ZH-HANS)
 4. Translation cached permanently in WordPress DB (MySQL)
 5. All subsequent visitors get the cached Chinese translation instantly
 
-**Why not translate in the pipeline (no deepl.js):**
+**Scope:** TranslatePress translates everything it encounters on the page — product names, descriptions, category names, breadcrumbs, navigation. Category names (e.g. "Training / Triathlon") are translated on first customer view and cached. No need to push Chinese category names from the pipeline.
+
+**Why Google Translate over DeepL:**
+- TranslatePress free tier + Google Translate API (bring your own key) covers the full use case at near-zero cost
+- DeepL integration requires a £17/month TranslatePress Pro plan — unnecessary for a single-language (ZH-HANS) store
+- Translation quality tested on product descriptions — output is accurate and natural for technical sports content
+
+**Why not translate in the pipeline:**
 - TranslatePress is a maintained WordPress plugin — operator can manage translations without touching code
 - Translations stored in WordPress DB alongside the product — no sync problem between PostgreSQL and WordPress
-- Removes DeepL API key dependency from the Express service
+- Removes any translation API dependency from the Express service
 - Tradeoff: PostgreSQL only has Japanese text; admin UIs querying PostgreSQL will see Japanese product names
 
 **TranslatePress config required:**
-- Install TranslatePress + DeepL extension on running.moximoxi.net
+- Install TranslatePress (free) on running.moximoxi.net
 - Set source language: Japanese, target language: Simplified Chinese (ZH-HANS)
-- Configure DeepL API key in TranslatePress settings
+- Configure Google Translate API key in TranslatePress settings
 
 ---
 
@@ -393,7 +400,7 @@ Translation is handled entirely by TranslatePress + DeepL on the WordPress side.
 |Decision|Choice|Alternatives Considered|Rationale|
 |---|---|---|---|
 |Product store|PostgreSQL permanent storage|In-memory only, Redis, 24h TTL cache|Permanent store enables re-scrape deduplication by URL; price change tracking; no TTL needed since re-scrape logic handles freshness|
-|Translation|TranslatePress + DeepL on first customer view (WordPress)|Custom deepl.js in Express pipeline|TranslatePress is a maintained plugin; caches in WordPress DB; operator-manageable; removes DeepL dependency from Express service|
+|Translation|TranslatePress (free) + Google Translate API on first customer view (WordPress)|DeepL via TranslatePress Pro (£17/mo), custom pipeline translation|Free tier covers full use case; caches in WordPress DB; no pipeline dependency; DeepL Pro unnecessary for single-language store|
 |Primary fetch|Rakuten Ranking API (top N per genre)|Genre search, keyword search|Ranking API returns proven top-sellers — higher product quality for initial catalog; supports up to top 1000|
 |WooCommerce integration|WooCommerce REST API|Direct DB insert, WP CLI|Official path; hooks fire correctly; no SSH dependency; revocable auth|
 |Pricing|Formula-based (configurable per category)|Manual per-product, flat markup|Configurable margins per category reflects real shipping cost differences; formula is auditable|
