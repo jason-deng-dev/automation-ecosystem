@@ -8,7 +8,8 @@
 		"dev": "tsx --watch src/app.ts",
 		"build": "tsc",
 		"start": "node dist/app.js",
-		"db": "tsx src/db/seed.ts"
+		"db": "tsx src/db/seed.ts",
+		"setup-categories": "tsx src/scripts/setupCategories.ts"
 	},
 	"keywords": [],
 	"author": "",

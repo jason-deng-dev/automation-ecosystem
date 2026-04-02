@@ -92,7 +92,7 @@ const SUBCATEGORIES: { name: string; parent: string }[] = [
 ];
 
 
-async function setupCategories(): Promise<Record<string, number>> {
+export async function setupCategories(): Promise<Record<string, number>> {
 	// Step 1 — create parent categories
 	const parentRes = await WooCommerce.post("products/categories/batch", {
 		create: CATEGORIES.map((name) => ({ name })),
