@@ -17,7 +17,6 @@ const wpCategoryIds: Record<string, number> = {
   'Running Cap': 456,
   'Running Tights': 457,
   'Compression Tights': 458,
-  'Reflective Vest': 459,
   'Running Belt': 460,
   'Leg Warmer': 461,
   'Neck Warmer': 462,
