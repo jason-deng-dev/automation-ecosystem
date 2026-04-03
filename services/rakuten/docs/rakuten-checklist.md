@@ -74,18 +74,22 @@ x
   - [x] End-to-end pipeline verified — product pushed to WooCommerce with correct category, images, and price
   - [x] Fix image resolution — strip `?_ex=128x128` query param in `normalizeItems` so full-res images are stored and pushed to WooCommerce
 
-- [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
+- [x] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [x] update arrReference
   - [x] Complete `runRankingPopulate.ts` loop body — fetch per genre 
   (`max(1, pagesPerSubcategory)` pages per subcategory — Ranking API returns fixed 30 products/page, no `hits` param; minimum 1 page = 30 products per subcategory), upsert, push
   - [x] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
-  - [ ] Configure flat shipping rate per order in WooCommerce settings
-  - [ ] Add shipping policy note to WooCommerce checkout page — category-based estimates + caveat for heavy orders
-  - [ ] Run initial bulk push across all categories
+  - [x] Configure flat shipping rate per order in WooCommerce settings — ¥100 flat rate
+  - [x] Add shipping policy note to WooCommerce cart page — per-product-type estimates + caveat for heavy orders (Chinese only)
+  - [x] Run initial bulk push across all categories
+
+- [x] Product quality fixes
+  - [x] Strip promotional text from titles — `cleanTitle()` in `utils.ts` strips 【...】, ★...★, date-limited promo prefixes; called at push time; promo text moved to WC `short_description`
+  - [x] Audit + fix genre IDs returning off-theme products — removed Reflective Vest subcategory entirely (genre IDs were pulling industrial tools)
 
 - [ ] WooCommerce remaining → §5
-  - [ ] removeProduct(wcProductId) — delete product from WooCommerce by WC product ID
-  - [ ] Idempotency check by rakuten_url before push (skip if already in WooCommerce)
+  - [x] Idempotency check — skip push if wc_product_id already set in DB
+  - [ ] `src/scripts/repushFromDb.ts` — re-push all products in DB that have a wc_product_id to WooCommerce (updates meta, price, images); used to backfill changes like _rakuten_url meta without re-scraping
   - [ ] Install **Discount Rules for WooCommerce** plugin on running.moximoxi.net
   - [ ] Configure markup rule: percentage increase applied globally or per WC category
   - [ ] Verify customer-facing prices reflect markup correctly on product pages
