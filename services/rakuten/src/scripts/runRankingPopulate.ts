@@ -1,5 +1,5 @@
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
-// import { categories } from "../config/genres"; // uncomment for full run
+import { categories } from "../config/genres"; // uncomment for full run
 import fs from "fs";
 import "dotenv/config";
 import { pushProducts } from "../services/woocommerceAPI";
@@ -9,14 +9,14 @@ async function runRankingPopulate() {
 	const config = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/rakuten/config.json`, "utf-8"));
 	const pagesPerSubcategory = Math.max(1, config.pagesPerSubcategory);
 
-	// Full run: const categoriesArr = Object.entries(categories);
-	const categoriesArr: [string, number[]][] = [
-		["Running Gear", [565768, 565767]], // Shoes, Wear
-		["Training", [565772, 205054]], // Fitness Machines, Dumbbell
-		["Nutrition & Supplements", [559936, 567603]], // Sports Drinks, Protein
-		["Recovery & Care", [214828, 214822]], // Massage Products, Stretching Equipment
-		["Sportswear", [502027, 402463]], // Women apparel, Men apparel
-	];
+	const categoriesArr = Object.entries(categories);
+	// const categoriesArr: [string, number[]][] = [
+	// 	["Running Gear", [565768, 565767]], // Shoes, Wear
+	// 	["Training", [201869, 565771]], // Wear, Shoes
+	// 	["Nutrition & Supplements", [559936, 567603]], // Sports Drinks, Protein
+	// 	["Recovery & Care", [214828, 214822]], // Massage Products, Stretching Equipment
+	// 	["Sportswear", [502027, 402463]], // Women apparel, Men apparel
+	// ];
 
 	console.log("starting populating by rankings...");
 

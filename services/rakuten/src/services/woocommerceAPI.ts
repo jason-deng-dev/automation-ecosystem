@@ -35,7 +35,6 @@ const SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Leg Warmer", parent: "Running Gear" },
 	{ name: "Neck Warmer", parent: "Running Gear" },
 	// Training
-	{ name: "Fitness Machines", parent: "Training" },
 	{ name: "Wear", parent: "Training" },
 	{ name: "Shoes", parent: "Training" },
 	{ name: "Protein Shaker", parent: "Training" },
@@ -44,9 +43,6 @@ const SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Triathlon", parent: "Training" },
 	{ name: "Yoga Wear", parent: "Training" },
 	{ name: "Yoga Mat", parent: "Training" },
-	{ name: "Dumbbell", parent: "Training" },
-	{ name: "Treadmill", parent: "Training" },
-	{ name: "Balance Ball", parent: "Training" },
 	{ name: "Resistance Band", parent: "Training" },
 	{ name: "Jump Rope", parent: "Training" },
 	// Nutrition & Supplements
@@ -98,9 +94,11 @@ export async function setupCategories(): Promise<Record<string, number>> {
 		create: CATEGORIES.map((name) => ({ name })),
 	});
 
+	const decodeHtml = (str: string) => str.replace(/&amp;/g, '&');
+
 	const categoryIdMap: Record<string, number> = {};
 	for (const cat of parentRes.data.create) {
-		categoryIdMap[cat.name] = cat.id;
+		categoryIdMap[decodeHtml(cat.name)] = cat.id;
 	}
 
 	// Step 2 — create subcategories with parent IDs
@@ -112,16 +110,31 @@ export async function setupCategories(): Promise<Record<string, number>> {
 	});
 
 	for (const sub of subRes.data.create) {
-		categoryIdMap[sub.name] = sub.id;
+		categoryIdMap[decodeHtml(sub.name)] = sub.id;
 	}
 
 	// { "Running Gear": 12, "Shoes": 34, ... }
 	return categoryIdMap;
 }
 
+const UNMAPPED_LOG = `${process.env.DATA_DIR}/rakuten/unmapped_genres.json`;
+
+function logUnmappedProduct(product: DbItem) {
+	const existing = fs.existsSync(UNMAPPED_LOG)
+		? JSON.parse(fs.readFileSync(UNMAPPED_LOG, 'utf-8'))
+		: [];
+	existing.push({ subcategory_id: product.subcategory_id, itemName: product.itemName, itemUrl: product.itemUrl });
+	fs.writeFileSync(UNMAPPED_LOG, JSON.stringify(existing, null, 2));
+}
+
 async function pushProduct(product: DbItem) {
-	const price = calculatePrice(product.itemPrice, product.categoryName);
-	const { name: subcategoryName } = await getSubcategoryNameByProductId(product.subcategory_id);
+	const price = calculatePrice(product.itemPrice);
+	const subcategory = await getSubcategoryNameByProductId(product.subcategory_id);
+	if (!subcategory) {
+		logUnmappedProduct(product);
+		return null;
+	}
+	const subcategoryName = subcategory.name;
 
 	const data = {
 		name: product.itemName,
@@ -144,6 +157,10 @@ export async function pushProducts(products: DbItem[]) {
 	for (const product of products) {
 		try {
 			const wcId = await pushProduct(product);
+			if (wcId === null) {
+				console.log(`skipped ${product.itemUrl} — unmapped subcategory_id ${product.subcategory_id}, logged to unmapped_genres.json`);
+				continue;
+			}
 			await updateWoocommerceProductId(product.id, wcId);
 		} catch (err) {
 			console.log(err);
