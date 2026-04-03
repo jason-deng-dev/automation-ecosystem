@@ -2,7 +2,7 @@ import "dotenv/config";
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import fs from "fs";
 import { calculatePrice } from "../services/pricing";
-import { DbItem } from "../utils";
+import { DbItem, cleanTitle } from "../utils";
 import { getSubcategoryNameByProductId, updateWoocommerceProductId } from "../db/queries";
 import wpCategoryIds from "../config/wpCategoryIds";
 
@@ -30,7 +30,6 @@ const SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Running Cap", parent: "Running Gear" },
 	{ name: "Running Tights", parent: "Running Gear" },
 	{ name: "Compression Tights", parent: "Running Gear" },
-	{ name: "Reflective Vest", parent: "Running Gear" },
 	{ name: "Running Belt", parent: "Running Gear" },
 	{ name: "Leg Warmer", parent: "Running Gear" },
 	{ name: "Neck Warmer", parent: "Running Gear" },
@@ -136,18 +135,22 @@ async function pushProduct(product: DbItem) {
 	}
 	const subcategoryName = subcategory.name;
 
+	const { title, promoText } = cleanTitle(product.itemName);
 	const data = {
-		name: product.itemName,
+		name: title,
 		type: "simple",
 		regular_price: String(price),
 		description: product.itemCaption,
-		short_description: product.itemCaption,
+		short_description: promoText,
 		categories: [
 			{
 				id: wpCategoryIds[subcategoryName],
 			},
 		],
 		images: product.mediumImageUrls.map(({ imageUrl }) => ({ src: imageUrl })),
+		meta_data: [
+			{ key: "_rakuten_url", value: product.itemUrl },
+		],
 	};
 	const res = await WooCommerce.post("products", data);
 	return res.data.id;
@@ -155,6 +158,10 @@ async function pushProduct(product: DbItem) {
 
 export async function pushProducts(products: DbItem[]) {
 	for (const product of products) {
+		if (product.wc_product_id) {
+			console.log(`skipped ${product.itemUrl} — already in WooCommerce (wc_product_id: ${product.wc_product_id})`);
+			continue;
+		}
 		try {
 			const wcId = await pushProduct(product);
 			if (wcId === null) {

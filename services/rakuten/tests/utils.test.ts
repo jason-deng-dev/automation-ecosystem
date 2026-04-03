@@ -1,4 +1,4 @@
-import { mockAPICall, normalizeItems } from '../src/utils';
+import { mockAPICall, normalizeItems, cleanTitle } from '../src/utils';
 import { describe, it, expect } from 'vitest';
 
 describe("normalizeItems", () => {
@@ -48,5 +48,48 @@ describe("normalizeItems", () => {
 				expect(item).toHaveProperty(field);
 			}
 		}
+	});
+});
+
+describe("cleanTitle", () => {
+	it("strips 【...】 brackets and moves to promoText", () => {
+		const { title, promoText } = cleanTitle("【公式】ナイキ エアズーム ランニングシューズ");
+		expect(title).toBe("ナイキ エアズーム ランニングシューズ");
+		expect(promoText).toBe("公式");
+	});
+
+	it("strips ★...★ patterns and moves to promoText", () => {
+		const { title, promoText } = cleanTitle("★送料無料★アシックス ゲルカヤノ 31 メンズ");
+		expect(title).toBe("アシックス ゲルカヤノ 31 メンズ");
+		expect(promoText).toContain("送料無料");
+	});
+
+	it("strips date-limited promo prefix with single ★", () => {
+		const { title, promoText } = cleanTitle("4/1限定★抽選で最大100％Pバック ナイキ ZOOM RIVAL FLY メンズ");
+		expect(title).toBe("ナイキ ZOOM RIVAL FLY メンズ");
+		expect(promoText).toContain("Pバック");
+	});
+
+	it("strips [square bracket] tags", () => {
+		const { title } = cleanTitle("ナイキ ランニングシューズ メンズ [Rakuten Fashion]");
+		expect(title).toBe("ナイキ ランニングシューズ メンズ");
+	});
+
+	it("strips 送料込み prefix", () => {
+		const { title } = cleanTitle("送料込み ミズノ ウェーブライダー 27 メンズ");
+		expect(title).toBe("ミズノ ウェーブライダー 27 メンズ");
+	});
+
+	it("returns empty promoText when no promo patterns present", () => {
+		const { title, promoText } = cleanTitle("アシックス NOVABLAST 5 メンズ ランニングシューズ");
+		expect(title).toBe("アシックス NOVABLAST 5 メンズ ランニングシューズ");
+		expect(promoText).toBe("");
+	});
+
+	it("handles multiple promo patterns in one title", () => {
+		const { title, promoText } = cleanTitle("【楽天1位】★期間限定★アシックス ゲルニンバス 25 メンズ");
+		expect(title).toBe("アシックス ゲルニンバス 25 メンズ");
+		expect(promoText).toContain("楽天1位");
+		expect(promoText).toContain("期間限定");
 	});
 });
