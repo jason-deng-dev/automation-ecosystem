@@ -1,11 +1,4 @@
 {
-	"markup": {
-		"Running Gear": 0.22,
-		"Training": 0.22,
-		"Nutrition & Supplements": 0.20,
-		"Recovery & Care": 0.20,
-		"Sportswear": 0.25
-	},
 	"YenToYuan": 0.043,
 	"pagesPerSubcategory": 1,
 	"SearchFillThreshhold": 10
