@@ -135,8 +135,10 @@ export function cleanTitle(name: string): { title: string; promoText: string } {
 		.replace(/★[^★]*★/g, (match) => { promoMatches.push(match.slice(1, -1)); return ''; })
 		.replace(/^[▽▼◆◇■□●○◎][^\s]*\s*/g, (match) => { promoMatches.push(match.trim()); return ''; })
 		.replace(/^.*?(?:Pバック|円OFF|%OFF|ポイント[0-9０-９倍]+)\s+/g, (match) => { promoMatches.push(match.trim()); return ''; })
+		.replace(/^[^。\n]*?まで[！!]\s*/g, (match) => { promoMatches.push(match.trim()); return ''; })
 		.replace(/\[[^\]]*\]/g, '') // strip [Rakuten Fashion], [amz] etc
 		.replace(/送料(込み|無料|込)/g, '') // strip shipping notices
+		.replace(/メール便[^\s]*/g, '') // strip メール便/ネコポス shipping method mentions
 		.replace(/\s+/g, ' ')
 		.trim();
 

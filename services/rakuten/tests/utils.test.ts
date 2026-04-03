@@ -115,4 +115,15 @@ describe("cleanTitle", () => {
 		const { title } = cleanTitle("▽10%OFFクーポン コカ・コーラ アクエリアス 500ml");
 		expect(title).toBe("コカ・コーラ アクエリアス 500ml");
 	});
+
+	it("strips date-limited promo ending with まで！", () => {
+		const { title, promoText } = cleanTitle("最大6000円OFFクーポン配布中！4/3 23:59まで！アシックス ゲルカヤノ 31");
+		expect(title).toBe("アシックス ゲルカヤノ 31");
+		expect(promoText).toContain("まで！");
+	});
+
+	it("strips メール便 shipping method mentions", () => {
+		const { title } = cleanTitle("メール便でもネコポスだから速い ミズノ ウェーブライダー 27");
+		expect(title).toBe("ミズノ ウェーブライダー 27");
+	});
 });
