@@ -1,5 +1,5 @@
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
-// import { categories } from "../config/genres"; // uncomment for full run
+import { categories } from "../config/genres";
 import fs from "fs";
 import "dotenv/config";
 import { pushProducts } from "../services/woocommerceAPI";
@@ -9,14 +9,7 @@ async function runRankingPopulate() {
 	const config = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/rakuten/config.json`, "utf-8"));
 	const pagesPerSubcategory = Math.max(1, config.pagesPerSubcategory);
 
-	// const categoriesArr = Object.entries(categories);
-	const categoriesArr: [string, number[]][] = [
-		["Running Gear", [565768]], // Shoes
-		["Training", [201869]], // Wear
-		["Nutrition & Supplements", [559936]], // Sports Drinks
-		["Recovery & Care", [214828]], // Massage Products
-		["Sportswear", [502027]], // Women apparel
-	];
+	const categoriesArr = Object.entries(categories);
 
 	console.log("starting populating by rankings...");
 

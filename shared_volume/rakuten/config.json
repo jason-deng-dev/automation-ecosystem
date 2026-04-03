@@ -1,5 +1,6 @@
 {
 	"YenToYuan": 0.043,
+	"markupPercent": 0,
 	"pagesPerSubcategory": 1,
 	"SearchFillThreshhold": 10
 }
