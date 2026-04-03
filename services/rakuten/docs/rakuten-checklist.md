@@ -81,7 +81,7 @@ x
   - [x] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
   - [x] Configure flat shipping rate per order in WooCommerce settings — ¥100 flat rate
   - [x] Add shipping policy note to WooCommerce cart page — per-product-type estimates + caveat for heavy orders (Chinese only)
-  - [x] Run initial bulk push across all categories
+  - [ ] Run initial bulk push across all categories — WC cleared; clean run with `cleanTitle` + `_rakuten_url` meta pending; switch `runRankingPopulate.ts` back to `Object.entries(categories)` and run `npm run db` first
 
 - [x] Product quality fixes
   - [x] Strip promotional text from titles — `cleanTitle()` in `utils.ts` strips 【...】, ★...★, date-limited promo prefixes; called at push time; promo text moved to WC `short_description`
@@ -89,6 +89,8 @@ x
 
 - [ ] WooCommerce remaining → §5
   - [x] Idempotency check — skip push if wc_product_id already set in DB
+  - [x] Store `_rakuten_url` as WC product meta in `pushProduct` — allows admin to trace WC product back to Rakuten source
+  - [x] `functions.php` hook — displays Rakuten URL as clickable link on WP admin order detail page (`woocommerce_after_order_itemmeta`)
   - [ ] `src/scripts/repushFromDb.ts` — re-push all products in DB that have a wc_product_id to WooCommerce (updates meta, price, images); used to backfill changes like _rakuten_url meta without re-scraping
   - [ ] Install **Discount Rules for WooCommerce** plugin on running.moximoxi.net
   - [ ] Configure markup rule: percentage increase applied globally or per WC category
