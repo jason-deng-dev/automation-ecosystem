@@ -87,7 +87,7 @@ x
   - [x] Strip promotional text from titles — `cleanTitle()` in `utils.ts` strips 【...】, ★...★, date-limited promo prefixes; called at push time; promo text moved to WC `short_description`
   - [x] Audit + fix genre IDs returning off-theme products — removed Reflective Vest subcategory entirely (genre IDs were pulling industrial tools)
 
-- [ ] WooCommerce remaining → §5
+- [x] WooCommerce remaining → §5
   - [x] Idempotency check — skip push if wc_product_id already set in DB
   - [x] Store `_rakuten_url` as WC product meta in `pushProduct` — allows admin to trace WC product back to Rakuten source
   - [x] `functions.php` hook — displays Rakuten URL as clickable link on WP admin order detail page (`woocommerce_after_order_itemmeta`)
@@ -106,15 +106,14 @@ x
   - [x] If scraped product has availability=0 → remove from WC (DELETE) + remove from DB immediately
   - [x] For each stale product (missed_scrapes >= 3, i.e. not seen in last 3 weekly scrapes) → remove from WC + delete from DB
   - [x] Write run_log.json and product_stats.json to shared volume after each run
-  - [ ] Wire up to node-cron in app.ts (schedule: every Monday 3am JST)
+  - [x] Wire up to node-cron in app.ts (schedule: every Monday 3am JST)
 
 - [ ] Product request flow → §9 Product Request Flow
   - Approach: always fetch X products fresh from Rakuten — no DB fill calculation.
     Products aren't indexed by keyword so there's no reliable way to count existing matches.
-  - Translation via DeepL API (ZH→JA for keyword, JA→ZH for product name+desc before WC push)
+  - No DeepL needed — Rakuten search API accepts Chinese keywords natively; TranslatePress handles JA→ZH lazily on first page view
   - Result: SSE "done" event sends `/shop/?s={keywordZH}` — customer lands on pre-searched results page.
-  - [ ] DeepL helper — translate(text, sourceLang, targetLang)
-  - [ ] POST /api/request-product endpoint — translate keyword ZH→JA → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → translate name+desc JA→ZH → push WC → store DB → emit SSE progress
+  - [ ] POST /api/request-product endpoint — Chinese keyword → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → push WC → store DB → emit SSE progress
   - [ ] SSE progress stream (GET /api/request-product/status/:requestId) — emit after each product pushed
   - [ ] Embed progress indicator widget on WooCommerce search results page (shortcode or plugin)
 

@@ -11,7 +11,7 @@ Currently, products are added to WooCommerce manually. Each product requires: fi
 Product ingestion needs to be:
 
 - **Automated** — fetch directly from Rakuten, no manual copy-paste
-- **Translated** — product names and descriptions are in Japanese; TranslatePress + DeepL handles JA → ZH-HANS on first customer view and caches permanently in WordPress DB
+- **Translated** — product names and descriptions are in Japanese; TranslatePress + Google Translate handles JA → ZH-HANS on first customer view and caches permanently in WordPress DB
 - **Priced intelligently** — sale price must account for Rakuten cost, estimated shipping, and target margin
 - **Scalable** — bulk import top-ranked products per genre at launch; weekly cron keeps catalog fresh
 - **Requestable** — if a customer can't find a product, they submit a request and it appears on the store within ~2 min
@@ -19,7 +19,7 @@ Product ingestion needs to be:
 ### 1.3 Goals
 
 - Automate product ingestion from Rakuten Ichiba into WooCommerce — no manual copy-paste
-- Translate product pages via TranslatePress + DeepL (JA → ZH-HANS) on first customer view, cached permanently in WordPress DB
+- Translate product pages via TranslatePress + Google Translate (JA → ZH-HANS) on first customer view, cached permanently in WordPress DB
 - Calculate auto-pricing using a margin formula (Rakuten price + shipping estimate + margin %)
 - Pre-load top-ranked products per category at launch via Ranking API; weekly cron auto-syncs new products
 - Expose a "Request a product" flow — customer submits keyword, backend fetches from Rakuten, prices, and pushes to WooCommerce while they wait (~1-2 min) with an on-page progress indicator
@@ -28,7 +28,7 @@ Product ingestion needs to be:
 ### 1.4 Non-Goals
 
 - Custom React SPA storefront — WooCommerce is the storefront
-- Pipeline-level translation for bulk products — TranslatePress handles this lazily on the WordPress side. **Exception:** the product request flow translates name + description in the pipeline (DeepL JA → ZH) before pushing, since these products are guaranteed to be viewed immediately (see §9)
+- Pipeline-level translation — TranslatePress + Google Translate handles all translation lazily on the WordPress side, including the product request flow (Rakuten search API accepts Chinese keywords natively; TranslatePress handles JA→ZH on first page view)
 - Real-time price sync after initial WooCommerce import (v1 is import-only, re-scrape updates changed prices)
 - Sourcing products from marketplaces other than Rakuten in v1
 
@@ -41,7 +41,7 @@ Product ingestion needs to be:
 |**WooCommerce**|Full customer-facing storefront — product browsing, search, cart, checkout, payments (Stripe is built-in via WooCommerce)|
 |**Express API**|Backend pipeline — Rakuten fetch, normalize, price, WooCommerce push, product request handler, weekly cron|
 |**PostgreSQL**|Permanent product store — rate limit protection, re-scrape deduplication, price change tracking|
-|**TranslatePress + DeepL**|JA → ZH-HANS translation on first customer page view, cached in WordPress DB permanently|
+|**TranslatePress + Google Translate**|JA → ZH-HANS translation on first customer page view, cached in WordPress DB permanently|
 |**TypeScript**|Implementation language for the entire Express pipeline — enforces type correctness across all pipeline stages at compile time|
 
 See Section 8 (Technical Decisions) for rationale on TypeScript, WooCommerce, and the no-deepl.js approach.
@@ -412,26 +412,23 @@ When a customer searches the WooCommerce store and can't find a product, a promi
 
 **Approach:** Always fetch X products fresh from Rakuten — no DB fill calculation. Products aren't indexed by keyword in PostgreSQL so there's no reliable way to count existing matches for a given search term. Rakuten's search handles relevance; we push whatever it returns.
 
-**Translation:** Unlike bulk products (TranslatePress lazy on first customer view), request flow products are pipeline-translated via DeepL (JA → ZH) before pushing to WooCommerce. These products are guaranteed to be viewed immediately so lazy translation would leave the customer seeing Japanese on arrival. Pipeline translation also means WooCommerce stores Chinese names, so `/shop/?s={keywordZH}` finds them natively — no TranslatePress search integration needed.
+**Translation:** No pipeline translation needed. Rakuten's search API accepts Chinese keywords natively — no ZH→JA conversion required. Products are pushed to WooCommerce with Japanese names; TranslatePress handles JA→ZH lazily on first page view, same as bulk products.
 
 ```
 Customer submits product request (keyword in Chinese)
     ↓  POST /api/request-product
 Express API:
-  1. Translate keyword ZH → JA via DeepL (Rakuten Search API needs Japanese)
-  2. Fetch X products from Rakuten Keyword Search API
-  3. For each product:
+  1. Fetch X products from Rakuten Keyword Search API (Chinese keyword passed directly)
+  2. For each product:
       a. Check rakuten_url in PostgreSQL (idempotency — skip if already exists)
       b. New product → normalize → calculate price
-      c. Translate name + description JA → ZH via DeepL
-      d. Push to WooCommerce (with Chinese name/description)
-      e. Store in PostgreSQL
-      f. Emit SSE progress update
+      c. Push to WooCommerce (Japanese name/description)
+      d. Store in PostgreSQL
+      e. Emit SSE progress update
     ↓  ~1-2 minutes total
 SSE "done" event sends link: /shop/?s={keywordZH}
     ↓
 On-page indicator → "Products are ready!" → customer clicks through to pre-searched results page
-WooCommerce search finds products natively (Chinese names stored, Chinese keyword searched)
 ```
 
 ### 9.3 On-Page Progress Indicator
@@ -459,9 +456,7 @@ If implemented, it would be two sequential calls:
 
 - WordPress shortcode added to WooCommerce search results page — no custom storefront needed
 - The progress indicator is a small embedded JS snippet that connects to the SSE stream
-- Pipeline translation (DeepL) only applies to the request flow — bulk products still use TranslatePress lazy translation since they may never be viewed
-- Two DeepL calls per request: (1) keyword ZH → JA for Rakuten search, (2) product name + description JA → ZH before WooCommerce push
-- WooCommerce search works natively because Chinese names are stored directly — no TranslatePress search integration required
+- No translation API needed in the pipeline — Rakuten search accepts Chinese natively; TranslatePress handles JA→ZH lazily for all products including request flow
 
 ---
 
