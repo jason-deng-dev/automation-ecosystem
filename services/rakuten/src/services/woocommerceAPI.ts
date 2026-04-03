@@ -3,7 +3,7 @@ import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import fs from "fs";
 import { calculatePrice } from "../services/pricing";
 import { DbItem, cleanTitle } from "../utils";
-import { getSubcategoryNameByProductId, updateWoocommerceProductId } from "../db/queries";
+import { getSubcategoryNameByProductId, updateWoocommerceProductId, getAllPushedProducts } from "../db/queries";
 import wpCategoryIds from "../config/wpCategoryIds";
 
 const WooCommerce = new WooCommerceRestApi({
@@ -173,4 +173,19 @@ export async function pushProducts(products: DbItem[]) {
 			console.log(err);
 		}
 	}
+}
+
+export async function updatePrices() {
+	const products = await getAllPushedProducts();
+	console.log(`Updating prices for ${products.length} products...`);
+	for (const product of products) {
+		try {
+			await WooCommerce.put(`products/${product.wc_product_id}`, {
+				regular_price: String(calculatePrice(product.itemPrice)),
+			});
+		} catch (err) {
+			console.error(`Failed to update price for wc_product_id ${product.wc_product_id}:`, err);
+		}
+	}
+	console.log('Price update complete');
 }

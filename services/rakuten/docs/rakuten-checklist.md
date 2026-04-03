@@ -91,9 +91,8 @@ x
   - [x] Idempotency check — skip push if wc_product_id already set in DB
   - [x] Store `_rakuten_url` as WC product meta in `pushProduct` — allows admin to trace WC product back to Rakuten source
   - [x] `functions.php` hook — displays Rakuten URL as clickable link on WP admin order detail page (`woocommerce_after_order_itemmeta`)
-  - [ ] Install **Discount Rules for WooCommerce** plugin on running.moximoxi.net
-  - [ ] Configure markup rule: percentage increase applied globally or per WC category
-  - [ ] Verify customer-facing prices reflect markup correctly on product pages
+  - [x] Add `markupPercent` to `config.json` + apply in `calculatePrice()` — operator sets e.g. `20` for 20% markup
+  - [ ] `fs.watch` on `config.json` in app — when `markupPercent` or `YenToYuan` changes, recalculate + re-push prices for all products with `wc_product_id` via WC REST API (PUT /products/{id})
 
 - [ ] Configure TranslatePress + Google Translate on running.moximoxi.net → §7 Translation
   - [ ] Install TranslatePress (free) plugin
@@ -133,6 +132,7 @@ x
   - [ ] Pipeline state written to shared volume for dashboard health card (idle | running | failed)
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3
+  - [ ] `pg_dump rakutenDB > dump.sql` locally → copy to server → `psql rakutenDB < dump.sql` inside postgres container — preserves `wc_product_id` so idempotency check prevents duplicate WC pushes
 
 ---
 

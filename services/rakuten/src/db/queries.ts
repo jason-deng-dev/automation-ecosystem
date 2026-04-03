@@ -151,3 +151,10 @@ export const updateWoocommerceProductId = async (product_id:number, woocommerce_
 		`, [woocommerce_product_id, product_id]
 	)
 }
+
+export const getAllPushedProducts = async () => {
+	const res = await pool.query(
+		`SELECT id, "itemPrice", wc_product_id FROM products WHERE wc_product_id IS NOT NULL`
+	);
+	return res.rows as { id: number; itemPrice: number; wc_product_id: number }[];
+}
