@@ -138,4 +138,19 @@ describe("cleanTitle", () => {
 		expect(title).toBe("選べる7カラー スポーツウェア メンズ");
 		expect(promoText).toContain("あす楽");
 	});
+
+	it("strips trailing imbkk store tag", () => {
+		const { title } = cleanTitle("ナイキ REVOLUTION 8 HJ9198-100 メンズ ランニングシューズ NIKE imbkk");
+		expect(title).toBe("ナイキ REVOLUTION 8 HJ9198-100 メンズ ランニングシューズ NIKE");
+	});
+
+	it("strips trailing cat-run store tag", () => {
+		const { title } = cleanTitle("アシックス ランニングシューズ ノヴァブラスト 5 スタンダード 1011B974.002 asics NOVABLAST 5 cat-run");
+		expect(title).toBe("アシックス ランニングシューズ ノヴァブラスト 5 スタンダード 1011B974.002 asics NOVABLAST 5");
+	});
+
+	it("strips trailing season codes (25SS, 26SS)", () => {
+		const { title } = cleanTitle("On（オン） ランニングシューズ メンズ Cloud クラウド 6 25SS");
+		expect(title).toBe("On（オン） ランニングシューズ メンズ Cloud クラウド 6");
+	});
 });

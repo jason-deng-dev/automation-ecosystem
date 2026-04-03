@@ -141,6 +141,8 @@ export function cleanTitle(name: string): { title: string; promoText: string } {
 		.replace(/\[[^\]]*\]/g, '') // strip [Rakuten Fashion], [amz] etc
 		.replace(/送料(込み|無料|込)/g, '') // strip shipping notices
 		.replace(/メール便[^\s]*/g, '') // strip メール便/ネコポス shipping method mentions
+		.replace(/\s+(imbkk|cat-run)\s*$/g, '') // strip store tracking tags
+		.replace(/\s+[0-9]{2}SS\s*$/g, '') // strip season codes (25SS, 26SS)
 		.replace(/\s+/g, ' ')
 		.trim();
 
