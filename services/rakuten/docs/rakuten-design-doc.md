@@ -242,28 +242,25 @@ CREATE TABLE products (
 ### 4.3 Pricing Formula
 
 ```
-sale_price = rakuten_price * yenToYuan * (1 + markup)
+sale_price = rakuten_price * yenToYuan
 ```
 
-**Current config (v1):** Markup = 0%, shipping not included in sticker price. Sticker price is purely the JPY → CNY conversion.
+**Currency:** All sale prices are stored and displayed in CNY (Chinese Yuan). Rakuten prices are in JPY — conversion applies at calculation time using a configurable exchange rate in `config.json`.
 
-**Currency:** All sale prices are stored and displayed in CNY (Chinese Yuan). Rakuten prices are in JPY — conversion applies at calculation time using a configurable exchange rate.
+**Markup:** Handled entirely in WooCommerce via the **Discount Rules for WooCommerce** plugin — not in the pipeline. The pipeline pushes the raw JPY→CNY conversion as `regular_price`. The operator applies a percentage markup globally or per category in the WooCommerce admin UI. This keeps markup management independent of the pipeline — changing margins never requires a re-scrape or re-push.
 
 **Shipping:** Handled separately at WooCommerce checkout — not baked into sticker price. Baking shipping per-product overcharges customers who buy multiple items (they pay one shipment, not one per product). Instead:
 - WooCommerce is configured with a flat shipping rate per order
 - Checkout page includes a shipping policy note: estimated shipping by category (e.g. shoes ~¥X, supplements ~¥Y), with a caveat that actual shipping may require follow-up if order weight is high
 - Operator contacts customer to collect additional shipping if actual cost exceeds estimate
 
-**Markup:** Currently 0% — operator decision, to be revisited. Formula supports per-category markup via `config.json` when ready.
-
-**Example (current):**
+**Example:**
 
 ```
 Rakuten price: ¥3,240 JPY
-Exchange rate: 0.049
-Markup: 0%
-
-sale_price = 3240 * 0.049 * 1.0 = ¥159 CNY
+Exchange rate: 0.043
+sale_price = 3240 * 0.043 = ¥140 CNY (rounded up to nearest 5)
+Markup applied separately in WooCommerce plugin (e.g. +20% → ¥168 CNY displayed to customer)
 ```
 
 ### 4.4 Express API Endpoints
@@ -397,7 +394,7 @@ Translation is handled entirely by TranslatePress + Google Translate on the Word
 |Translation|TranslatePress (free) + Google Translate API on first customer view (WordPress)|DeepL via TranslatePress Pro (£17/mo), custom pipeline translation|Free tier covers full use case; caches in WordPress DB; no pipeline dependency; DeepL Pro unnecessary for single-language store|
 |Primary fetch|Rakuten Ranking API (top N per genre)|Genre search, keyword search|Ranking API returns proven top-sellers — higher product quality for initial catalog; supports up to top 1000|
 |WooCommerce integration|WooCommerce REST API|Direct DB insert, WP CLI|Official path; hooks fire correctly; no SSH dependency; revocable auth|
-|Pricing|Formula-based (configurable per category)|Manual per-product, flat markup|Configurable margins per category reflects real shipping cost differences; formula is auditable|
+|Pricing|Pipeline applies raw JPY→CNY; markup via WooCommerce plugin|Baking markup into pipeline formula|Decouples margin management from scraping — operator changes markup in WooCommerce admin without re-running the pipeline|
 |Deduplication key|`rakuten_url`|`item_code`, `sku`|URL is stable and unique per Rakuten listing; also used as canonical product identity for re-scrape|
 |Re-scrape strategy|Check URL → compare price/availability → update if changed|Full re-fetch, ignore existing|Minimizes Rakuten API calls; only pushes WooCommerce updates when something actually changed|
 |Frontend|WooCommerce storefront + TranslatePress|Custom React SPA|WooCommerce has 24/7 support, built-in security, maintainable by any WordPress developer after handoff|

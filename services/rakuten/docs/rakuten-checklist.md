@@ -36,8 +36,8 @@ x
     - [x] updateWoocommerceProductId(product_id, wc_product_id) — sets wc_product_id + wc_pushed_at = NOW()
 
 - [x] Pricing (`src/services/pricing.ts`) → §4.3 Pricing Formula
-  - [x] calculatePrice(price, category) — formula: `price * (1 + markup) * yenToYuan`, rounded up to nearest 5 CNY
-  - [x] Reads per-category markup + yenToYuan from shared volume config.json at startup (shipping removed — handled at WooCommerce checkout)
+  - [x] calculatePrice(price) — formula: `price * yenToYuan`, rounded up to nearest 5 CNY; markup removed from pipeline (handled by WooCommerce plugin)
+  - [x] Reads yenToYuan from shared volume config.json at startup; markup % removed from config
   - [x] Strip `?_ex=` query param from Rakuten image URLs in `normalizeItems` — serves full-res images to WooCommerce
 
 - [x] Tests (`tests/`) → no design doc section
@@ -76,9 +76,9 @@ x
 
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [x] update arrReference
-  - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre 
+  - [x] Complete `runRankingPopulate.ts` loop body — fetch per genre 
   (`max(1, pagesPerSubcategory)` pages per subcategory — Ranking API returns fixed 30 products/page, no `hits` param; minimum 1 page = 30 products per subcategory), upsert, push
-  - [ ] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
+  - [x] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
   - [ ] Configure flat shipping rate per order in WooCommerce settings
   - [ ] Add shipping policy note to WooCommerce checkout page — category-based estimates + caveat for heavy orders
   - [ ] Run initial bulk push across all categories
@@ -86,6 +86,9 @@ x
 - [ ] WooCommerce remaining → §5
   - [ ] removeProduct(wcProductId) — delete product from WooCommerce by WC product ID
   - [ ] Idempotency check by rakuten_url before push (skip if already in WooCommerce)
+  - [ ] Install **Discount Rules for WooCommerce** plugin on running.moximoxi.net
+  - [ ] Configure markup rule: percentage increase applied globally or per WC category
+  - [ ] Verify customer-facing prices reflect markup correctly on product pages
 
 - [ ] Configure TranslatePress + Google Translate on running.moximoxi.net → §7 Translation
   - [ ] Install TranslatePress (free) plugin
@@ -124,6 +127,17 @@ x
   - [ ] Pipeline state written to shared volume for dashboard health card (idle | running | failed)
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3
+
+---
+
+## Handoff Document — TODO
+
+- [ ] Write handoff doc covering operator-managed configuration:
+  - **Markup:** Discount Rules for WooCommerce plugin — how to install, create a percentage markup rule globally or per category, and verify it's applying correctly on product pages
+  - **Flat shipping rate:** WooCommerce → Settings → Shipping → Shipping Zones — how to set a flat rate per order and update it when shipping costs change
+  - **Shipping policy note:** where the checkout page note lives and how to edit the category-based estimates
+  - **Exchange rate:** how to update `YenToYuan` in `shared_volume/rakuten/config.json` when the JPY→CNY rate changes significantly
+  - **Running the pipeline:** how to trigger a manual bulk push or re-scrape
 
 ---
 
