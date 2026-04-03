@@ -20,7 +20,7 @@
   - [x] XHS card: run state, last run, next scheduled post, auth status, success rate, error breakdown, post type distribution, API token totals
   - [x] Scraper card: run state, last run, next scrape, total races, last scraped, data freshness, success rate
   - [ ] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator
-  - [ ] Action triggers on each home card (manual trigger, re-auth, etc.)
+  - [ ] Action triggers on each home card (manual trigger, re-auth, etc.) — XHS card has placeholder UI stubs, not wired up
   - [ ] Poll or SSE to keep cards live without page refresh
 
 ---
