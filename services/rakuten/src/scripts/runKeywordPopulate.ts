@@ -2,7 +2,7 @@ import { pushProducts } from "../services/woocommerceAPI";
 import { getProductsByKeyword } from "../services/rakutenAPI";
 import { upsertProducts, getProductByUrls} from "../db/queries";
 
-async function singleKeywordRun() {
+async function runKeywordPopulate() {
 	console.log("starting keyword populate single run...");
 
 	console.log("fetching products from Rakuten");
@@ -21,4 +21,4 @@ async function singleKeywordRun() {
     console.log("Run complete")
 }
 
-singleKeywordRun();
+runKeywordPopulate();
