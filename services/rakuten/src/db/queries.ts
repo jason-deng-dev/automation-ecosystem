@@ -158,3 +158,32 @@ export const getAllPushedProducts = async () => {
 	);
 	return res.rows as { id: number; itemPrice: number; wc_product_id: number }[];
 }
+
+export const getStaleProductsWithWcId = async () => {
+	const res = await pool.query(
+		`SELECT id, wc_product_id FROM products WHERE missed_scrapes >= 3 AND wc_product_id IS NOT NULL`
+	);
+	return res.rows as { id: number; wc_product_id: number }[];
+};
+
+export const deleteProductByUrl = async (itemUrl: string) => {
+	await pool.query(`DELETE FROM products WHERE itemURL = $1`, [itemUrl]);
+};
+
+export const getProductStatsByCategory = async () => {
+	const res = await pool.query(`
+		SELECT c.name AS "categoryName", COUNT(*) AS total, COUNT(p.wc_product_id) AS pushed
+		FROM products p
+		LEFT JOIN subcategories s ON p.subcategory_id = s.id
+		LEFT JOIN categories c ON s.category_id = c.id
+		GROUP BY c.name
+	`);
+	return res.rows as { categoryName: string; total: string; pushed: string }[];
+};
+
+export const getProductTotals = async () => {
+	const res = await pool.query(
+		`SELECT COUNT(*) AS total, COUNT(wc_product_id) AS pushed FROM products`
+	);
+	return res.rows[0] as { total: string; pushed: string };
+};

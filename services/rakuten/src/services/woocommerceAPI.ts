@@ -175,6 +175,20 @@ export async function pushProducts(products: DbItem[]) {
 	}
 }
 
+export async function deleteWcProduct(wcProductId: number) {
+	try {
+		await WooCommerce.delete(`products/${wcProductId}`, { force: true });
+	} catch (err) {
+		console.error(`Failed to delete WC product ${wcProductId}:`, err);
+	}
+}
+
+export async function updateWcPrice(wcProductId: number, price: number) {
+	await WooCommerce.put(`products/${wcProductId}`, {
+		regular_price: String(price),
+	});
+}
+
 export async function updatePrices() {
 	const products = await getAllPushedProducts();
 	console.log(`Updating prices for ${products.length} products...`);

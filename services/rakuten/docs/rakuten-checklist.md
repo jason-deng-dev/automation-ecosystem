@@ -81,7 +81,7 @@ x
   - [x] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
   - [x] Configure flat shipping rate per order in WooCommerce settings — ¥100 flat rate
   - [x] Add shipping policy note to WooCommerce cart page — per-product-type estimates + caveat for heavy orders (Chinese only)
-  - [ ] Run initial bulk push across all categories — WC cleared; clean run with `cleanTitle` + `_rakuten_url` meta pending; switch `runRankingPopulate.ts` back to `Object.entries(categories)` and run `npm run db` first
+  - [x] Run initial bulk push across all categories — WC cleared; clean run with `cleanTitle` + `_rakuten_url` meta pending; switch `runRankingPopulate.ts` back to `Object.entries(categories)` and run `npm run db` first
 
 - [x] Product quality fixes
   - [x] Strip promotional text from titles — `cleanTitle()` in `utils.ts` strips 【...】, ★...★, date-limited promo prefixes; called at push time; promo text moved to WC `short_description`
@@ -92,44 +92,41 @@ x
   - [x] Store `_rakuten_url` as WC product meta in `pushProduct` — allows admin to trace WC product back to Rakuten source
   - [x] `functions.php` hook — displays Rakuten URL as clickable link on WP admin order detail page (`woocommerce_after_order_itemmeta`)
   - [x] Add `markupPercent` to `config.json` + apply in `calculatePrice()` — operator sets e.g. `20` for 20% markup
-  - [ ] `fs.watch` on `config.json` in app — when `markupPercent` or `YenToYuan` changes, recalculate + re-push prices for all products with `wc_product_id` via WC REST API (PUT /products/{id})
+  - [x] `fs.watch` on `config.json` in app — when `markupPercent` or `YenToYuan` changes, recalculate + re-push prices for all products with `wc_product_id` via WC REST API (PUT /products/{id})
 
 - [ ] Configure TranslatePress + Google Translate on running.moximoxi.net → §7 Translation
-  - [ ] Install TranslatePress (free) plugin
-  - [ ] Configure Google Translate API key in TranslatePress settings
-  - [ ] Set source language: Japanese, target: Simplified Chinese (ZH-HANS)
+  - [x] Install TranslatePress (free) plugin
+  - [x] Set source language: Japanese, target: Chinese (Simplified)
+  - [ ] Configure Google Translate API key in TranslatePress settings — waiting on boss to enable Cloud Translation API + create key
   - [ ] Verify JA → ZH-HANS translation fires on first product page view and caches in WordPress DB (product names, descriptions, category names)
+
+- [x] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.8 Stale Product Refresh
+  - [x] Fetch top-ranked products per category via Ranking API
+  - [x] If scraped product URL already in DB and price changed → update DB + re-push to WC (PUT product price)
+  - [x] If scraped product has availability=0 → remove from WC (DELETE) + remove from DB immediately
+  - [x] For each stale product (missed_scrapes >= 3, i.e. not seen in last 3 weekly scrapes) → remove from WC + delete from DB
+  - [x] Write run_log.json and product_stats.json to shared volume after each run
+  - [ ] Wire up to node-cron in app.ts (schedule: every Monday 3am JST)
 
 - [ ] Product request flow → §9 Product Request Flow
   - Approach: always fetch X products fresh from Rakuten — no DB fill calculation.
     Products aren't indexed by keyword so there's no reliable way to count existing matches.
-  - Products are pipeline-translated via Google Translate API (name + description JA → ZH) before WooCommerce push —
-    unlike bulk products (TranslatePress lazy), these are guaranteed to be viewed immediately.
-    This also means WooCommerce search by Chinese keyword works natively without any TranslatePress search integration.
+  - Translation via DeepL API (ZH→JA for keyword, JA→ZH for product name+desc before WC push)
   - Result: SSE "done" event sends `/shop/?s={keywordZH}` — customer lands on pre-searched results page.
-  - [ ] Google Translate ZH → JA keyword translation (customer searches in Chinese, Rakuten needs Japanese)
-  - [ ] Google Translate JA → ZH translation of product name + description before WooCommerce push
-  - [ ] POST /api/request-product endpoint — translate keyword → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → translate name+desc → push WC → store DB → emit SSE progress
+  - [ ] DeepL helper — translate(text, sourceLang, targetLang)
+  - [ ] POST /api/request-product endpoint — translate keyword ZH→JA → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → translate name+desc JA→ZH → push WC → store DB → emit SSE progress
   - [ ] SSE progress stream (GET /api/request-product/status/:requestId) — emit after each product pushed
   - [ ] Embed progress indicator widget on WooCommerce search results page (shortcode or plugin)
-
-- [ ] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.8 Stale Product Refresh
-  - [ ] Fetch top-ranked products per category via Ranking API
-  - [ ] If scraped product URL already in DB and price changed → update DB + re-push to WC (PUT product price)
-  - [ ] If scraped product has availability=0 → remove from WC (DELETE) + remove from DB immediately
-  - [ ] For each stale product (missed_scrapes >= 3, i.e. not seen in last 3 weekly scrapes) → remove from WC + delete from DB
-  - [ ] Write run_log.json and product_stats.json to shared volume after each run
-
-- [ ] Shared volume output → §13 Shared Volume
-  - [ ] Write `rakuten/run_log.json` after each pipeline run (operation, category, products fetched/pushed, failures, stale products deleted)
-  - [ ] Write `rakuten/product_stats.json` after each run (total cached, total pushed, per-category breakdown)
-  - [ ] Write `rakuten/import_log.json` per product WooCommerce push attempt and outcome
-  - [ ] Read `rakuten/config.json` at runtime — per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold
 
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /trigger — fetch more products (category + count)
   - [ ] POST /retry — retry failed WooCommerce imports
   - [ ] Pipeline state written to shared volume for dashboard health card (idle | running | failed)
+
+- [ ] Shared volume output → §13 Shared Volume
+  - [x] Write `rakuten/run_log.json` after each pipeline run (operation, category, products fetched/pushed, failures, stale products deleted)
+  - [x] Write `rakuten/product_stats.json` after each run (total cached, total pushed, per-category breakdown)
+  - [ ] Write `rakuten/import_log.json` per product WooCommerce push attempt and outcome
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3
   - [ ] `pg_dump rakutenDB > dump.sql` locally → copy to server → `psql rakutenDB < dump.sql` inside postgres container — preserves `wc_product_id` so idempotency check prevents duplicate WC pushes
