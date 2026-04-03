@@ -92,4 +92,27 @@ describe("cleanTitle", () => {
 		expect(promoText).toContain("楽天1位");
 		expect(promoText).toContain("期間限定");
 	});
+
+	it("strips 《...》 double angle brackets", () => {
+		const { title, promoText } = cleanTitle("《受注生産》《》ミズノ カスタムオーダー レーシングショーツ");
+		expect(title).toBe("ミズノ カスタムオーダー レーシングショーツ");
+		expect(promoText).toContain("受注生産");
+	});
+
+	it("strips ＼...／ fullwidth slash patterns", () => {
+		const { title, promoText } = cleanTitle("＼今だけ新発売特価！！／シャクティマット 指圧マット");
+		expect(title).toBe("シャクティマット 指圧マット");
+		expect(promoText).toContain("今だけ新発売特価");
+	});
+
+	it("strips ＜...＞ fullwidth angle brackets", () => {
+		const { title, promoText } = cleanTitle("＜10%OFFクーポン発行中＞ On ランニングシューズ メンズ");
+		expect(title).toBe("On ランニングシューズ メンズ");
+		expect(promoText).toContain("10%OFFクーポン発行中");
+	});
+
+	it("strips ▽ triangle prefix", () => {
+		const { title } = cleanTitle("▽10%OFFクーポン コカ・コーラ アクエリアス 500ml");
+		expect(title).toBe("コカ・コーラ アクエリアス 500ml");
+	});
 });
