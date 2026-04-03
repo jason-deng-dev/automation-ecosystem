@@ -120,6 +120,9 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 ### 3.3 Data Flow
 
 #### Bulk push (initial load + ranking)
+
+Per-subcategory fetch count = `max(1, floor(fetchPerCategory / numSubcategories))`. If `fetchPerCategory` is smaller than the number of subcategories in a category, every subcategory still gets at least 1 product scraped.
+
 ```
 For each genre in genres.js:
     Rakuten Ranking API (top N products)
