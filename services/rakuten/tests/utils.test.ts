@@ -126,4 +126,16 @@ describe("cleanTitle", () => {
 		const { title } = cleanTitle("メール便でもネコポスだから速い ミズノ ウェーブライダー 27");
 		expect(title).toBe("ミズノ ウェーブライダー 27");
 	});
+
+	it("strips お買い得スペシャルプライス prefix", () => {
+		const { title, promoText } = cleanTitle("お買い得スペシャルプライス ナイキ アンクル ソックス 3足組 靴下 メンズ");
+		expect(title).toBe("ナイキ アンクル ソックス 3足組 靴下 メンズ");
+		expect(promoText).toContain("お買い得スペシャルプライス");
+	});
+
+	it("strips P5倍 coupon prefix ending with あす楽", () => {
+		const { title, promoText } = cleanTitle("P5倍＆まとめ買いクーポン 5点セット あす楽 選べる7カラー スポーツウェア メンズ");
+		expect(title).toBe("選べる7カラー スポーツウェア メンズ");
+		expect(promoText).toContain("あす楽");
+	});
 });
