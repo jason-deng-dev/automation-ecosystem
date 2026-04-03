@@ -7,6 +7,6 @@
 		"Sportswear": 0
 	},
 	"YenToYuan": 0.043,
-	"fetchPerCategory": 0,
+	"pagesPerSubcategory": 1,
 	"SearchFillThreshhold": 10
 }

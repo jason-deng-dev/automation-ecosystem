@@ -121,9 +121,7 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 #### Bulk push (initial load + ranking)
 
-**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via the `page` parameter (1–34). `fetchPerCategory` in `config.json` represents **number of pages** (not number of products) — each page yields 30 products. Minimum per subcategory is 30.
-
-Per-subcategory page count = `max(1, floor(fetchPerCategory / numSubcategories))`. If `fetchPerCategory` is smaller than the number of subcategories in a category, every subcategory still gets at least 1 page (30 products).
+**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via the `page` parameter (1–34). `pagesPerSubcategory` in `config.json` sets how many pages to fetch per subcategory (each page = 30 products). Minimum is 1 page = 30 products per subcategory.
 
 ```
 For each genre in genres.js:
@@ -578,7 +576,7 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Challenge:** The Rakuten Ranking API does not accept a `hits` parameter — passing it is silently ignored. Initial implementation passed `count` as `hits`, resulting in the API returning its default page size (30 products) regardless of the requested count.
 
-**Solution:** Switch to the `page` parameter (1–34), where each page returns exactly 30 products. `fetchPerCategory` in `config.json` now represents number of pages, not number of products. Minimum granularity is 30 products per subcategory.
+**Solution:** Switch to the `page` parameter (1–34), where each page returns exactly 30 products. Config key renamed to `pagesPerSubcategory` — directly sets how many pages to fetch per subcategory. Minimum granularity is 30 products per subcategory.
 
 ---
 

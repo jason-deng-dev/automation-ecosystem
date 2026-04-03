@@ -15,7 +15,7 @@ x
   - [x] Add `availability` field to Rakuten API response + normalizeItems — maps to `stock_status` in DB
 
 - [x] Config → §4.3 Pricing Formula, §6 Genre Map, §11.6
-  - [x] `shared_volume/rakuten/config.json` — per-category markup %, shipping estimate, JPY→CNY rate, fetchPerCategory, SearchFillThreshold
+  - [x] `shared_volume/rakuten/config.json` — per-category markup %, shipping estimate, JPY→CNY rate, pagesPerSubcategory, SearchFillThreshold
   - [x] `src/config/genres.ts` — Rakuten genre ID map; `categories` (category → genre ID[]) and `allGenres` (flat name → ID map for Claude) exported
   - [x] `src/config/wpCategoryIds.ts` — WooCommerce category name → ID map, hardcoded after setupCategories() + setupNewCategories() runs
   - Genre map stays static in genres.ts — Claude keyword flow returns a genre ID directly, runtime expansion not needed (see §11.6)
@@ -77,7 +77,7 @@ x
 - [ ] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [x] update arrReference
   - [ ] Complete `runRankingPopulate.ts` loop body — fetch per genre 
-  (`max(1, floor(fetchPerCategory / numSubcategories))` pages per subcategory — Ranking API returns fixed 30 products/page, no `hits` param; `fetchPerCategory` = number of pages, minimum 1 page = 30 products per subcategory), upsert, push
+  (`max(1, pagesPerSubcategory)` pages per subcategory — Ranking API returns fixed 30 products/page, no `hits` param; minimum 1 page = 30 products per subcategory), upsert, push
   - [ ] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
   - [ ] Configure flat shipping rate per order in WooCommerce settings
   - [ ] Add shipping policy note to WooCommerce checkout page — category-based estimates + caveat for heavy orders
