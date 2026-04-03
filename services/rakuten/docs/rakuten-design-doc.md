@@ -121,7 +121,9 @@ FETCH → NORMALIZE → PRICE → STORE → PUSH
 
 #### Bulk push (initial load + ranking)
 
-Per-subcategory fetch count = `max(1, floor(fetchPerCategory / numSubcategories))`. If `fetchPerCategory` is smaller than the number of subcategories in a category, every subcategory still gets at least 1 product scraped.
+**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via the `page` parameter (1–34). `fetchPerCategory` in `config.json` represents **number of pages** (not number of products) — each page yields 30 products. Minimum per subcategory is 30.
+
+Per-subcategory page count = `max(1, floor(fetchPerCategory / numSubcategories))`. If `fetchPerCategory` is smaller than the number of subcategories in a category, every subcategory still gets at least 1 page (30 products).
 
 ```
 For each genre in genres.js:
@@ -571,6 +573,12 @@ See `docs/rakuten-checklist.md` for current build status.
 **Challenge:** The weekly re-scrape uses the Ranking API, which only returns the current top N products per genre. Products already in the DB that fall off the ranking have no scalable way to get their price/availability refreshed — calling the Search API one-by-one per stored product becomes untenable at hundreds or thousands of products (1 req/sec rate limit, blocking the weekly job).
 
 **Solution (§11.9):** Add a `missed_scrapes` counter to each product in PostgreSQL. Each weekly ranking run increments the counter for any product not returned by the ranking. At 3 consecutive missed scrapes, the product is hard-deleted from both PostgreSQL and WooCommerce. No separate refresh pass is needed — if a product is popular enough to return to stock, it will re-appear in the Ranking API results and be re-imported naturally as a new product.
+
+### 11.10 Ranking API Has No `hits` Parameter
+
+**Challenge:** The Rakuten Ranking API does not accept a `hits` parameter — passing it is silently ignored. Initial implementation passed `count` as `hits`, resulting in the API returning its default page size (30 products) regardless of the requested count.
+
+**Solution:** Switch to the `page` parameter (1–34), where each page returns exactly 30 products. `fetchPerCategory` in `config.json` now represents number of pages, not number of products. Minimum granularity is 30 products per subcategory.
 
 ---
 

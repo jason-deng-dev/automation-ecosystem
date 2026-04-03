@@ -54,9 +54,9 @@ export const getProductsByGenresId = async (
 
 export const getProductsByRankingGenre = async (
 	genreId: number,
-	count: number,
+	pageNumber: number,
 ) => {
-	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601?format=json&genreId=${genreId}&hits=${count}&applicationId=${process.env.RAKUTEN_APP_ID}`
+	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601?format=json&genreId=${genreId}&pages=${pageNumber}&applicationId=${process.env.RAKUTEN_APP_ID}`
 	
 	try {
 		const res = await fetch(itemSearchEndpoint, {
