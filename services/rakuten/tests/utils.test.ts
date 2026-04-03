@@ -149,8 +149,18 @@ describe("cleanTitle", () => {
 		expect(title).toBe("アシックス ランニングシューズ ノヴァブラスト 5 スタンダード 1011B974.002 asics NOVABLAST 5");
 	});
 
+	it("strips concatenated cat-run (v14cat-run)", () => {
+		const { title } = cleanTitle("ニューバランス ランニングシューズ フレッシュフォーム v14 new balance Fresh Foam X 1080 v14cat-run");
+		expect(title).toBe("ニューバランス ランニングシューズ フレッシュフォーム v14 new balance Fresh Foam X 1080 v14");
+	});
+
 	it("strips trailing season codes (25SS, 26SS)", () => {
 		const { title } = cleanTitle("On（オン） ランニングシューズ メンズ Cloud クラウド 6 25SS");
 		expect(title).toBe("On（オン） ランニングシューズ メンズ Cloud クラウド 6");
+	});
+
+	it("strips concatenated season code (TOKYO26SS)", () => {
+		const { title } = cleanTitle("アシックス ランニングシューズ メタスピード エッジ トウキョウ スタンダード 1013A163.101 asics METASPEED EDGE TOKYO26SS");
+		expect(title).toBe("アシックス ランニングシューズ メタスピード エッジ トウキョウ スタンダード 1013A163.101 asics METASPEED EDGE TOKYO");
 	});
 });

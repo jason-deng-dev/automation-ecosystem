@@ -91,7 +91,6 @@ x
   - [x] Idempotency check — skip push if wc_product_id already set in DB
   - [x] Store `_rakuten_url` as WC product meta in `pushProduct` — allows admin to trace WC product back to Rakuten source
   - [x] `functions.php` hook — displays Rakuten URL as clickable link on WP admin order detail page (`woocommerce_after_order_itemmeta`)
-  - [ ] `src/scripts/repushFromDb.ts` — re-push all products in DB that have a wc_product_id to WooCommerce (updates meta, price, images); used to backfill changes like _rakuten_url meta without re-scraping
   - [ ] Install **Discount Rules for WooCommerce** plugin on running.moximoxi.net
   - [ ] Configure markup rule: percentage increase applied globally or per WC category
   - [ ] Verify customer-facing prices reflect markup correctly on product pages
@@ -117,8 +116,9 @@ x
 
 - [ ] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.8 Stale Product Refresh
   - [ ] Fetch top-ranked products per category via Ranking API
-  - [ ] Re-scrape upsert — skip unchanged, update if price changed, insert if new URL
-  - [ ] For each stale product (missed_scrapes >= 3): call removeProduct(wc_product_id) → then deleteStaleProducts from DB
+  - [ ] If scraped product URL already in DB and price changed → update DB + re-push to WC (PUT product price)
+  - [ ] If scraped product has availability=0 → remove from WC (DELETE) + remove from DB immediately
+  - [ ] For each stale product (missed_scrapes >= 3, i.e. not seen in last 3 weekly scrapes) → remove from WC + delete from DB
   - [ ] Write run_log.json and product_stats.json to shared volume after each run
 
 - [ ] Shared volume output → §13 Shared Volume
