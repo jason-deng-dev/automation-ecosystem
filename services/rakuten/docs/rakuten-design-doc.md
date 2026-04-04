@@ -55,14 +55,15 @@ See Section 8 (Technical Decisions) for rationale on TypeScript, WooCommerce, an
 ### 3.1 High-Level Overview
 
 ```
-FETCH → NORMALIZE → PRICE → STORE → PUSH
+FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 ```
 
 - **FETCH:** Rakuten Ranking API returns top-selling products per genre (up to 1000)
 - **NORMALIZE:** Map raw Rakuten fields to internal product schema
+- **TRANSLATE:** DeepL API translates `name_ja` → `name_zh` (names only — descriptions translated lazily by TranslatePress on first page view)
 - **PRICE:** Auto-pricing formula calculates CNY sale price
 - **STORE:** Products written to PostgreSQL (permanent — used for deduplication and re-scrape)
-- **PUSH:** WooCommerce REST API receives products; TranslatePress handles translation on first customer view
+- **PUSH:** WooCommerce REST API receives products with Chinese names — search index is immediately queryable in Chinese
 
 ### 3.2 Component Breakdown
 
@@ -176,6 +177,7 @@ TranslatePress translates on first view, caches in WordPress DB
   "item_code": "amino-vital-pro-30sticks",
   "rakuten_item_code": "amovital:10000123",
   "name_ja": "アミノバイタル プロ 30本入",
+  "name_zh": "氨基活力 PRO 30支装",
   "description_ja": "...",
   "images": [
     "https://thumbnail.image.rakuten.co.jp/@0_mall/amovital/cabinet/img01.jpg"
@@ -293,7 +295,7 @@ Use the WooCommerce REST API (`/wp-json/wc/v3/products`) authenticated with Cons
 
 |Internal field|WooCommerce field|
 |---|---|
-|`name_ja`|`name` (Japanese — TranslatePress translates on first customer view)|
+|`name_zh`|`name` (Chinese — immediately searchable; TranslatePress leaves it untouched)|
 |`description_ja`|`description` (Japanese — TranslatePress translates on first customer view)|
 |`sale_price`|`regular_price`|
 |`images`|`images` (array of `{ src }`)|
@@ -561,6 +563,20 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Solution (§11.9):** Add a `missed_scrapes` counter to each product in PostgreSQL. Each weekly ranking run increments the counter for any product not returned by the ranking. At 3 consecutive missed scrapes, the product is hard-deleted from both PostgreSQL and WooCommerce. No separate refresh pass is needed — if a product is popular enough to return to stock, it will re-appear in the Ranking API results and be re-imported naturally as a new product.
 
+### 11.12 WooCommerce Search Can't Find Japanese Products by Chinese Keyword
+
+**Challenge:** WooCommerce search queries `post_title` and `post_content` in MySQL. Products are pushed with Japanese names — TranslatePress only writes Chinese text to the DB after a customer visits the product page. Until that first visit, a Chinese search term returns zero results even if the product exists in the store. This means customers trigger the product request flow unnecessarily, and the search experience is broken for the entire catalog until every product has been manually visited once.
+
+**Solution:** Translate product `name_ja` to `name_zh` via DeepL API in the pipeline before pushing to WooCommerce. Product names are pushed in Chinese — WooCommerce search index has Chinese text immediately. TranslatePress sees the name is already in the target language and leaves it untouched. Only product names are translated (not descriptions) — descriptions are long, expensive, and not needed for search. The pipeline data flow becomes:
+
+```
+FETCH → NORMALIZE → TRANSLATE (DeepL, name only) → PRICE → STORE → PUSH
+```
+
+**Why DeepL over Google Translate:** Product names are short, high-visibility text — quality matters for first impressions and search relevance. DeepL produces more natural JA → ZH-HANS output than Google Translate for product copy. DeepL free tier (500k chars/month) covers product names comfortably.
+
+**New field:** `name_zh` added to the internal product schema and PostgreSQL `products` table. `name_ja` kept for reference. WooCommerce `name` field receives `name_zh` instead of `name_ja`.
+
 ### 11.11 Product Request Redirect — Chinese Search Can't Find Japanese Titles
 
 **Challenge:** The original plan redirected customers to `/shop/?s={keywordZH}` after a product request completed. WooCommerce search queries `post_title` and `post_content` in MySQL — which contain Japanese text. A Chinese keyword produces zero results because TranslatePress only translates on first page view and does not affect WooCommerce's search index.
@@ -579,7 +595,7 @@ See `docs/rakuten-checklist.md` for current build status.
 
 ### Resolved
 - **Currency:** CNY. Sale prices stored and displayed in Chinese Yuan. JPY → CNY conversion applied at pricing calculation time.
-- **Translation:** TranslatePress + DeepL on WordPress side. No deepl.js in the Express pipeline. PostgreSQL stores Japanese only.
+- **Translation:** Product names translated JA → ZH-HANS via DeepL API in the pipeline before WooCommerce push — enables Chinese keyword search immediately. Descriptions remain Japanese and are translated lazily by TranslatePress on first page view. PostgreSQL stores both `name_ja` and `name_zh`.
 - **WooCommerce role:** Full storefront — browsing, cart, checkout, payments. Express pipeline is ingestion-only.
 - **Deduplication key:** `rakuten_url` — stable, unique per Rakuten listing.
 - **Primary fetch method:** Ranking API (top N per genre) — replaces genre search for bulk push.

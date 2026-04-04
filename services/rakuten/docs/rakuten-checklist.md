@@ -102,6 +102,15 @@ x
   - [x] Fixed category names manually in WooCommerce admin — corrected bad Google Translate guesses (跳绳, 阻力带, 跑步帽, 颈套, 蛋白粉 etc.)
   - [ ] Translation quality upgrade — discuss DeepL Pro API with boss (see §12 Open Questions)
 
+- [ ] DeepL translation (`src/services/translation.ts`) → §11.12
+  - Translate product `name_ja` → `name_zh` via DeepL API before DB store + WooCommerce push
+  - Names only — descriptions stay Japanese (TranslatePress handles lazily on first page view)
+  - [ ] Add DEEPL_API_KEY to .env.example
+  - [ ] `translateNames(products[])` — one DeepL API call per batch (e.g. per page of 30): collect all `name_ja` values into array, send single request, zip translations back onto products by index
+  - [ ] Add `name_zh` column to PostgreSQL products table (migration or seed update)
+  - [ ] Push `name_zh` as WooCommerce `name` field instead of `name_ja`
+  - [ ] Wire into pipeline: FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
+
 - [x] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.8 Stale Product Refresh
   - [x] Fetch top-ranked products per category via Ranking API
   - [x] If scraped product URL already in DB and price changed → update DB + re-push to WC (PUT product price)
@@ -113,10 +122,10 @@ x
 - [ ] Product request flow → §9 Product Request Flow
   - Approach: always fetch X products fresh from Rakuten — no DB fill calculation.
     Products aren't indexed by keyword so there's no reliable way to count existing matches.
-  - No DeepL needed — Rakuten search API accepts Chinese keywords natively; TranslatePress handles JA→ZH lazily on first page view
-  - Result: SSE "done" event sends `/shop/?s={keywordZH}` — customer lands on pre-searched results page.
-  - [ ] POST /api/request-product endpoint — Chinese keyword → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → push WC → store DB → return { redirectUrl: '/shop/?s={keywordZH}' }
-  - [ ] Embed request form widget on WooCommerce search results page (shortcode) — show loading state on submit, confirmation on success, redirect to /shop/?s={keywordZH}
+  - Names already in Chinese via pipeline DeepL translation — no extra translation needed for request flow
+  - Result: returns { productIds: [...] } — shortcode renders [products ids="..."] grid inline (see §11.11)
+  - [x] POST /api/request-product endpoint — Chinese keyword → genre validation → upsert DB → push WC → return { success, productIds }
+  - [ ] Embed request form widget on WooCommerce search results page (shortcode) — show loading state on submit, render inline product grid on success via [products ids="..."]
 
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /trigger — fetch more products (category + count)
