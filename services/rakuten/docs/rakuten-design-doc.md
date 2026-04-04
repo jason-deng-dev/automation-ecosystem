@@ -71,7 +71,7 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 
 - `getProductsByKeyword(keyword, count, sortMode)` — Ichiba Item Search API (used for product request flow); max `hits` = 30
 - `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
-- Returns normalized product objects (normalization handled internally)
+- Returns normalized + translated product objects — `normalizeItems` then `translateNames` (DeepL, names only) called internally before returning; all call sites already await these functions so no changes needed at call sites
 
 #### genres.ts (exists — curated genre ID map)
 

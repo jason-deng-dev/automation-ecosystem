@@ -105,11 +105,12 @@ x
 - [ ] DeepL translation (`src/services/translation.ts`) → §11.12
   - Translate product `name_ja` → `name_zh` via DeepL API before DB store + WooCommerce push
   - Names only — descriptions stay Japanese (TranslatePress handles lazily on first page view)
+  - Translation wired inside `rakutenAPI.ts` — `getProductsByKeyword` and `getRanking` translate before returning; all call sites already await them, no other changes needed
   - [ ] Add DEEPL_API_KEY to .env.example
-  - [ ] `translateNames(products[])` — one DeepL API call per batch (e.g. per page of 30): collect all `name_ja` values into array, send single request, zip translations back onto products by index
+  - [ ] `translateNames(products[])` in `src/utils.ts` — one DeepL API call per batch: collect all `itemName` values into array, send single request, zip translations back onto products by index
+  - [ ] Call `translateNames` inside `getProductsByKeyword` and `getRanking` in `rakutenAPI.ts` after `normalizeItems`
   - [ ] Add `name_zh` column to PostgreSQL products table (migration or seed update)
-  - [ ] Push `name_zh` as WooCommerce `name` field instead of `name_ja`
-  - [ ] Wire into pipeline: FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
+  - [ ] Push `name_zh` as WooCommerce `name` field instead of `itemName`
 
 - [x] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.8 Stale Product Refresh
   - [x] Fetch top-ranked products per category via Ranking API

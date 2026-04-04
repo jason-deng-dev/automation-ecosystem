@@ -129,6 +129,18 @@ source ~/.bashrc
 
 Then just run `db-tunnel` in a spare terminal before starting work.
 
+### Connect to VPS DB via psql
+
+In terminal 1 (keep open):
+```bash
+db-tunnel
+```
+
+In terminal 2:
+```bash
+psql postgresql://goodsoft:1234@localhost:5433/rakutendb
+```
+
 ### Local `.env` connection string
 
 ```

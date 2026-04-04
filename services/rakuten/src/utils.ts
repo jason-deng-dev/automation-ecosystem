@@ -27,6 +27,14 @@ export function cleanTitle(name: string): { title: string; promoText: string } {
 	};
 }
 
+export async function translateItemNames(normalizedItems: RakutenDbQueryItem) {
+	
+
+
+}
+
+
+
 export function normalizeItems(items: RakutenResponseItem[]) {
 	return items.map(
 		({
