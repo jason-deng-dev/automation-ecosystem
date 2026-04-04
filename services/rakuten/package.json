@@ -11,7 +11,8 @@
 		"db": "tsx src/db/seed.ts",
 		"setup-categories": "tsx src/scripts/setupCategories.ts",
 		"keyword-search": "tsx src/scripts/runKeywordPopulate",
-		"weekly-sync": "tsx src/scripts/runWeeklySync.ts"
+		"weekly-sync": "tsx src/scripts/runWeeklySync.ts",
+		"showcase": "tsx src/scripts/showcase/runRankingPopulateShowcase.ts"
 	},
 	"keywords": [],
 	"author": "",

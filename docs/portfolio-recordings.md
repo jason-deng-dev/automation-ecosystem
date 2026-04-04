@@ -6,7 +6,7 @@ Every scene below is a self-contained recording that demonstrates a real, workin
 
 ## 1. Rakuten Pipeline
 
-### 1.1 Bulk Product Push (DB on VPS → WooCommerce live)
+### 1.1 Bulk Product Push (DB on VPS → WooCommerce live) ✓ DONE
 
 **Recording sequence:**
 1. `ssh lightsail` — show connecting to the real VPS
