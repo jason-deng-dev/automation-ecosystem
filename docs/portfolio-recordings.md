@@ -15,7 +15,16 @@ Every scene below is a self-contained recording that demonstrates a real, workin
 4. `db-tunnel` in a spare terminal — open the SSH tunnel (port 5433 → VPS 5432)
 5. Scroll `src/db/seed.ts` in VSCode — show the table schema (products, categories, subcategories)
 6. `npm run db` — seed the VPS DB live, watch tables created
-7. Connect to DB via tunnel in a DB client or psql — show empty tables are there and ready
+7. Connect to DB via psql through the tunnel and show empty tables:
+   ```bash
+   psql postgresql://goodsoft:1234@localhost:5433/rakutendb
+   ```
+   Then inside psql:
+   ```sql
+   \dt          -- list all tables
+   \d products  -- show products table schema
+   \q           -- exit
+   ```
 8. Scroll `src/scripts/showcase/runRankingPopulateShowcase.ts` — walk through the 4 pipeline steps in the comments (config load → Rakuten fetch → PostgreSQL upsert → WooCommerce push)
 9. Run the showcase script — watch logs fire: fetching → upserted → pushed per category
 10. Refresh WordPress `/shop/` — products appearing live as the script runs
