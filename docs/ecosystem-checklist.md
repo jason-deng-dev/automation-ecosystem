@@ -71,7 +71,10 @@
 - [x] Initial bulk push across all categories
 - [x] Weekly auto-sync cron — price updates, unavailability removal, stale cleanup
 - [x] fs.watch on config.json — auto-recalculates + re-pushes prices on change
-- [x] TranslatePress installed + configured (waiting on Google Translate API key)
+- [x] TranslatePress installed + configured — Google Translate API key active, JA→ZH verified
+- [x] Category names corrected in WooCommerce admin (Chinese, human-reviewed)
+- [x] Currency set to 元 (CNY) in WooCommerce settings
+- [x] Default language redirect — visitors land on Chinese version without toggling
 - [ ] Product request flow (keyword → Rakuten search → push WC → SSE progress)
 - [ ] Dashboard integration (POST /trigger, /retry, pipeline_state)
 - [ ] Shared volume output (import_log.json)

@@ -237,7 +237,7 @@ Set at: GitHub → repo → Settings → Secrets and variables → Actions
 
 ---
 
-## 7. Environment Variables on the VPS
+## 8. Environment Variables on the VPS
 
 Never committed to git. Each service has a `.env` on the VPS at the same path as in local dev. Inject via `docker-compose.yml` using `env_file`:
 

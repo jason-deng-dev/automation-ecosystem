@@ -94,11 +94,13 @@ x
   - [x] Add `markupPercent` to `config.json` + apply in `calculatePrice()` — operator sets e.g. `20` for 20% markup
   - [x] `fs.watch` on `config.json` in app — when `markupPercent` or `YenToYuan` changes, recalculate + re-push prices for all products with `wc_product_id` via WC REST API (PUT /products/{id})
 
-- [ ] Configure TranslatePress + Google Translate on running.moximoxi.net → §7 Translation
+- [x] Configure TranslatePress + Google Translate on running.moximoxi.net → §7 Translation
   - [x] Install TranslatePress (free) plugin
   - [x] Set source language: Japanese, target: Chinese (Simplified)
-  - [ ] Configure Google Translate API key in TranslatePress settings — waiting on boss to enable Cloud Translation API + create key
-  - [ ] Verify JA → ZH-HANS translation fires on first product page view and caches in WordPress DB (product names, descriptions, category names)
+  - [x] Configure Google Translate API key in TranslatePress settings
+  - [x] Verified JA → ZH-HANS translation fires on first product page view and caches in WordPress DB
+  - [x] Fixed category names manually in WooCommerce admin — corrected bad Google Translate guesses (跳绳, 阻力带, 跑步帽, 颈套, 蛋白粉 etc.)
+  - [ ] Translation quality upgrade — discuss DeepL Pro API with boss (see §12 Open Questions)
 
 - [x] Weekly auto-sync cron → §3.3 Weekly Re-scrape Data Flow, §11.8 Stale Product Refresh
   - [x] Fetch top-ranked products per category via Ranking API

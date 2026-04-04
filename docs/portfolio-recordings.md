@@ -7,13 +7,20 @@ Every scene below is a self-contained recording that demonstrates a real, workin
 ## 1. Rakuten Pipeline
 
 ### 1.1 Bulk Product Push (DB on VPS → WooCommerce live)
-**What to show:**
-- VSCode open, SSH tunnel to VPS Postgres active
-- Run the bulk push script (`npm run bulk-push` or equivalent)
-- Split screen: terminal showing products being inserted row by row into PostgreSQL, browser showing WordPress `/shop/` refreshing as products appear live
-- End on: 50–100 products populated, store visibly full
 
-**Why it's strong:** End-to-end pipeline. Real DB on a real VPS. Real WooCommerce store. No mocking.
+**Recording sequence:**
+1. `ssh lightsail` — show connecting to the real VPS
+2. `sudo systemctl status postgresql` — confirm Postgres is running on the server
+3. `exit` — back to local machine
+4. `db-tunnel` in a spare terminal — open the SSH tunnel (port 5433 → VPS 5432)
+5. Scroll `src/db/seed.ts` in VSCode — show the table schema (products, categories, subcategories)
+6. `npm run db` — seed the VPS DB live, watch tables created
+7. Connect to DB via tunnel in a DB client or psql — show empty tables are there and ready
+8. Scroll `src/scripts/showcase/runRankingPopulateShowcase.ts` — walk through the 4 pipeline steps in the comments (config load → Rakuten fetch → PostgreSQL upsert → WooCommerce push)
+9. Run the showcase script — watch logs fire: fetching → upserted → pushed per category
+10. Refresh WordPress `/shop/` — products appearing live as the script runs
+
+**Why it's strong:** Complete end-to-end story. Real SSH into a real VPS, real DB tunnel, real pipeline, real store populating. No mocking, no localhost tricks.
 
 ---
 
