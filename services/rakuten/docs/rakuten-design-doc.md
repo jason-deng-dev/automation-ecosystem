@@ -588,6 +588,7 @@ See `docs/rakuten-checklist.md` for current build status.
 - **Top N per genre:** How many products to pull per genre for initial bulk push — not yet decided.
 - **Exchange rate source:** JPY → CNY rate — hardcoded in config or fetched from an exchange rate API?
 - **Image sideloading:** WooCommerce's automatic image sideloading needs testing — some CDN images may block hotlink requests.
+- **Translation quality upgrade — needs boss approval:** Current setup uses Google Translate v2 via TranslatePress (free tier). Translation quality is functional but not natural-sounding for Chinese readers. DeepL Pro API (paid monthly) would significantly improve JA → ZH-HANS quality, especially for product names and descriptions. TranslatePress supports DeepL as a drop-in replacement engine. Needs discussion with boss — involves ongoing monthly cost. Flag this when reviewing store conversion rates.
 
 ---
 
