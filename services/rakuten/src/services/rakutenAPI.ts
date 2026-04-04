@@ -21,8 +21,8 @@ export const getProductsByKeyword = async (keyword: string, count: number, sortM
 			console.log("No items:", resJson.error_description ?? resJson);
 			return null;
 		}
-		const normalizedItem = normalizeItems(items);
-		return normalizedItem;
+		const normalizedItems = normalizeItems(items);
+		return normalizedItems;
 	} catch (err) {
 		console.log(err);
 	}

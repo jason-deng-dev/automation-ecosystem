@@ -6,6 +6,7 @@ import { reloadConfig } from "./services/pricing";
 import { updatePrices } from "./services/woocommerceAPI";
 import runWeeklySync from "./scripts/runWeeklySync";
 import nodeCron from "node-cron";
+import { itemRequestByKeyword } from "./controller";
 
 const app = express();
 
@@ -37,8 +38,13 @@ fs.watch(configPath, () => {
 const assetsPath = path.join(__dirname, "public");
 app.use(express.static(assetsPath));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => res.send("Running"));
+app.post("/api/request-product", async (req: Request, res: Response) => {
+	const result = await itemRequestByKeyword(req.body.keyword);
+	res.json(result);
+});
 
 app.listen(process.env.PORT!, () => {
 	console.log(`Server running on port ${process.env.PORT}`);

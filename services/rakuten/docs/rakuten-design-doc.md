@@ -22,7 +22,7 @@ Product ingestion needs to be:
 - Translate product pages via TranslatePress + Google Translate (JA → ZH-HANS) on first customer view, cached permanently in WordPress DB
 - Calculate auto-pricing using a margin formula (Rakuten price + shipping estimate + margin %)
 - Pre-load top-ranked products per category at launch via Ranking API; weekly cron auto-syncs new products
-- Expose a "Request a product" flow — customer submits keyword, backend fetches from Rakuten, prices, and pushes to WooCommerce while they wait (~1-2 min) with an on-page progress indicator
+- Expose a "Request a product" flow — customer submits keyword, sees a loading state while the backend fetches from Rakuten, prices, and pushes to WooCommerce (~1-2 min), then gets a confirmation and is redirected to the pre-searched WooCommerce results page
 - WooCommerce handles all customer-facing browsing, cart, checkout, and payments — no custom storefront
 
 ### 1.4 Non-Goals
@@ -270,8 +270,7 @@ Markup applied separately in WooCommerce plugin (e.g. +20% → ¥168 CNY display
 |`POST`|`/api/push/bulk`|Fetch top N per genre from Ranking API → normalize → price → push to WooCommerce|
 |`GET`|`/api/products`|Products stored in PostgreSQL (by genre or category)|
 |`GET`|`/api/products/:itemCode`|Single product detail|
-|`POST`|`/api/request-product`|Product request flow — fetch by keyword, push to WooCommerce|
-|`GET`|`/api/request-product/status/:requestId`|SSE progress stream for product request|
+|`POST`|`/api/request-product`|Product request flow — fetch by keyword, push to WooCommerce, return redirect URL|
 |`POST`|`/api/cron/sync`|Trigger weekly re-scrape manually|
 
 ---
@@ -406,7 +405,7 @@ Translation is handled entirely by TranslatePress + Google Translate on the Word
 
 ### 9.1 Overview
 
-When a customer searches the WooCommerce store and can't find a product, a prominent "Didn't find what you're looking for? Request it here" button is shown. The customer submits a product name or keyword, the backend fetches from Rakuten, prices, and pushes to WooCommerce — all while the customer waits on-page with a progress indicator. TranslatePress translates on first customer view after the product is live.
+When a customer searches the WooCommerce store and can't find a product, a prominent "Didn't find what you're looking for? Request it here" button is shown. The customer submits a product name or keyword, sees a generic loading state, and when all products are ready gets a confirmation message with a product grid rendered inline on the same page. TranslatePress translates on first customer view after the product is live.
 
 ### 9.2 Flow
 
@@ -417,6 +416,7 @@ When a customer searches the WooCommerce store and can't find a product, a promi
 ```
 Customer submits product request (keyword in Chinese)
     ↓  POST /api/request-product
+Frontend shows generic "Loading..." state
 Express API:
   1. Fetch X products from Rakuten Keyword Search API (Chinese keyword passed directly)
   2. For each product:
@@ -424,19 +424,17 @@ Express API:
       b. New product → normalize → calculate price
       c. Push to WooCommerce (Japanese name/description)
       d. Store in PostgreSQL
-      e. Emit SSE progress update
     ↓  ~1-2 minutes total
-SSE "done" event sends link: /shop/?s={keywordZH}
+Returns { productIds: [123, 456, 789] }
     ↓
-On-page indicator → "Products are ready!" → customer clicks through to pre-searched results page
+Frontend shortcode renders [products ids="123,456,789"] → WooCommerce product grid shown inline
 ```
 
-### 9.3 On-Page Progress Indicator
+### 9.3 On-Page Loading State
 
-- Shown immediately after form submission — customer stays on the page
-- Steps: Searching Rakuten → Calculating price → Adding to store → Ready!
-- Progress streamed from backend via SSE (`GET /api/request-product/status/:requestId`)
-- On completion: "Your product is ready — [View Product]" link to WooCommerce product page
+- Generic "Loading..." shown immediately after form submission — customer stays on the page
+- No per-product SSE updates — the POST resolves when all products are done
+- On completion: shortcode receives `productIds` array, renders `[products ids="..."]` grid inline on the same page
 - On failure: "We couldn't find that product on Rakuten. Try a different search term."
 
 ### 9.4 Claude Quality Check
@@ -454,8 +452,7 @@ If implemented, it would be two sequential calls:
 
 ### 9.5 Implementation Notes
 
-- WordPress shortcode added to WooCommerce search results page — no custom storefront needed
-- The progress indicator is a small embedded JS snippet that connects to the SSE stream
+- WordPress shortcode added to WooCommerce search results page — form + loading state, renders inline product grid on completion via `[products ids="..."]`, no SSE
 - No translation API needed in the pipeline — Rakuten search accepts Chinese natively; TranslatePress handles JA→ZH lazily for all products including request flow
 
 ---
@@ -486,8 +483,8 @@ See `docs/rakuten-checklist.md` for current build status.
 
 ### 10.3 Phase 3 — Product Request Flow + Cron + Deploy
 
-1. Build product request flow: `POST /api/request-product` + SSE progress stream
-2. Embed progress indicator widget on WooCommerce search results page via shortcode
+1. Build product request flow: `POST /api/request-product` — fetch all products, return `{ redirectUrl }` when done
+2. Embed request form widget on WooCommerce search results page via shortcode (loading state + confirmation + redirect)
 3. Set up weekly auto-sync cron: Ranking API fetch → re-scrape logic (skip/update/add)
 4. Deploy Express API to AWS Lightsail
 5. Smoke test: browse WooCommerce → translation correct → request missing product → appears in ~2 min → weekly sync runs
@@ -563,6 +560,12 @@ See `docs/rakuten-checklist.md` for current build status.
 **Challenge:** The weekly re-scrape uses the Ranking API, which only returns the current top N products per genre. Products already in the DB that fall off the ranking have no scalable way to get their price/availability refreshed — calling the Search API one-by-one per stored product becomes untenable at hundreds or thousands of products (1 req/sec rate limit, blocking the weekly job).
 
 **Solution (§11.9):** Add a `missed_scrapes` counter to each product in PostgreSQL. Each weekly ranking run increments the counter for any product not returned by the ranking. At 3 consecutive missed scrapes, the product is hard-deleted from both PostgreSQL and WooCommerce. No separate refresh pass is needed — if a product is popular enough to return to stock, it will re-appear in the Ranking API results and be re-imported naturally as a new product.
+
+### 11.11 Product Request Redirect — Chinese Search Can't Find Japanese Titles
+
+**Challenge:** The original plan redirected customers to `/shop/?s={keywordZH}` after a product request completed. WooCommerce search queries `post_title` and `post_content` in MySQL — which contain Japanese text. A Chinese keyword produces zero results because TranslatePress only translates on first page view and does not affect WooCommerce's search index.
+
+**Solution:** API returns `{ productIds: [123, 456, 789] }` — the WooCommerce product IDs of everything just pushed. The WordPress shortcode receives these IDs and dynamically renders a `[products ids="123,456,789"]` shortcode, which WooCommerce natively converts into a product grid. Customer sees all matched products on the same page without a redirect.
 
 ### 11.10 Ranking API Has No `hits` Parameter
 

@@ -157,6 +157,7 @@ async function pushProduct(product: DbItem) {
 }
 
 export async function pushProducts(products: DbItem[]) {
+	const wc_ids = []
 	for (const product of products) {
 		if (product.wc_product_id) {
 			console.log(`skipped ${product.itemUrl} — already in WooCommerce (wc_product_id: ${product.wc_product_id})`);
@@ -168,11 +169,13 @@ export async function pushProducts(products: DbItem[]) {
 				console.log(`skipped ${product.itemUrl} — unmapped subcategory_id ${product.subcategory_id}, logged to unmapped_genres.json`);
 				continue;
 			}
+			wc_ids.push(wcId)
 			await updateWoocommerceProductId(product.id, wcId);
 		} catch (err) {
 			console.log(err);
 		}
 	}
+	return wc_ids
 }
 
 export async function deleteWcProduct(wcProductId: number) {

@@ -115,9 +115,8 @@ x
     Products aren't indexed by keyword so there's no reliable way to count existing matches.
   - No DeepL needed — Rakuten search API accepts Chinese keywords natively; TranslatePress handles JA→ZH lazily on first page view
   - Result: SSE "done" event sends `/shop/?s={keywordZH}` — customer lands on pre-searched results page.
-  - [ ] POST /api/request-product endpoint — Chinese keyword → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → push WC → store DB → emit SSE progress
-  - [ ] SSE progress stream (GET /api/request-product/status/:requestId) — emit after each product pushed
-  - [ ] Embed progress indicator widget on WooCommerce search results page (shortcode or plugin)
+  - [ ] POST /api/request-product endpoint — Chinese keyword → Keyword Search API → for each result: check rakuten_url in DB (skip if exists) → normalize → price → push WC → store DB → return { redirectUrl: '/shop/?s={keywordZH}' }
+  - [ ] Embed request form widget on WooCommerce search results page (shortcode) — show loading state on submit, confirmation on success, redirect to /shop/?s={keywordZH}
 
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /trigger — fetch more products (category + count)
