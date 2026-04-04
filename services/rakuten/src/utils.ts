@@ -1,3 +1,5 @@
+import * as deepl from 'deepl-node';
+
 export function cleanTitle(name: string): { title: string; promoText: string } {
 	const promoMatches: string[] = [];
 

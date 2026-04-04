@@ -20,6 +20,7 @@
 	"type": "commonjs",
 	"dependencies": {
 		"@woocommerce/woocommerce-rest-api": "^1.0.2",
+		"deepl-node": "^1.25.0",
 		"dotenv": "^17.3.1",
 		"express": "^5.2.1",
 		"node-cron": "^4.2.1",
