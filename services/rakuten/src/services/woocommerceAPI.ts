@@ -2,7 +2,7 @@ import "dotenv/config";
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import fs from "fs";
 import { calculatePrice } from "../services/pricing";
-import { DbItem, cleanTitle } from "../utils";
+import { DbItem } from "../utils";
 import { getSubcategoryNameByProductId, updateWoocommerceProductId, getAllPushedProducts } from "../db/queries";
 import wpCategoryIds from "../config/wpCategoryIds";
 
@@ -135,13 +135,11 @@ async function pushProduct(product: DbItem) {
 	}
 	const subcategoryName = subcategory.name;
 
-	const { title, promoText } = cleanTitle(product.itemName);
 	const data = {
-		name: title,
+		name: product.itemName,
 		type: "simple",
 		regular_price: String(price),
 		description: product.itemCaption,
-		short_description: promoText,
 		categories: [
 			{
 				id: wpCategoryIds[subcategoryName],
