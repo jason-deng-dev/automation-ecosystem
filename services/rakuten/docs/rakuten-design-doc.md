@@ -400,6 +400,8 @@ Translation is handled entirely by TranslatePress + Google Translate on the Word
 |Re-scrape strategy|Check URL → compare price/availability → update if changed|Full re-fetch, ignore existing|Minimizes Rakuten API calls; only pushes WooCommerce updates when something actually changed|
 |Frontend|WooCommerce storefront + TranslatePress|Custom React SPA|WooCommerce has 24/7 support, built-in security, maintainable by any WordPress developer after handoff|
 |Shipping at checkout|Flat rate per order in WooCommerce + policy note at checkout|Baked into sticker price per product|Per-product shipping overcharges multi-item orders; flat rate + transparent policy is fairer and simpler|
+|Product variants (size/color)|Not modeled — single product per listing with Add-Ons plugin for preference capture|WooCommerce variable products with parsed variants|Rakuten descriptions embed size/color in inconsistent Japanese formats — reliable parsing is not feasible; WooCommerce Product Add-Ons (free) adds a size dropdown + color text field on the product page, captured in order line item; operator communicates if preference is unavailable|
+|Pipeline name translation|DeepL API in pipeline (`translateNames` in `utils.ts`) overwrites `itemName` in place|Separate `name_zh` field, TranslatePress Pro|Single field keeps schema simple; WooCommerce search index has Chinese text immediately on push; no separate DB column or sync needed|
 
 ---
 
@@ -582,6 +584,18 @@ FETCH → NORMALIZE → TRANSLATE (DeepL, name only) → PRICE → STORE → PUS
 **Challenge:** The original plan redirected customers to `/shop/?s={keywordZH}` after a product request completed. WooCommerce search queries `post_title` and `post_content` in MySQL — which contain Japanese text. A Chinese keyword produces zero results because TranslatePress only translates on first page view and does not affect WooCommerce's search index.
 
 **Solution:** API returns `{ productIds: [123, 456, 789] }` — the WooCommerce product IDs of everything just pushed. The WordPress shortcode receives these IDs and dynamically renders a `[products ids="123,456,789"]` shortcode, which WooCommerce natively converts into a product grid. Customer sees all matched products on the same page without a redirect.
+
+### 11.13 Size/Color Variant Extraction Not Feasible
+
+**Challenge:** Rakuten product descriptions embed size and color information in inconsistent formats — structured fields like `■カラー(メーカー表記):ブラック`, tag-style like `【size:24.5cm】`, and full size chart tables as raw text. No reliable parser can extract this across all listings without significant error rate.
+
+**Solution:** Do not model variants in WooCommerce. Products are pushed as simple single listings. WooCommerce Product Add-Ons (free plugin) adds a size dropdown and color text field directly on the product page — preferences are captured in the order line item. Operator communicates manually if the requested size/color is unavailable.
+
+### 11.14 Rate Limiting & API Protection
+
+**Challenge:** Public-facing endpoints trigger third-party API calls (Rakuten, DeepL) and WooCommerce writes. Without rate limiting, anyone who discovers the endpoint can exhaust API quota or spam product imports.
+
+**Solution:** Apply per-IP rate limiting via `express-rate-limit` on all public endpoints. Use a Redis store for production-grade persistence across restarts. VPS IP hidden behind a WordPress PHP proxy — the client never sees the VPS address directly, all requests route through `wp-admin/admin-ajax.php`.
 
 ### 11.10 Ranking API Has No `hits` Parameter
 

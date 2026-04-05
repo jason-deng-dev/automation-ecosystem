@@ -102,7 +102,7 @@ x
   - [x] Configure Google Translate API key in TranslatePress settings
   - [x] Verified JA → ZH-HANS translation fires on first product page view and caches in WordPress DB
   - [x] Fixed category names manually in WooCommerce admin — corrected bad Google Translate guesses (跳绳, 阻力带, 跑步帽, 颈套, 蛋白粉 etc.)
-  - [ ] Translation quality upgrade — discuss DeepL Pro API with boss (see §12 Open Questions)
+  - [x] Translation quality upgrade — discuss DeepL Pro API with boss (see §12 Open Questions)
 
 - [x] DeepL translation (`src/utils.ts`) → §11.12
   - Translate product `name_ja` → `name_zh` via DeepL API before DB store + WooCommerce push
@@ -129,6 +129,12 @@ x
   - [x] POST /api/request-product endpoint — Chinese keyword → genre validation → upsert DB → push WC → return { success, productIds }
   - [ ] Embed request form widget on WooCommerce search results page (shortcode) — show loading state on submit, render inline product grid on success via [products ids="..."]
 
+- [ ] Rate limiting → §11.14
+  - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
+  - [ ] Install `express-rate-limit` (+ Redis store for production-grade persistence)
+  - [ ] Apply per-IP limits on public endpoints
+  - [ ] Hide VPS IP behind WordPress PHP proxy — IP never exposed to client
+
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /trigger — fetch more products (category + count)
   - [ ] POST /retry — retry failed WooCommerce imports
@@ -152,6 +158,13 @@ x
   - **Shipping policy note:** where the checkout page note lives and how to edit the category-based estimates
   - **Exchange rate:** how to update `YenToYuan` in `shared_volume/rakuten/config.json` when the JPY→CNY rate changes significantly
   - **Running the pipeline:** how to trigger a manual bulk push or re-scrape
+
+---
+
+- [ ] Size/color preference capture on product page → §8, §11.13
+  - [ ] Install WooCommerce Product Add-Ons (free plugin)
+  - [ ] Add size dropdown + color text field to all products
+  - [ ] Verify preferences appear in order line items in WooCommerce admin
 
 ---
 
