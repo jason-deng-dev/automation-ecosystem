@@ -12,10 +12,10 @@ import { upsertProducts, getProductByUrls } from "../../db/queries";
 // ─────────────────────────────────────────────────────────────────────────────
 const showcaseCategories: Record<string, number[]> = {
     'Running Gear':           [565768],   // prod: 16 genre IDs (shoes, GPS, socks, tights...)
-    'Training':               [201869],   // prod: 10 genre IDs (gym wear, resistance bands, jump rope...)
-    'Nutrition & Supplements':[559936],   // prod: 13 genre IDs (protein, BCAA, energy gels, vitamins...)
-    'Recovery & Care':        [214828],   // prod: 9 genre IDs (massage guns, foam rollers, taping...)
-    'Sportswear':             [502027],   // prod: 14 genre IDs (compression, sports bra, windbreakers...)
+    // 'Training':               [201869],   // prod: 10 genre IDs (gym wear, resistance bands, jump rope...)
+    // 'Nutrition & Supplements':[559936],   // prod: 13 genre IDs (protein, BCAA, energy gels, vitamins...)
+    // 'Recovery & Care':        [214828],   // prod: 9 genre IDs (massage guns, foam rollers, taping...)
+    // 'Sportswear':             [502027],   // prod: 14 genre IDs (compression, sports bra, windbreakers...)
 };
 
 async function runRankingPopulate() {

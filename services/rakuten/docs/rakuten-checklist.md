@@ -87,6 +87,8 @@ x
   - [x] Strip promotional text from titles — `cleanTitle()` in `utils.ts` strips 【...】, ★...★, date-limited promo prefixes; called at push time; promo text moved to WC `short_description`
   - [x] Audit + fix genre IDs returning off-theme products — removed Reflective Vest subcategory entirely (genre IDs were pulling industrial tools)
 
+- [x] Remove `cleanTitle` call in `woocommerceAPI.ts` — `itemName` is already cleaned + translated before reaching push; dropped `short_description` (promoText is Rakuten-specific noise, meaningless on WooCommerce)
+
 - [x] WooCommerce remaining → §5
   - [x] Idempotency check — skip push if wc_product_id already set in DB
   - [x] Store `_rakuten_url` as WC product meta in `pushProduct` — allows admin to trace WC product back to Rakuten source

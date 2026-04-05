@@ -1,5 +1,16 @@
 # VPS Setup — Automation Ecosystem
 
+
+
+Connect to DB via psql through the tunnel and show empty tables:
+```bash
+db-tunnel
+```
+   ```bash
+   psql postgresql://goodsoft:1234@localhost:5433/rakutendb
+   ```
+
+
 ## 1. Instance
 
 | Setting | Value |

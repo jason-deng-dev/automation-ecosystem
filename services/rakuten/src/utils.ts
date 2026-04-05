@@ -1,4 +1,5 @@
 import * as deepl from "deepl-node";
+import 'dotenv/config'
 
 export function cleanTitle(name: string): { title: string; promoText: string } {
 	const promoMatches: string[] = [];
@@ -60,10 +61,12 @@ export function cleanTitle(name: string): { title: string; promoText: string } {
 }
 
 export async function translateNames(normalizedItems: RakutenDbQueryItem[]): Promise<RakutenDbQueryItem[]> {
-	const names = normalizedItems.map((product) => product.itemName);
+	const names = normalizedItems.map((product) => cleanTitle(product.itemName).title);
 
+	console.log(`translating ${names.length} product names via DeepL...`);
 	const deeplClient = new deepl.DeepLClient(process.env.DEEPL_API_KEY!);
-	const results = await deeplClient.translateText(names, "ja", "zh");
+	const results = await deeplClient.translateText(names, null, "zh");
+	console.log(`translated ${results.length} product names`);
 
 	return normalizedItems.map((item, i) => ({ ...item, itemName: results[i].text }));
 }
