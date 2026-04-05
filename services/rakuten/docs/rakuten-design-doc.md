@@ -575,7 +575,7 @@ FETCH → NORMALIZE → TRANSLATE (DeepL, name only) → PRICE → STORE → PUS
 
 **Why DeepL over Google Translate:** Product names are short, high-visibility text — quality matters for first impressions and search relevance. DeepL produces more natural JA → ZH-HANS output than Google Translate for product copy. DeepL free tier (500k chars/month) covers product names comfortably.
 
-**New field:** `name_zh` added to the internal product schema and PostgreSQL `products` table. `name_ja` kept for reference. WooCommerce `name` field receives `name_zh` instead of `name_ja`.
+**Implementation:** `translateNames(items[])` in `utils.ts` overwrites `itemName` in place — no separate field needed. Chinese name flows through the pipeline as `itemName` to PostgreSQL and WooCommerce unchanged.
 
 ### 11.11 Product Request Redirect — Chinese Search Can't Find Japanese Titles
 

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import fs from 'fs';
-import { normalizeItems, RakutenResponseItem } from "../utils";
+import { normalizeItems, RakutenResponseItem,translateNames } from "../utils";
 
 
 
@@ -22,7 +22,8 @@ export const getProductsByKeyword = async (keyword: string, count: number, sortM
 			return null;
 		}
 		const normalizedItems = normalizeItems(items);
-		return normalizedItems;
+		const translatedItems = await translateNames(normalizedItems)
+		return translatedItems;
 	} catch (err) {
 		console.log(err);
 	}
@@ -45,8 +46,9 @@ export const getProductsByGenresId = async (
 		const resJson = await res.json();
 		const items = resJson.Items;
 		if (!items) return null;
-		const normalizedItem = normalizeItems(items)
-		return normalizedItem;
+		const normalizedItems = normalizeItems(items)
+		const translatedItems = await translateNames(normalizedItems)
+		return translatedItems;
 	} catch (err) {
 		console.log(err)
 	}
@@ -69,8 +71,9 @@ export const getProductsByRankingGenre = async (
 		const resJson = await res.json();
 		const items = resJson.Items;
 		if (!items) return null;
-		const normalizedItem = normalizeItems(items)
-		return normalizedItem;
+		const normalizedItems = normalizeItems(items)
+		const translatedItems = await translateNames(normalizedItems)
+		return translatedItems;
 	} catch (err) {
 		console.log(err)
 	}

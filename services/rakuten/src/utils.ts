@@ -1,43 +1,74 @@
-import * as deepl from 'deepl-node';
+import * as deepl from "deepl-node";
 
 export function cleanTitle(name: string): { title: string; promoText: string } {
 	const promoMatches: string[] = [];
 
 	// Extract and remove 【...】 and ★...★ patterns
 	const cleaned = name
-		.replace(/【[^】]*】/g, (match) => { promoMatches.push(match.slice(1, -1)); return ''; })
-		.replace(/《[^》]*》/g, (match) => { promoMatches.push(match.slice(1, -1)); return ''; })
-		.replace(/＜[^＞]*＞/g, (match) => { promoMatches.push(match.slice(1, -1)); return ''; })
-		.replace(/＼[^／]*／/g, (match) => { promoMatches.push(match.slice(1, -1)); return ''; })
-		.replace(/★[^★]*★/g, (match) => { promoMatches.push(match.slice(1, -1)); return ''; })
-		.replace(/^[▽▼◆◇■□●○◎][^\s]*\s*/g, (match) => { promoMatches.push(match.trim()); return ''; })
-		.replace(/^お買い得[^\s]*\s*/g, (match) => { promoMatches.push(match.trim()); return ''; })
-		.replace(/^.*?(?:Pバック|円OFF|%OFF|ポイント[0-9０-９倍]+)\s+/g, (match) => { promoMatches.push(match.trim()); return ''; })
-		.replace(/^[^。\n]*?まで[！!]\s*/g, (match) => { promoMatches.push(match.trim()); return ''; })
-		.replace(/^[^。\n]*?あす楽\s*/g, (match) => { promoMatches.push(match.trim()); return ''; })
-		.replace(/\[[^\]]*\]/g, '') // strip [Rakuten Fashion], [amz] etc
-		.replace(/送料(込み|無料|込)/g, '') // strip shipping notices
-		.replace(/メール便[^\s]*/g, '') // strip メール便/ネコポス shipping method mentions
-		.replace(/(imbkk|cat-run)\s*$/g, '') // strip store tracking tags
-		.replace(/[0-9]{2}SS\s*$/g, '') // strip season codes (25SS, 26SS, TOKYO26SS)
-		.replace(/\s+/g, ' ')
+		.replace(/【[^】]*】/g, (match) => {
+			promoMatches.push(match.slice(1, -1));
+			return "";
+		})
+		.replace(/《[^》]*》/g, (match) => {
+			promoMatches.push(match.slice(1, -1));
+			return "";
+		})
+		.replace(/＜[^＞]*＞/g, (match) => {
+			promoMatches.push(match.slice(1, -1));
+			return "";
+		})
+		.replace(/＼[^／]*／/g, (match) => {
+			promoMatches.push(match.slice(1, -1));
+			return "";
+		})
+		.replace(/★[^★]*★/g, (match) => {
+			promoMatches.push(match.slice(1, -1));
+			return "";
+		})
+		.replace(/^[▽▼◆◇■□●○◎][^\s]*\s*/g, (match) => {
+			promoMatches.push(match.trim());
+			return "";
+		})
+		.replace(/^お買い得[^\s]*\s*/g, (match) => {
+			promoMatches.push(match.trim());
+			return "";
+		})
+		.replace(/^.*?(?:Pバック|円OFF|%OFF|ポイント[0-9０-９倍]+)\s+/g, (match) => {
+			promoMatches.push(match.trim());
+			return "";
+		})
+		.replace(/^[^。\n]*?まで[！!]\s*/g, (match) => {
+			promoMatches.push(match.trim());
+			return "";
+		})
+		.replace(/^[^。\n]*?あす楽\s*/g, (match) => {
+			promoMatches.push(match.trim());
+			return "";
+		})
+		.replace(/\[[^\]]*\]/g, "") // strip [Rakuten Fashion], [amz] etc
+		.replace(/送料(込み|無料|込)/g, "") // strip shipping notices
+		.replace(/メール便[^\s]*/g, "") // strip メール便/ネコポス shipping method mentions
+		.replace(/(imbkk|cat-run)\s*$/g, "") // strip store tracking tags
+		.replace(/[0-9]{2}SS\s*$/g, "") // strip season codes (25SS, 26SS, TOKYO26SS)
+		.replace(/\s+/g, " ")
 		.trim();
 
 	return {
 		title: cleaned,
-		promoText: promoMatches.join(' ').trim(),
+		promoText: promoMatches.join(" ").trim(),
 	};
 }
 
-export async function translateItemNames(normalizedItems: RakutenDbQueryItem) {
-	
+export async function translateNames(normalizedItems: RakutenDbQueryItem[]): Promise<RakutenDbQueryItem[]> {
+	const names = normalizedItems.map((product) => product.itemName);
 
+	const deeplClient = new deepl.DeepLClient(process.env.DEEPL_API_KEY!);
+	const results = await deeplClient.translateText(names, "ja", "zh");
 
+	return normalizedItems.map((item, i) => ({ ...item, itemName: results[i].text }));
 }
 
-
-
-export function normalizeItems(items: RakutenResponseItem[]) {
+export function normalizeItems(items: RakutenResponseItem[]): RakutenDbQueryItem[] {
 	return items.map(
 		({
 			Item: {
@@ -59,8 +90,8 @@ export function normalizeItems(items: RakutenResponseItem[]) {
 			itemPrice: Number(itemPrice),
 			itemCaption,
 			itemUrl,
-			smallImageUrls: smallImageUrls.map(({ imageUrl }) => ({ imageUrl: imageUrl.split('?')[0] })),
-			mediumImageUrls: mediumImageUrls.map(({ imageUrl }) => ({ imageUrl: imageUrl.split('?')[0] })),
+			smallImageUrls: smallImageUrls.map(({ imageUrl }) => ({ imageUrl: imageUrl.split("?")[0] })),
+			mediumImageUrls: mediumImageUrls.map(({ imageUrl }) => ({ imageUrl: imageUrl.split("?")[0] })),
 			reviewCount: Number(reviewCount),
 			reviewAverage: Number(reviewAverage),
 			shopName,
@@ -122,9 +153,8 @@ export interface DbItem {
 	last_updated_at: Date;
 	missed_scrapes: number;
 	subcategory_id: number;
-	categoryName: string,
+	categoryName: string;
 }
-
 
 export function mockAPICall() {
 	return [
