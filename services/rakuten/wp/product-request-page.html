@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+	</head>
+	<body>
+		<div id="product-request-form" style="max-width: 600px; margin: 0 auto; padding: 20px 0">
+			<h2>找不到想要的商品？</h2>
+			<p>输入您想要的商品关键词，我们将为您从日本进口。</p>
+
+			<div style="display: flex; gap: 8px; margin-top: 16px">
+				<input
+					type="text"
+					id="request-keyword"
+					placeholder="例如：耐克跑步鞋"
+					style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 4px; font-size: 15px; height: 44px; box-sizing: border-box;"
+				/>
+				<button
+					id="request-submit"
+					onclick="submitProductRequest()"
+					style="
+						background: #F2295E;
+						color: #fff;
+						border: none;
+						padding: 10px 20px;
+						border-radius: 4px;
+						font-size: 15px;
+						cursor: pointer;
+						height: 44px;
+						box-sizing: border-box;
+						line-height: 1;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						transition: background 0.2s ease;
+					"
+					onmouseover="this.style.background='#d41e50'"
+					onmouseout="this.style.background='#F2295E'"
+				>
+					搜索
+				</button>
+			</div>
+
+			<div id="request-status" style="margin-top: 16px; font-size: 14px; color: #666"></div>
+			<div id="request-results" style="margin-top: 24px"></div>
+		</div>
+
+		<script>
+			async function submitProductRequest() {
+				const keyword = document.getElementById("request-keyword").value.trim();
+				if (!keyword) return;
+
+				const status = document.getElementById("request-status");
+				const results = document.getElementById("request-results");
+				const btn = document.getElementById("request-submit");
+
+				status.textContent = "正在搜索，请稍候...";
+				results.innerHTML = "";
+				btn.disabled = true;
+
+				try {
+					const res = await fetch("https://YOUR_VPS_IP:3001/api/request-product", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ keyword }),
+					});
+					const data = await res.json();
+
+					if (data.success && data.productIds.length > 0) {
+						status.textContent = `找到 ${data.productIds.length} 件商品：`;
+						results.innerHTML = '[products ids="' + data.productIds.join(",") + '"]';
+						// trigger WooCommerce shortcode rendering
+						if (typeof do_shortcode === "function") do_shortcode(results);
+					} else {
+						status.textContent = "暂时未找到相关商品，请尝试其他关键词。";
+					}
+				} catch (err) {
+					status.textContent = "请求失败，请稍后再试。";
+				} finally {
+					btn.disabled = false;
+				}
+			}
+		</script>
+	</body>
+</html>
