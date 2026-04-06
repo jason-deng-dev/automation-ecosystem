@@ -121,13 +121,18 @@ x
   - [x] Write run_log.json and product_stats.json to shared volume after each run
   - [x] Wire up to node-cron in app.ts (schedule: every Monday 3am JST)
 
-- [ ] Product request flow → §9 Product Request Flow
-  - Approach: always fetch X products fresh from Rakuten — no DB fill calculation.
-    Products aren't indexed by keyword so there's no reliable way to count existing matches.
-  - Names already in Chinese via pipeline DeepL translation — no extra translation needed for request flow
-  - Result: returns { productIds: [...] } — shortcode renders [products ids="..."] grid inline (see §11.11)
-  - [x] POST /api/request-product endpoint — Chinese keyword → genre validation → upsert DB → push WC → return { success, productIds }
-  - [ ] Embed request form widget on WooCommerce search results page (shortcode) — show loading state on submit, render inline product grid on success via [products ids="..."]
+- [x] Shared volume → PostgreSQL migration → §11.16
+  - [x] Add `config` table to `seed.ts` — single row: YenToYuan, markupPercent, pagesPerSubcategory, searchFillThreshold
+  - [x] Add `getConfig()`, `updateConfig()`, `insertRunLog()`, `upsertProductStats()`, `insertImportLog()` queries in `queries.ts`
+  - [x] Replace `fs.readFileSync(config.json)` in `controller.ts` + `pricing.ts` with DB config read at startup
+  - [x] Replace `fs.watch` in `app.ts` with `POST /api/config` endpoint — updates DB row + triggers `reloadConfig()` + `updatePrices()`
+  - [x] Add `run_logs`, `product_stats`, `import_logs` tables to `seed.ts`
+  - [x] Replace JSON file writes in `runWeeklySync.ts` with DB inserts into `run_logs` + `product_stats`
+  - [x] Delete `schema.sql` — `seed.ts` is the source of truth
+  - [x] Remove `DATA_DIR` env var dependency — all file reads/writes replaced with DB queries; dead `fs` import removed from `rakutenAPI.ts`; vitest.config.js cleaned up; pricing.test.ts mocks `getConfig`
+  - [x] Replace `logUnmappedProduct` file write in `woocommerceAPI.ts` with `insertImportLog` DB call; log push success/failure per product
+  - [x] Replace `fs.readFileSync(config.json)` in `runRankingPopulate.ts` + `runRankingPopulateShowcase.ts` with `getConfig()` + `initPricing()`
+  - [ ] Run `npm run db` to re-seed with new tables
 
 - [ ] Dynamic genre expansion → §9.4, §11.15
   - [ ] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
@@ -137,22 +142,21 @@ x
   - [ ] If Claude returns null (off-theme) → `{ success: false }`; if on-theme → append to DB + proceed with push
   - [ ] Remove `genres.ts` and all imports of `allGenres` once DB-driven map is in place
 
+- [ ] Product request flow → §9 Product Request Flow
+  - Approach: always fetch X products fresh from Rakuten — no DB fill calculation.
+    Products aren't indexed by keyword so there's no reliable way to count existing matches.
+  - Names already in Chinese via pipeline DeepL translation — no extra translation needed for request flow
+  - Result: returns { productIds: [...] } — shortcode renders [products ids="..."] grid inline (see §11.11)
+  - [x] POST /api/request-product endpoint — Chinese keyword → genre validation → upsert DB → push WC → return { success, productIds }
+  - [ ] Embed request form widget on WooCommerce search results page (shortcode) — show loading state on submit, render inline product grid on success via [products ids="..."]
+
 - [ ] Rate limiting → §11.14
   - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
   - [ ] Install `express-rate-limit` (+ Redis store for production-grade persistence)
   - [ ] Apply per-IP limits on public endpoints
   - [ ] Hide VPS IP behind WordPress PHP proxy — IP never exposed to client
 
-- [ ] Shared volume → PostgreSQL migration → §11.16
-  - [ ] Add `config` table to `schema.sql` + `seed.ts` — single row: YenToYuan, markupPercent, pagesPerSubcategory, searchFillThreshold
-  - [ ] Add `getConfig()` and `updateConfig(key, value)` queries in `queries.ts`
-  - [ ] Replace `fs.readFileSync(config.json)` in `controller.ts` + `pricing.ts` with DB config read at startup
-  - [ ] Replace `fs.watch` in `app.ts` with a `POST /api/config` endpoint — updates DB row + triggers `reloadConfig()` + `updatePrices()`
-  - [ ] Add `run_logs` table to schema — one row per pipeline run (operation, category, fetched, pushed, failures, stale deleted)
-  - [ ] Add `product_stats` table to schema — updated after each run (total cached, total pushed, per-category breakdown)
-  - [ ] Add `import_logs` table to schema — one row per WooCommerce push attempt and outcome
-  - [ ] Replace JSON file writes in `runWeeklySync.ts` with DB inserts into `run_logs` + `product_stats`
-  - [ ] Remove `DATA_DIR` env var dependency once all shared volume reads/writes are gone
+
 
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /trigger — fetch more products (category + count)

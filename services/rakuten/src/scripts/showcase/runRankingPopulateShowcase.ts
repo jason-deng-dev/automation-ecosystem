@@ -1,8 +1,8 @@
 import { getProductsByRankingGenre } from "../../services/rakutenAPI";
-import fs from "fs";
 import "dotenv/config";
 import { pushProducts } from "../../services/woocommerceAPI";
-import { upsertProducts, getProductByUrls } from "../../db/queries";
+import { upsertProducts, getProductByUrls, getConfig } from "../../db/queries";
+import { initPricing } from "../../services/pricing";
 
 // ─── SHOWCASE VERSION ────────────────────────────────────────────────────────
 // Uses 1 genre ID per category so the demo runs quickly and is easy to follow.
@@ -19,11 +19,9 @@ const showcaseCategories: Record<string, number[]> = {
 };
 
 async function runRankingPopulate() {
-	// ── Step 1: Load config ───────────────────────────────────────────────────
-	// config.json lives on the shared volume and is written by the dashboard.
-	// It holds the JPY→CNY rate and pagesPerSubcategory (how many pages of
-	// 30 products to fetch per genre). Hot-reloadable — no server restart needed.
-	const config = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/rakuten/config.json`, "utf-8"));
+	// ── Step 1: Load config from DB ───────────────────────────────────────────
+	await initPricing();
+	const config = await getConfig();
 	const pagesPerSubcategory = Math.max(1, config.pagesPerSubcategory);
 	const categoriesArr = Object.entries(showcaseCategories);
 

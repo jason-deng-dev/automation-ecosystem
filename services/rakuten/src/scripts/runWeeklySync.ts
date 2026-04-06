@@ -1,5 +1,4 @@
 import "dotenv/config";
-import fs from "fs";
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
 import { categories } from "../config/genres";
 import { calculatePrice } from "../services/pricing";
@@ -13,54 +12,22 @@ import {
 	deleteProductByUrl,
 	getProductStatsByCategory,
 	getProductTotals,
+	getConfig,
+	insertRunLog,
+	upsertProductStats,
 } from "../db/queries";
 
-const DATA_DIR = process.env.DATA_DIR!;
-
-interface SyncLog {
-	timestamp: string;
-	operation: string;
-	newProductsPushed: number;
-	priceUpdates: number;
-	removedUnavailable: number;
-	removedStale: number;
-	errors: string[];
-}
-
-function writeRunLog(entry: SyncLog) {
-	const runLogPath = `${DATA_DIR}/rakuten/run_log.json`;
-	const existing = fs.existsSync(runLogPath)
-		? JSON.parse(fs.readFileSync(runLogPath, "utf-8"))
-		: [];
-	existing.push(entry);
-	fs.writeFileSync(runLogPath, JSON.stringify(existing, null, 2));
-}
-
-async function writeProductStats() {
-	const [totals, byCategory] = await Promise.all([getProductTotals(), getProductStatsByCategory()]);
-	const stats = {
-		totalCached: Number(totals.total),
-		totalPushed: Number(totals.pushed),
-		perCategory: Object.fromEntries(
-			byCategory.map((r) => [r.categoryName, { cached: Number(r.total), pushed: Number(r.pushed) }])
-		),
-		lastUpdated: new Date().toISOString(),
-	};
-	fs.writeFileSync(`${DATA_DIR}/rakuten/product_stats.json`, JSON.stringify(stats, null, 2));
-}
-
 export default async function runWeeklySync() {
-	const log: SyncLog = {
-		timestamp: new Date().toISOString(),
+	const log = {
 		operation: "weekly_sync",
 		newProductsPushed: 0,
 		priceUpdates: 0,
 		removedUnavailable: 0,
 		removedStale: 0,
-		errors: [],
+		errors: [] as string[],
 	};
 
-	const config = JSON.parse(fs.readFileSync(`${DATA_DIR}/rakuten/config.json`, "utf-8"));
+	const config = await getConfig();
 	const pagesPerSubcategory = Math.max(1, config.pagesPerSubcategory);
 
 	console.log("Starting weekly sync...");
@@ -144,8 +111,15 @@ export default async function runWeeklySync() {
 		`removed unavailable: ${log.removedUnavailable}, removed stale: ${log.removedStale}, errors: ${log.errors.length}`
 	);
 
-	// Step 4: Write shared volume outputs
-	writeRunLog(log);
-	await writeProductStats();
+	// Step 4: Write run log + product stats to DB
+	await insertRunLog(log);
+	const [totals, byCategory] = await Promise.all([getProductTotals(), getProductStatsByCategory()]);
+	await upsertProductStats({
+		totalCached: Number(totals.total),
+		totalPushed: Number(totals.pushed),
+		perCategory: Object.fromEntries(
+			byCategory.map((r) => [r.categoryName, { cached: Number(r.total), pushed: Number(r.pushed) }])
+		),
+	});
 }
 

@@ -1,9 +1,8 @@
 import "dotenv/config";
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
-import fs from "fs";
 import { calculatePrice } from "../services/pricing";
 import { DbItem } from "../utils";
-import { getSubcategoryNameByProductId, updateWoocommerceProductId, getAllPushedProducts } from "../db/queries";
+import { getSubcategoryNameByProductId, updateWoocommerceProductId, getAllPushedProducts, insertImportLog } from "../db/queries";
 import wpCategoryIds from "../config/wpCategoryIds";
 
 const WooCommerce = new WooCommerceRestApi({
@@ -116,21 +115,11 @@ export async function setupCategories(): Promise<Record<string, number>> {
 	return categoryIdMap;
 }
 
-const UNMAPPED_LOG = `${process.env.DATA_DIR}/rakuten/unmapped_genres.json`;
-
-function logUnmappedProduct(product: DbItem) {
-	const existing = fs.existsSync(UNMAPPED_LOG)
-		? JSON.parse(fs.readFileSync(UNMAPPED_LOG, 'utf-8'))
-		: [];
-	existing.push({ subcategory_id: product.subcategory_id, itemName: product.itemName, itemUrl: product.itemUrl });
-	fs.writeFileSync(UNMAPPED_LOG, JSON.stringify(existing, null, 2));
-}
-
 async function pushProduct(product: DbItem) {
 	const price = calculatePrice(product.itemPrice);
 	const subcategory = await getSubcategoryNameByProductId(product.subcategory_id);
 	if (!subcategory) {
-		logUnmappedProduct(product);
+		await insertImportLog({ itemUrl: product.itemUrl, itemName: product.itemName, wcProductId: null, status: "skipped", errorMsg: `unmapped subcategory_id: ${product.subcategory_id}` });
 		return null;
 	}
 	const subcategoryName = subcategory.name;
@@ -164,13 +153,15 @@ export async function pushProducts(products: DbItem[]) {
 		try {
 			const wcId = await pushProduct(product);
 			if (wcId === null) {
-				console.log(`skipped ${product.itemUrl} — unmapped subcategory_id ${product.subcategory_id}, logged to unmapped_genres.json`);
+				console.log(`skipped ${product.itemUrl} — unmapped subcategory_id ${product.subcategory_id}`);
 				continue;
 			}
-			wc_ids.push(wcId)
+			wc_ids.push(wcId);
 			await updateWoocommerceProductId(product.id, wcId);
+			await insertImportLog({ itemUrl: product.itemUrl, itemName: product.itemName, wcProductId: wcId, status: "success" });
 		} catch (err) {
 			console.log(err);
+			await insertImportLog({ itemUrl: product.itemUrl, itemName: product.itemName, wcProductId: null, status: "failed", errorMsg: String(err) });
 		}
 	}
 	return wc_ids

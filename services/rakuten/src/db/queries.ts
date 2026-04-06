@@ -1,6 +1,79 @@
 import pool from "./pool";
 import { RakutenDbQueryItem } from "../utils";
-import { categories } from "../config/genres";
+
+export interface Config {
+	yenToYuan: number;
+	markupPercent: number;
+	pagesPerSubcategory: number;
+	searchFillThreshold: number;
+}
+
+export const getConfig = async (): Promise<Config> => {
+	const res = await pool.query(`SELECT yen_to_yuan, markup_percent, pages_per_subcategory, search_fill_threshold FROM config WHERE id = 1`);
+	const row = res.rows[0];
+	return {
+		yenToYuan: Number(row.yen_to_yuan),
+		markupPercent: Number(row.markup_percent),
+		pagesPerSubcategory: Number(row.pages_per_subcategory),
+		searchFillThreshold: Number(row.search_fill_threshold),
+	};
+};
+
+export const updateConfig = async (key: keyof Config, value: number) => {
+	const colMap: Record<keyof Config, string> = {
+		yenToYuan: "yen_to_yuan",
+		markupPercent: "markup_percent",
+		pagesPerSubcategory: "pages_per_subcategory",
+		searchFillThreshold: "search_fill_threshold",
+	};
+	await pool.query(`UPDATE config SET ${colMap[key]} = $1, updated_at = NOW() WHERE id = 1`, [value]);
+};
+
+export const insertRunLog = async (log: {
+	operation: string;
+	newProductsPushed: number;
+	priceUpdates: number;
+	removedUnavailable: number;
+	removedStale: number;
+	errors: string[];
+}) => {
+	await pool.query(
+		`INSERT INTO run_logs (operation, new_products_pushed, price_updates, removed_unavailable, removed_stale, errors)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		[log.operation, log.newProductsPushed, log.priceUpdates, log.removedUnavailable, log.removedStale, log.errors]
+	);
+};
+
+export const upsertProductStats = async (stats: {
+	totalCached: number;
+	totalPushed: number;
+	perCategory: Record<string, { cached: number; pushed: number }>;
+}) => {
+	await pool.query(
+		`INSERT INTO product_stats (id, total_cached, total_pushed, per_category, last_updated)
+		 VALUES (1, $1, $2, $3, NOW())
+		 ON CONFLICT (id) DO UPDATE SET
+		 	total_cached = EXCLUDED.total_cached,
+		 	total_pushed = EXCLUDED.total_pushed,
+		 	per_category = EXCLUDED.per_category,
+		 	last_updated = NOW()`,
+		[stats.totalCached, stats.totalPushed, JSON.stringify(stats.perCategory)]
+	);
+};
+
+export const insertImportLog = async (log: {
+	itemUrl: string;
+	itemName: string;
+	wcProductId: number | null;
+	status: "success" | "failed" | "skipped";
+	errorMsg?: string;
+}) => {
+	await pool.query(
+		`INSERT INTO import_logs (item_url, item_name, wc_product_id, status, error_msg)
+		 VALUES ($1, $2, $3, $4, $5)`,
+		[log.itemUrl, log.itemName, log.wcProductId, log.status, log.errorMsg ?? null]
+	);
+};
 
 
 

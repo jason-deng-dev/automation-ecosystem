@@ -1,22 +1,21 @@
-import fs from "fs";
 import { getProductsByKeyword } from "./services/rakutenAPI";
 import { allGenres } from "./config/genres";
-import { upsertProducts, getProductByUrls } from "./db/queries";
+import { upsertProducts, getProductByUrls, getConfig } from "./db/queries";
 import { pushProducts } from "./services/woocommerceAPI";
 // |`POST`|`/api/push/bulk`|Fetch top N per genre from Ranking API → normalize → price → push to WooCommerce|
 // |`GET`|`/api/products`|Products stored in PostgreSQL (by genre or category)|
 // |`GET`|`/api/products/:itemCode`|Single product detail|
 // |`POST`|`/api/request-product`|Product request flow — fetch by keyword, push to WooCommerce, return wc_product_ids|
 
-const config = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/rakuten/config.json`, "utf-8"));
-
 export function bulkFetch() {}
 
 export function bulkPush() {}
 
 export async function itemRequestByKeyword(keywordZH: string) {
-	// 1. Rakuten keyword search (count from searchFillThreshold in config.json)
-	const res = await getProductsByKeyword(keywordZH, config.searchFillThreshold);
+	const { searchFillThreshold } = await getConfig();
+
+	// 1. Rakuten keyword search (count from searchFillThreshold in DB config)
+	const res = await getProductsByKeyword(keywordZH, searchFillThreshold);
 	if (!res) return { success: false };
 
 	// 2. Validate: at least one product's genreId must be in allGenres — else return { success: false }
@@ -28,12 +27,12 @@ export async function itemRequestByKeyword(keywordZH: string) {
 	if (!validKeyword) return { success: false };
 
 	// 3. Upsert to DB → get back newly inserted products
-    const newProductsUrl = await upsertProducts(res)
-    const newProducts = await getProductByUrls(newProductsUrl)
+	const newProductsUrl = await upsertProducts(res);
+	const newProducts = await getProductByUrls(newProductsUrl);
 
 	// 4. Push new products to WooCommerce
-    const wc_ids = await pushProducts(newProducts)
+	const wc_ids = await pushProducts(newProducts);
 
 	// 5. Return { success: true, productIds: [wc_ids] }
-    return {success: true, productIds: wc_ids}
+	return { success: true, productIds: wc_ids };
 }

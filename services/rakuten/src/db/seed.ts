@@ -1,6 +1,10 @@
 import "dotenv/config";
 import { Client } from "pg";
 const SQL = `
+DROP TABLE IF EXISTS import_logs;
+DROP TABLE IF EXISTS product_stats;
+DROP TABLE IF EXISTS run_logs;
+DROP TABLE IF EXISTS config;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS subcategories;
 DROP TABLE IF EXISTS categories;
@@ -14,6 +18,48 @@ CREATE TABLE
         name TEXT,
         genre_ids INTEGER[],
         category_id INTEGER REFERENCES categories (id)
+    );
+
+CREATE TABLE
+    config (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        yen_to_yuan DECIMAL(10, 4) NOT NULL,
+        markup_percent INTEGER NOT NULL DEFAULT 0,
+        pages_per_subcategory INTEGER NOT NULL DEFAULT 1,
+        search_fill_threshold INTEGER NOT NULL DEFAULT 10,
+        updated_at TIMESTAMP DEFAULT NOW()
+    );
+
+CREATE TABLE
+    run_logs (
+        id SERIAL PRIMARY KEY,
+        timestamp TIMESTAMP DEFAULT NOW(),
+        operation TEXT,
+        new_products_pushed INTEGER DEFAULT 0,
+        price_updates INTEGER DEFAULT 0,
+        removed_unavailable INTEGER DEFAULT 0,
+        removed_stale INTEGER DEFAULT 0,
+        errors TEXT[]
+    );
+
+CREATE TABLE
+    product_stats (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        total_cached INTEGER,
+        total_pushed INTEGER,
+        per_category JSONB,
+        last_updated TIMESTAMP DEFAULT NOW()
+    );
+
+CREATE TABLE
+    import_logs (
+        id SERIAL PRIMARY KEY,
+        timestamp TIMESTAMP DEFAULT NOW(),
+        item_url TEXT,
+        item_name TEXT,
+        wc_product_id INTEGER,
+        status TEXT,
+        error_msg TEXT
     );
 
 CREATE TABLE
@@ -37,6 +83,9 @@ CREATE TABLE
         missed_scrapes INTEGER DEFAULT 0,
         subcategory_id INTEGER REFERENCES subcategories (id)
     );
+
+INSERT INTO config (id, yen_to_yuan, markup_percent, pages_per_subcategory, search_fill_threshold)
+VALUES (1, 0.043, 0, 1, 10);
 
 INSERT INTO
     categories (name)

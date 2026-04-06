@@ -1,5 +1,19 @@
-import { calculatePrice } from '../src/services/pricing';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
+
+vi.mock('../src/db/queries', () => ({
+	getConfig: vi.fn().mockResolvedValue({
+		yenToYuan: 0.043,
+		markupPercent: 0,
+		pagesPerSubcategory: 1,
+		searchFillThreshold: 10,
+	}),
+}));
+
+const { initPricing, calculatePrice } = await import('../src/services/pricing');
+
+beforeAll(async () => {
+	await initPricing();
+});
 
 describe("calculatePrice", () => {
 	describe("JPY → CNY conversion (rate=0.043)", () => {

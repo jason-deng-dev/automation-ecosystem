@@ -1,12 +1,13 @@
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
 import { categories } from "../config/genres";
-import fs from "fs";
 import "dotenv/config";
 import { pushProducts } from "../services/woocommerceAPI";
-import { upsertProducts, getProductByUrls } from "../db/queries";
+import { upsertProducts, getProductByUrls, getConfig } from "../db/queries";
+import { initPricing } from "../services/pricing";
 
 async function runRankingPopulate() {
-	const config = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/rakuten/config.json`, "utf-8"));
+	await initPricing();
+	const config = await getConfig();
 	const pagesPerSubcategory = Math.max(1, config.pagesPerSubcategory);
 
 	const categoriesArr = Object.entries(categories);

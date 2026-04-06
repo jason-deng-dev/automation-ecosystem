@@ -1,18 +1,15 @@
-import 'dotenv/config';
-import fs from 'fs';
+import { getConfig } from '../db/queries';
 
 let yenToYuan: number;
 let markupMultiplier: number;
 
-function loadConfig() {
-    const configs = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/rakuten/config.json`, 'utf-8'));
-    yenToYuan = configs.YenToYuan;
-    markupMultiplier = 1 + (configs.markupPercent ?? 0) / 100;
+export async function initPricing() {
+    const config = await getConfig();
+    yenToYuan = config.yenToYuan;
+    markupMultiplier = 1 + (config.markupPercent ?? 0) / 100;
 }
 
-loadConfig();
-
-export function reloadConfig() { loadConfig(); }
+export async function reloadConfig() { await initPricing(); }
 
 export function calculatePrice(price: number) {
     const priceYuan = price * yenToYuan * markupMultiplier;

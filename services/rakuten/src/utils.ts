@@ -1,6 +1,13 @@
 import * as deepl from "deepl-node";
 import 'dotenv/config'
 
+export function cleanDescription(description: string) {
+	
+
+}
+
+
+
 export function cleanTitle(name: string): { title: string; promoText: string } {
 	const promoMatches: string[] = [];
 
