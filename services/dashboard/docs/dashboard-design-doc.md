@@ -98,7 +98,7 @@ Each day supports multiple post slots — each slot has a time and a post type. 
 - **Add slot** — button to add another post to the same day
 - **Remove slot** — button to remove a slot
 
-The schedule is stored in `xhs/config.json` on the shared volume. The dashboard reads and writes this file via an API endpoint. The scheduler reads `config.json` at runtime to register one cron job per slot — no code changes or restarts required.
+The schedule is stored in the `xhs_schedule` table in PostgreSQL. The dashboard reads and writes this via an API endpoint. The XHS scheduler polls the table at runtime to register one cron job per slot — no code changes or restarts required.
 
 ### config.json Shape
 
@@ -167,8 +167,8 @@ The home page shows one card per pipeline side by side, full height. Each card s
 - Weekly grid — one row per day, each row shows all configured post slots
 - Per slot: time picker (24h CST) + post type dropdown (Race Guide / Training / Nutrition / Wearables)
 - Add slot button per day, remove button per slot
-- Save button writes to `xhs/config.json` via `POST /api/xhs/schedule`
-- Scheduler picks up changes at runtime without restart — watches `xhs/config.json` for changes and re-registers cron jobs on update
+- Save button writes to `xhs_schedule` table via `POST /api/xhs/schedule`
+- Scheduler picks up changes at runtime without restart — polls `xhs_schedule` table for changes and re-registers cron jobs on update
 
 ### 8.2 Live Log Stream
 
@@ -255,12 +255,12 @@ Home card metrics and triggers are in section 7.2. This section covers the detai
 - Per-category table: shipping estimate (CNY) + target margin % — editable inline
 - JPY → CNY exchange rate field with last-updated timestamp
 - **Search fill threshold** — number input controlling how many DB results trigger a live Rakuten fill-up (default: 10)
-- Save button writes to `pricing_config.js` via API — no code changes or server access required
+- Save button writes to `rakuten_config` table via `POST /api/rakuten/config` — no code changes or server access required
 - Exchange rate last updated shown next to the field — if it's been weeks and the rate has moved, margins are silently off
 
 ### 10.3 Import Log
 
-- Table of all WooCommerce push attempts from `import_log`: timestamp, product name, status (success / failed / skipped), error message if failed
+- Table of all WooCommerce push attempts from `rakuten_import_logs` table: timestamp, product name, status (success / failed / skipped), error message if failed
 - **Failed imports panel** — products with `status = 'failed'` surfaced as a list with a one-click retry button per product
 
 ### 10.4 Manual Trigger
@@ -280,16 +280,16 @@ Home card metrics and triggers are in section 7.2. This section covers the detai
 
 ## 12. API Endpoints (Next.js Route Handlers)
 
-All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read from / write to the shared Docker volume unless noted. No database.
+All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read from / write to PostgreSQL. No shared volume dependency.
 
 ### XHS
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/xhs/schedule` | Read `xhs/config.json` — returns per-day post schedule |
-| `POST` | `/api/xhs/schedule` | Write `xhs/config.json` — scheduler picks up changes at runtime |
-| `GET` | `/api/xhs/run-history` | Read `xhs/run_log.json` — full post run history |
-| `GET` | `/api/xhs/post-archive` | Read `xhs/post_archive/` — published post archive |
+| `GET` | `/api/xhs/schedule` | Query `xhs_schedule` table — returns per-day post schedule |
+| `POST` | `/api/xhs/schedule` | Update `xhs_schedule` table — XHS scheduler polls for changes and re-registers cron jobs |
+| `GET` | `/api/xhs/run-history` | Query `xhs_run_logs` table — full post run history |
+| `GET` | `/api/xhs/post-archive` | Query `xhs_post_archive` table — published post archive |
 | `POST` | `/api/xhs/trigger` | Spawn manual XHS run — accepts `{ type }` body; runs `run-manualPost.js <type>` via docker exec (non-blocking) |
 | `POST` | `/api/xhs/preview` | Generate post without publishing — runs `run-preview.js <type>` via docker exec, captures stdout, returns parsed post JSON |
 | `GET` | `/api/xhs/logs/stream` | SSE — streams XHS process stdout in real time |
@@ -300,25 +300,25 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/scraper/run-history` | Read `scraper/run_log.json` — full scrape run history |
+| `GET` | `/api/scraper/run-history` | Query `scraper_run_logs` table — full scrape run history |
 | `POST` | `/api/scraper/trigger` | Spawn manual scraper run via docker exec (non-blocking) |
 
 ### Rakuten
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/rakuten/stats` | Read `rakuten/product_stats.json` — catalog size, WC push count, per-category breakdown |
-| `GET` | `/api/rakuten/import-log` | Read `rakuten/import_log.json` — per-product WC push attempts |
-| `GET` | `/api/rakuten/config` | Read `rakuten/config.json` — pricing config |
-| `POST` | `/api/rakuten/config` | Write `rakuten/config.json` — update margins, exchange rate, thresholds |
-| `POST` | `/api/rakuten/trigger` | Fetch more products — accepts `{ category, count }`; calls Rakuten :3002 |
-| `POST` | `/api/rakuten/retry` | Retry failed WooCommerce imports — calls Rakuten :3002 |
+| `GET` | `/api/rakuten/stats` | Query `rakuten_product_stats` table — catalog size, WC push count, per-category breakdown |
+| `GET` | `/api/rakuten/import-log` | Query `rakuten_import_logs` table — per-product WC push attempts |
+| `GET` | `/api/rakuten/config` | Query `rakuten_config` table — pricing config |
+| `POST` | `/api/rakuten/config` | Update `rakuten_config` table — triggers price reload + re-push in Rakuten service |
+| `POST` | `/api/rakuten/trigger` | Fetch more products — accepts `{ category, count }`; calls Rakuten :3000 |
+| `POST` | `/api/rakuten/retry` | Retry failed WooCommerce imports — calls Rakuten :3000 |
 
 ### Shared
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/pipeline-state` | Read all pipeline state files — returns `{ xhs, scraper }` each `"idle\|running\|failed"` |
+| `GET` | `/api/pipeline-state` | Query `pipeline_state` table — returns `{ xhs, scraper, rakuten }` each `"idle\|running\|failed"` |
 
 ### Shared File Schemas
 
@@ -376,4 +376,5 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 - **Translation tracking:** Removed — translation is handled by TranslatePress on the WordPress side, not tracked in the dashboard
 - **Language switching:** No runtime toggle — UI language is controlled by `NEXT_PUBLIC_LANG` env var. Set to `zh` in production `.env`, defaults to `en` locally. Components import from `en.js` or `zh.js` vocab files and read from the right one at render time. No React context or client components needed.
 - **XHS login browser streaming: screenshot polling, not noVNC** — noVNC requires a VNC server (x11vnc) and virtual display (Xvfb) on the Lightsail instance — significant infrastructure overhead for a single use case. Screenshot polling via `page.screenshot()` every 2 seconds is sufficient because the only operator action is scanning a QR code with their phone. The navigation to the QR code screen is automated in `xhs-login.js` (click sequence is hardcoded), so the QR code is already showing by the time the first screenshot reaches the dashboard. Operator never needs to click or type inside the browser.
+- **State/config storage: PostgreSQL, not shared volume** — all pipeline state, run logs, post history, config, and race data are stored in a shared PostgreSQL instance. Dashboard reads from DB directly. Config updates go through API endpoints that write to DB rows. Eliminates shared volume as an inter-container communication layer. Exception: `xhs/auth.json` stays as a file (session cookies are a runtime artifact, not config data). See `docs/architecture.md §5`.
 

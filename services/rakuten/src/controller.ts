@@ -20,7 +20,11 @@ export async function itemRequestByKeyword(keywordZH: string) {
 	if (!res) return { success: false };
 
 	// 2. Validate: at least one product's genreId must be in allGenres — else return { success: false }
-	const validKeyword = res.some((product) => product.genreId in allGenres);
+	const allGenreIds = new Set(Object.values(allGenres).map(String));
+	const returnedGenreIds = [...new Set(res.map((p) => p.genreId))];
+	console.log("returned genreIds:", returnedGenreIds);
+	console.log("in allGenreIds:", returnedGenreIds.filter((id) => allGenreIds.has(id)));
+	const validKeyword = res.some((product) => allGenreIds.has(product.genreId));
 	if (!validKeyword) return { success: false };
 
 	// 3. Upsert to DB → get back newly inserted products

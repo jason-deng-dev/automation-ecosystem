@@ -129,6 +129,21 @@
   - [x] Scheduler watches xhs/config.json for changes and re-registers cron jobs at runtime
   - [x] Write xhs/pipeline_state.json to shared volume on run start (running) and run end (idle / failed) — dashboard reads this for GET /api/pipeline-state
   - [x] Remove scraper.js from XHS container — reads scraper/races.json from shared volume instead
+- [ ] PostgreSQL migration (shared volume → DB)
+  - [ ] Add `xhs_schedule` table — day (0–6), time, post_type; replaces `xhs/config.json`
+  - [ ] Add `xhs_run_logs` table — timestamp, post_type, outcome, error_stage, error_msg, input_tokens, output_tokens
+  - [ ] Add `xhs_post_history` table — race_name, posted_at, month (for monthly reset)
+  - [ ] Add `xhs_post_archive` table — timestamp, post_type, title, hook, contents, cta, description
+  - [ ] Replace `races.json` file read with DB query on `races` table
+  - [ ] Replace `config.json` file watch with DB poll on `xhs_schedule` table — re-register cron jobs on change
+  - [ ] Replace `pipeline_state.json` write with UPSERT into `pipeline_state` table
+  - [ ] Replace `run_log.json` append with INSERT into `xhs_run_logs`
+  - [ ] Replace `post_history.json` read/write with DB queries on `xhs_post_history`
+  - [ ] Replace `post_archive/` writes with INSERT into `xhs_post_archive`
+  - [ ] Monthly reset — DELETE FROM xhs_post_history WHERE month != current month
+  - [ ] Remove `DATA_DIR` env var dependency once all file reads/writes are gone
+  - [ ] `auth.json` stays as file — no migration needed
+
 - [ ] xhs-login.js — dashboard re-auth flow
   - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
   - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode

@@ -1,8 +1,8 @@
 ## 1. What This Is
 
-The Scraper is a pure cron process running as a Docker container. It scrapes RunJapan weekly and writes `races.json` to a shared Docker volume. No HTTP server. No persistent process. Just a file writer on a schedule.
+The Scraper is a pure cron process running as a Docker container. It scrapes RunJapan weekly and writes race data to the `races` table in PostgreSQL. No HTTP server. No persistent process. Just a DB writer on a schedule.
 
-The Race Hub container reads `races.json` from that same volume and serves it to WordPress. They are fully decoupled — the scraper just writes a file, the Race Hub just reads it.
+The Race Hub container reads from the `races` table and serves it to WordPress. They are fully decoupled — the scraper just writes to DB, the Race Hub just reads it.
 
 For Race Hub design (Express API + React SPA), see `services/race-hub/docs/race-hub-design-doc.md`.
 
@@ -17,8 +17,7 @@ For Race Hub design (Express API + React SPA), see `services/race-hub/docs/race-
        │
        │ writes
        ▼
-scraper/races.json     (shared Docker volume)
-scraper/run_log.json
+PostgreSQL: races table, scraper_run_logs, pipeline_state
        │
        │ reads
        ▼
@@ -296,12 +295,10 @@ services/scraper/
     └── package.json                # (to be created)
 ```
 
-**Shared volume — local dev:** `shared_volume/` at repo root. Set `DATA_DIR=../../shared_volume` in `.env`.
+**PostgreSQL — tables this service interacts with:**
 
-**Shared volume — files this service interacts with:**
-
-| File | Direction | Contains |
+| Table | Direction | Contains |
 |---|---|---|
-| `shared_volume/scraper/races.json` | Scraper writes | All upcoming race data from RunJapan |
-| `shared_volume/scraper/run_log.json` | Scraper writes | Per-run: timestamp, races scraped, failure count, failed URLs, outcome |
-| `shared_volume/scraper/pipeline_state.json` | Scraper writes | `{ state: "idle \| running \| failed" }` |
+| `races` | Scraper writes | All upcoming race data from RunJapan — replaces `races.json` |
+| `scraper_run_logs` | Scraper writes | Per-run: timestamp, races scraped, failure count, failed URLs, outcome |
+| `pipeline_state` | Scraper writes | `{ service: "scraper", state: "idle \| running \| failed" }` |

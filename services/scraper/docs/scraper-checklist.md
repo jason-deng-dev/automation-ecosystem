@@ -23,9 +23,19 @@
   - [x] After full scrape pass, translate all fields per race: name, date, location, entryStart, entryEnd, description, info (keys + values recursively), notice[]
   - [x] Graceful fallback — write null for _zh fields if DeepL unavailable, UI falls back to English
   - [x] Verify all _zh fields present in output races.json
+- [ ] PostgreSQL migration (shared volume → DB)
+  - [ ] Add `races` table to shared PostgreSQL schema — matches current races.json field structure, add `scraped_at` timestamp
+  - [ ] Add `scraper_run_logs` table — timestamp, races_scraped, failure_count, failed_urls, outcome
+  - [ ] Add `pipeline_state` table — service, state, updated_at (shared with XHS + Rakuten)
+  - [ ] Replace `races.json` file write with DB upsert on `itemUrl` — incremental scrape logic stays the same, Map built from DB instead of file
+  - [ ] Replace `run_log.json` write with INSERT into `scraper_run_logs`
+  - [ ] Replace `pipeline_state.json` write with UPSERT into `pipeline_state`
+  - [ ] Remove `DATA_DIR` env var dependency once all file writes are gone
+  - [ ] Race Hub reads from `races` table instead of `races.json` file
+
 - [ ] Docker & Deploy
   - [ ] Write Dockerfile
   - [ ] Verify container starts and cron fires correctly with docker-compose up
-  - [ ] Verify races.json written to shared volume on run
+  - [ ] Verify races written to PostgreSQL on run
 
 ---

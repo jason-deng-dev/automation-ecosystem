@@ -40,7 +40,7 @@ Product ingestion needs to be:
 |---|---|
 |**WooCommerce**|Full customer-facing storefront — product browsing, search, cart, checkout, payments (Stripe is built-in via WooCommerce)|
 |**Express API**|Backend pipeline — Rakuten fetch, normalize, price, WooCommerce push, product request handler, weekly cron|
-|**PostgreSQL**|Permanent product store — rate limit protection, re-scrape deduplication, price change tracking|
+|**PostgreSQL**|Single source of truth — product store, genre/subcategory map, operator config (markup, exchange rate), pipeline run logs|
 |**TranslatePress + Google Translate**|JA → ZH-HANS translation on first customer page view, cached in WordPress DB permanently|
 |**TypeScript**|Implementation language for the entire Express pipeline — enforces type correctness across all pipeline stages at compile time|
 
@@ -73,11 +73,11 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 - `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
 - Returns normalized + translated product objects — `normalizeItems` then `translateNames` (DeepL, names only) called internally before returning; all call sites already await these functions so no changes needed at call sites
 
-#### genres.ts (exists — curated genre ID map)
+#### genres.ts (removed — migrated to DB)
 
-- Maps internal category names to Rakuten genre IDs
-- Used by rakutenAPI.ts to target specific product categories for ranking fetch
-- See Section 6 for full category structure
+- Genre ID map previously hardcoded here — now lives in the `subcategories` table
+- Loaded into memory at startup via `getSubcategoriesWithCategory()` query
+- See §11.6, §11.15 for migration rationale
 
 #### db/pool.ts (new)
 
@@ -98,7 +98,7 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 #### pricing.ts (new)
 
 - `calculatePrice(price, category)` — applies markup formula: `(price * yenToYuan * (1 + markup)) + shipping`
-- Configurable markup % and shipping estimate per category, read from `shared_volume/rakuten/config.json`
+- Configurable markup % and exchange rate read from `config` table in PostgreSQL at startup; reloaded via dashboard admin endpoint (replaces `fs.watch` on config.json)
 
 #### woocommerceAPI.ts (new)
 
@@ -122,7 +122,7 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 
 #### Bulk push (initial load + ranking)
 
-**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via the `page` parameter (1–34). `pagesPerSubcategory` in `config.json` sets how many pages to fetch per subcategory (each page = 30 products). Minimum is 1 page = 30 products per subcategory.
+**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via the `page` parameter (1–34). `pagesPerSubcategory` in the `config` DB table sets how many pages to fetch per subcategory (each page = 30 products). Minimum is 1 page = 30 products per subcategory.
 
 ```
 For each genre in genres.js:
@@ -247,7 +247,7 @@ CREATE TABLE products (
 sale_price = rakuten_price * yenToYuan
 ```
 
-**Currency:** All sale prices are stored and displayed in CNY (Chinese Yuan). Rakuten prices are in JPY — conversion applies at calculation time using a configurable exchange rate in `config.json`.
+**Currency:** All sale prices are stored and displayed in CNY (Chinese Yuan). Rakuten prices are in JPY — conversion applies at calculation time using a configurable exchange rate stored in the `config` DB table.
 
 **Markup:** Handled entirely in WooCommerce via the **Discount Rules for WooCommerce** plugin — not in the pipeline. The pipeline pushes the raw JPY→CNY conversion as `regular_price`. The operator applies a percentage markup globally or per category in the WooCommerce admin UI. This keeps markup management independent of the pipeline — changing margins never requires a re-scrape or re-push.
 
@@ -441,23 +441,29 @@ Frontend shortcode renders [products ids="123,456,789"] → WooCommerce product 
 - On completion: shortcode receives `productIds` array, renders `[products ids="..."]` grid inline on the same page
 - On failure: "We couldn't find that product on Rakuten. Try a different search term."
 
-### 9.4 Claude Quality Check
+### 9.4 Dynamic Genre Expansion via Claude
 
-After the keyword scrape expanded `genres.ts` to cover the vast majority of store-relevant products, a Claude quality check is no longer on the critical path. The keyword flow will handle genre assignment by matching against the comprehensive `allGenres` map directly.
+When a keyword search returns products whose genre IDs are not in the `subcategories` table, Claude is used to classify the unknown IDs and expand the catalogue dynamically — rather than rejecting the request.
 
-**Claude quality check — deferred (add if time allows after launch):**
+**Flow:**
 
-If implemented, it would be two sequential calls:
+1. Keyword search returns products with one or more unknown genre IDs (not in any subcategory's `genre_ids[]`)
+2. Query DB for current subcategory structure (id, name, category name)
+3. Call Claude API: "Given these subcategories, which one does genre ID `X` belong to? Return `subcategoryId` or `null` if off-theme."
+4. If Claude returns a valid subcategory → `UPDATE subcategories SET genre_ids = array_append(genre_ids, X) WHERE id = $subcategoryId`
+5. Update in-memory genre map and proceed with upsert + WooCommerce push
+6. If Claude returns `null` (off-theme) → return `{ success: false }`
 
-- **Stage 1 — Validity check:** ask Claude if the keyword is relevant to running, fitness, or sports nutrition. Abort early if no — prevents off-theme products and saves the Rakuten API call.
-- **Stage 2 — Genre assignment:** feed `allGenres` map, Claude returns the best-fit genre ID. Used as a fallback for keywords that surface a genre ID not in our map.
+**Why this approach:** The Keyword Search API returns deeper subcategory-level genre IDs that weren't captured during the initial Ranking API scrape. Rather than maintaining a static map that requires code changes to expand, Claude classifies new IDs at runtime against the live DB structure. This makes the catalogue self-expanding for on-theme products.
 
-**Why deferred:** After the keyword scrape, `allGenres` covers nearly all realistic customer requests. The edge case rate (unknown genre ID) is low enough that launching without Claude and adding it later is the right call.
+See §11.15 for the engineering detail.
 
 ### 9.5 Implementation Notes
 
 - WordPress shortcode added to WooCommerce search results page — form + loading state, renders inline product grid on completion via `[products ids="..."]`, no SSE
 - No translation API needed in the pipeline — Rakuten search accepts Chinese natively; TranslatePress handles JA→ZH lazily for all products including request flow
+- **Mixed content constraint:** WordPress runs on HTTPS. Direct `fetch()` calls from the form to `http://VPS_IP:3000` are blocked by browsers as mixed content. The PHP proxy (§11.14) is required before the form can be embedded in production — the client posts to a WordPress AJAX endpoint, which proxies internally to the Express API. The VPS IP is never exposed to the browser.
+- **Shortcode rendering:** `do_shortcode` is a PHP function — it does not exist in browser JS. The form sets `results.innerHTML` to the raw shortcode string as a stopgap for testing, but actual rendering requires the PHP proxy response to return pre-rendered HTML (WordPress executes `do_shortcode` server-side before responding).
 
 ---
 
@@ -531,13 +537,15 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Note:** Rakuten's API returns image URLs with a `?_ex=128x128` query param that caps resolution at 128×128. The `?_ex=...` param is stripped in `normalizeItems` before the URL is stored or pushed — this gives WooCommerce the full-resolution image from Rakuten's CDN.
 
-### 11.6 Genre Map Stays Static in genres.ts
+### 11.6 Genre Map Migrated from genres.ts to DB
 
-**Challenge considered:** Moving the genre map to `shared_volume/rakuten/config.json` to allow runtime expansion via the dashboard — so new Rakuten genre IDs could be added without a redeploy.
+**Original decision:** Genre map hardcoded in `genres.ts` — static, required code changes to expand.
 
-**Why we didn't do it:** The keyword request flow uses Claude to validate and categorize requests. Claude receives the full genre name/ID map from `genres.ts` and returns the single best-fit genre ID. This means the keyword flow doesn't need runtime genre map expansion at all — Claude maps the customer's request to an existing genre ID, and the existing `upsertProduct` flow (which resolves `subcategory_id` via `WHERE genre_id = $N`) works unchanged.
+**Revised decision:** `genres.ts` is removed. The `subcategories` table in PostgreSQL becomes the single source of truth for genre IDs. At startup, the app loads the full subcategory/genre structure from DB into memory. When the keyword request flow encounters an unknown genre ID, Claude classifies it and `array_append` adds it to the appropriate subcategory row at runtime — no redeploy needed.
 
-**Decision:** Genre map stays hardcoded in `src/config/genres.ts`. This keeps config.json focused on operator-tunable parameters (markup, shipping, exchange rate). Adding new genre IDs still requires a code change, but the Claude quality gate ensures thematic correctness so genre expansion is a deliberate curation decision, not something that needs to happen at runtime.
+**Why revised:** The Keyword Search API returns genre IDs that were never captured during the Ranking API scrape. A static file can't handle this without constant manual updates. The DB-driven approach makes the catalogue self-expanding for on-theme products while keeping off-theme requests blocked via Claude's classification step.
+
+See §9.4 for the full dynamic expansion flow and §11.15 for the engineering detail.
 
 ### 11.7 Genre Map Expansion via Keyword Scrape
 
@@ -597,6 +605,33 @@ FETCH → NORMALIZE → TRANSLATE (DeepL, name only) → PRICE → STORE → PUS
 
 **Solution:** Apply per-IP rate limiting via `express-rate-limit` on all public endpoints. Use a Redis store for production-grade persistence across restarts. VPS IP hidden behind a WordPress PHP proxy — the client never sees the VPS address directly, all requests route through `wp-admin/admin-ajax.php`.
 
+### 11.16 Shared Volume → PostgreSQL Migration
+
+**Challenge:** Config, run logs, and product stats were written to `shared_volume/` JSON files. The dashboard read these files directly. `fs.watch` on `config.json` triggered price recalculation when the operator changed markup or exchange rate. This created a file-system dependency between services that complicates deployment and removes the ability to update config at runtime without file access.
+
+**Solution:** Migrate everything to PostgreSQL:
+
+- **`config` table** — single row storing `YenToYuan`, `markupPercent`, `pagesPerSubcategory`, `searchFillThreshold`. Dashboard exposes an admin UI (input fields + Apply button) that POSTs to an endpoint, updates the DB row, and triggers price recalculation in the rakuten service. Replaces `fs.watch`.
+- **`run_logs` table** — one row per pipeline run, written at end of each weekly sync or manual trigger
+- **`product_stats` table** — updated after each run with total/per-category counts
+- **`import_logs` table** — one row per WooCommerce push attempt
+- **`subcategories` table** — already the genre ID source of truth (see §11.15)
+
+**Result:** No shared volume dependency. Dashboard reads all state from DB. Config updates flow through an admin endpoint, not file edits.
+
+### 11.15 Dynamic Genre Expansion — DB as Source of Truth
+
+**Challenge:** The Keyword Search API returns genre IDs at a deeper subcategory level than what the Ranking API surfaces. A static `genres.ts` file can't keep up — any new genre ID requires a code change and redeploy.
+
+**Solution:** Remove `genres.ts` entirely. At app startup, load the full `subcategories` structure (id, name, genre_ids[], category name) from PostgreSQL into an in-memory map. When the keyword request flow encounters a genre ID not in the map:
+
+1. Query DB for the current subcategory list (id + name + parent category name)
+2. Call Claude API: given this list, which subcategory does the unknown genre ID belong to? Return `subcategoryId` or `null` if off-theme.
+3. If on-theme: `UPDATE subcategories SET genre_ids = array_append(genre_ids, $newId) WHERE id = $subcategoryId` — persists immediately, updates in-memory map
+4. If off-theme: return `{ success: false }` — no products pushed
+
+**Result:** The catalogue expands automatically as customers request products in genres we haven't seen before, while off-theme requests are blocked by Claude. No redeploying to add genre IDs.
+
 ### 11.10 Ranking API Has No `hits` Parameter
 
 **Challenge:** The Rakuten Ranking API does not accept a `hits` parameter — passing it is silently ignored. Initial implementation passed `count` as `hits`, resulting in the API returning its default page size (30 products) regardless of the requested count.
@@ -614,7 +649,7 @@ FETCH → NORMALIZE → TRANSLATE (DeepL, name only) → PRICE → STORE → PUS
 - **Deduplication key:** `rakuten_url` — stable, unique per Rakuten listing.
 - **Primary fetch method:** Ranking API (top N per genre) — replaces genre search for bulk push.
 - **Re-scrape logic:** URL-based upsert — skip if unchanged, update if price/availability changed, insert if new.
-- **Genre map location:** Stays hardcoded in `genres.ts`. Moving to shared_volume config was considered but rejected — the Claude keyword flow returns a genre ID directly from the existing map, so runtime expansion is unnecessary. New genres are added via code as a deliberate curation decision. See §11.6.
+- **Genre map location:** Migrated from `genres.ts` to PostgreSQL `subcategories` table. Loaded into memory at startup. Unknown genre IDs classified by Claude at runtime and appended via `array_append` — no redeploy needed. See §11.6, §11.15.
 
 ### Still Open
 - **WooCommerce REST API credentials:** Consumer Key + Secret not yet generated on running.moximoxi.net.
@@ -648,13 +683,14 @@ automation-ecosystem/rakuten/
 └── package.json
 ```
 
-**Shared volume — local dev:** `shared_volume/` at repo root. Set `DATA_DIR=../../shared_volume` in `.env`.
+**Shared volume — removed.** All data previously written to `shared_volume/` is migrated to PostgreSQL. The dashboard reads from DB directly.
 
-| File | Direction | Contains |
+| DB Table | Previously | Contains |
 |---|---|---|
-| `shared_volume/rakuten/config.json` | Dashboard writes → Rakuten reads | Per-category markup %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold |
-| `src/config/wpCategoryIds.ts` | Static — generated once by setupCategories() | WooCommerce category name → ID map, hardcoded after initial run, IDs are stable |
-| `shared_volume/rakuten/pipeline_state.json` | Rakuten writes → Dashboard reads | `{ state: "idle \| running \| failed" }` |
-| `shared_volume/rakuten/run_log.json` | Rakuten writes → Dashboard reads | Per-run: operation, category, products fetched/pushed, failures, stale products deleted |
-| `shared_volume/rakuten/product_stats.json` | Rakuten writes → Dashboard reads | Total cached, total pushed, per-category breakdown |
-| `shared_volume/rakuten/import_log.json` | Rakuten writes → Dashboard reads | Per-product WooCommerce push attempt and outcome |
+| `config` | `shared_volume/rakuten/config.json` | YenToYuan, markupPercent, pagesPerSubcategory, searchFillThreshold — updated via dashboard admin UI |
+| `run_logs` | `shared_volume/rakuten/run_log.json` | Per-run: operation, category, products fetched/pushed, failures, stale products deleted |
+| `product_stats` | `shared_volume/rakuten/product_stats.json` | Total cached, total pushed, per-category breakdown — updated after each run |
+| `import_logs` | `shared_volume/rakuten/import_log.json` | Per-product WooCommerce push attempt and outcome |
+| `subcategories` | `src/config/genres.ts` | Genre ID map — dynamically expandable at runtime via Claude classification |
+
+`src/config/wpCategoryIds.ts` stays static — WooCommerce category IDs are stable after initial setup and don't need runtime updates.

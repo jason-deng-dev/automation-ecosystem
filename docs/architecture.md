@@ -34,27 +34,26 @@ Running the platform manually at scale is not viable. Three core operations — 
 
 ## 3. System Architecture
 
-All five containers run on a single AWS Lightsail VPS, managed by one `docker-compose.yml`. They share a Docker volume for state and configuration.
+All five containers run on a single AWS Lightsail VPS, managed by one `docker-compose.yml`. PostgreSQL is the shared communication bus — all pipeline state, config, logs, and data are stored in DB and read by the dashboard directly.
 
 ```
 ┌──────────────────────────────── AWS Lightsail VPS ──────────────────────────────────────┐
 │                                                                                         │
 │  [Scraper container]  [Race Hub container]  [XHS container]    [Rakuten container]      │
 │   cron only            Express :3001         scheduler.js       cron: fetch pipeline    │
-│   scraper.js weekly    (always up)           generator.js       PostgreSQL              │
-│   no HTTP              serves races.json     publisher.js       Express :3002           │
-│          │             to WordPress               │             (internal only)         │
+│   scraper.js weekly    (always up)           generator.js       Express :3000           │
+│   no HTTP              reads races table     publisher.js       (internal only)         │
+│          │             serves to WordPress        │                    │                │
 │          │                   │                    │                    │                │
 │          ▼                   ▼                    ▼                    ▼                │
 │    ┌──────────────────────────────────────────────────────────────────────┐             │
-│    │                          shared volume                               │             │
+│    │                        PostgreSQL (shared)                           │             │
 │    │                                                                      │             │
-│    │  scraper/                xhs/                    rakuten/            │             │
-│    │   races.json ←            run_log.json ←          run_log.json ←     │             │
-│    │   run_log.json ←          pipeline_state.json ←   product_stats.json←│             │
-│    │   pipeline_state.json ←   post_archive/ ←         import_log.json ←  │             │
-│    │                           auth.json ←             config.json →      │             │
-│    │                           config.json →                               │             │
+│    │  races ←               xhs_schedule →        rakuten_config →       │             │
+│    │  scraper_run_logs ←    xhs_run_logs ←         run_logs ←            │             │
+│    │  pipeline_state ←      xhs_post_history ←     product_stats ←       │             │
+│    │                        xhs_post_archive ←     import_logs ←         │             │
+│    │                        pipeline_state ←        subcategories         │             │
 │    │                                                                      │             │
 │    │   ← pipeline writes          → dashboard writes                     │             │
 │    └───────────────────────────────────┬──────────────────────────────────┘             │
@@ -65,11 +64,11 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 │                      │  Next.js :3000 (PM2 + NGINX)       │                             │
 │                      │  App Router pages + API routes     │                             │
 │                      │  (operator-facing only)            │                             │
-│                      │  commands → Rakuten :3002          │                             │
+│                      │  commands → Rakuten :3000          │                             │
 │                      └───────────────┬───────────────────┘                             │
 │                                      │                                                  │
 └──────┬───────────────────────────────┼───────────────────────────────────────┬──────────┘
-       │ Race Hub :3001                │ Dashboard :3000                        │ Rakuten :3002
+       │ Race Hub :3001                │ Dashboard :3000                        │ Rakuten :3000
      HTTPS                          HTTPS                                     HTTPS
  GET /api/races                  (operator)                             push products
        │                              │                                         │
@@ -84,44 +83,43 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 
 | Container | Role | External calls |
 |---|---|---|
-| **Scraper** | Cron-only process. Runs weekly, scrapes RunJapan, writes `scraper/races.json` to shared volume. No HTTP server. | RunJapan (scrape) |
-| **Race Hub** | Persistent Express server (:3001). Always up. Reads `scraper/races.json` from shared volume, serves it to WordPress via `GET /api/races`. Public-facing. | — |
-| **XHS** | Daily automation pipeline. Scheduler triggers generator (Claude API) → publisher (Playwright → XHS). Reads race data from shared volume, writes logs and post archive back. | Claude API, XHS web |
-| **Rakuten** | Product ingestion pipeline. Fetches from Rakuten API, normalises, prices, stores permanently in PostgreSQL, pushes to WooCommerce. Internal Express :3002 for dashboard commands only. Translation handled by TranslatePress on WordPress side — not in the pipeline. | Rakuten API, WooCommerce REST API |
-| **Dashboard** | Operator-facing monitoring UI. Next.js :3000 (App Router + API routes, served via PM2 + NGINX). Reads all pipeline state from the shared volume. Writes config files that pipelines pick up at runtime. Calls Rakuten :3002 for commands (trigger fetch, retry import). | — |
+| **Scraper** | Cron-only process. Runs weekly, scrapes RunJapan, writes race data to `races` table in PostgreSQL. No HTTP server. | RunJapan (scrape) |
+| **Race Hub** | Persistent Express server (:3001). Always up. Reads from `races` table in PostgreSQL, serves it to WordPress via `GET /api/races`. Public-facing. | — |
+| **XHS** | Daily automation pipeline. Scheduler triggers generator (Claude API) → publisher (Playwright → XHS). Reads race data from PostgreSQL, writes logs and post archive to PostgreSQL. Schedule config read from `xhs_schedule` table; `auth.json` stays as a file (session cookies). | Claude API, XHS web |
+| **Rakuten** | Product ingestion pipeline. Fetches from Rakuten API, normalises, prices, stores permanently in PostgreSQL, pushes to WooCommerce. Internal Express :3000 for dashboard commands. All config and logs in PostgreSQL. | Rakuten API, WooCommerce REST API |
+| **Dashboard** | Operator-facing monitoring UI. Next.js :3000 (App Router + API routes, served via PM2 + NGINX). Reads all pipeline state from PostgreSQL. Updates config via API endpoints that write to DB. Calls Rakuten :3000 for commands (trigger fetch, retry import). | — |
 
 ---
 
-## 5. Shared Volume — Data Flow
+## 5. PostgreSQL — Shared Data Layer
 
-**Local dev:** `shared_volume/` at repo root. Set `DATA_DIR=../../shared_volume` in each service's `.env`.
-**Production (Docker):** mounted at `/data` inside each container. Set `DATA_DIR=/data` in each service's environment.
+PostgreSQL is the communication bus between all containers. Pipelines write state, logs, and output data to it. The dashboard reads directly from it. Config is updated via dashboard API endpoints that write to DB — no file watching required.
 
+**Shared instance:** All services connect to the same PostgreSQL instance. Each service owns its own tables.
 
-
-The shared volume is the communication bus between all containers. Pipelines write their state (logs, output data) to it. The dashboard reads state from it and writes config back. Pipelines watch their config files and adjust behaviour at runtime without restarting.
-
-| File | Written by | Read by | Contains |
+| Table | Written by | Read by | Contains |
 |---|---|---|---|
-| `scraper/races.json` | Scraper | Race Hub, XHS | All upcoming race data from RunJapan |
-| `scraper/pipeline_state.json` | Scraper | Dashboard | Current scraper state — `{ state: "idle | running | failed" }` |
-| `scraper/run_log.json` | Scraper | Dashboard | Per-run: timestamp, races scraped, failure count, failed URLs, outcome |
-| `xhs/pipeline_state.json` | XHS | Dashboard | Current XHS state — `{ state: "idle | running | failed" }` |
-| `xhs/run_log.json` | XHS | Dashboard | Per-run: timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output |
-| `xhs/post_archive/` | XHS | Dashboard | Published post content, weekly JSON files |
-| `xhs/auth.json` | XHS (xhs-login.js) | XHS (publisher.js) | XHS session cookies |
-| `xhs/post_history.json` | XHS | XHS | Tracks which races have been posted — avoids re-posting the same race |
-| `xhs/config.json` | Dashboard | XHS | Per-day post schedule — XHS re-registers cron jobs on change |
-| `rakuten/run_log.json` | Rakuten | Dashboard | Per-run: operation, category, products fetched/pushed, failures |
-| `rakuten/product_stats.json` | Rakuten | Dashboard | Total cached, total pushed, per-category breakdown |
-| `rakuten/import_log.json` | Rakuten | Dashboard | Per-product WooCommerce push attempts and outcomes |
-| `rakuten/config.json` | Dashboard | Rakuten | Per-category margin %, shipping estimate, JPY→CNY rate, fetch count, search fill threshold |
+| `races` | Scraper | Race Hub, XHS | All upcoming race data from RunJapan |
+| `scraper_run_logs` | Scraper | Dashboard | Per-run: timestamp, races scraped, failure count, failed URLs, outcome |
+| `pipeline_state` | Scraper, XHS, Rakuten | Dashboard | Current state per service — `{ service, state: "idle\|running\|failed" }` |
+| `xhs_schedule` | Dashboard | XHS | Per-day post schedule — XHS re-registers cron jobs when table changes |
+| `xhs_run_logs` | XHS | Dashboard | Per-run: timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output |
+| `xhs_post_history` | XHS | XHS | Races already posted — dedup tracker, reset monthly |
+| `xhs_post_archive` | XHS | Dashboard | Published post content keyed by timestamp |
+| `rakuten_config` | Dashboard | Rakuten | YenToYuan, markupPercent, pagesPerSubcategory, searchFillThreshold |
+| `rakuten_run_logs` | Rakuten | Dashboard | Per-run: operation, category, products fetched/pushed, failures |
+| `rakuten_product_stats` | Rakuten | Dashboard | Total cached, total pushed, per-category breakdown |
+| `rakuten_import_logs` | Rakuten | Dashboard | Per-product WooCommerce push attempts and outcomes |
+| `subcategories` | Seed + Claude (runtime) | Rakuten | Genre ID map — dynamically expandable |
+| `products` | Rakuten | Rakuten, Dashboard | Full product store with WooCommerce IDs |
+
+**Exception:** `xhs/auth.json` stays as a file — XHS session cookies are a runtime artifact, not configuration data. Stored on the container filesystem, never transmitted to clients.
 
 ---
 
 ## 6. Dashboard
 
-The monitoring dashboard gives a non-technical operator full visibility and control over all pipelines from a browser — no SSH, no terminal, no code changes required. Reads all pipeline state from the shared volume; writes config files that pipelines pick up at runtime.
+The monitoring dashboard gives a non-technical operator full visibility and control over all pipelines from a browser — no SSH, no terminal, no code changes required. Reads all pipeline state from PostgreSQL; writes config updates via API endpoints that update DB rows.
 
 → See `services/dashboard/docs/dashboard-design-doc.md`
 

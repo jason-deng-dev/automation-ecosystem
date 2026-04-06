@@ -993,21 +993,20 @@ services/xhs/
     └── package.json
 ```
 
-**Local testing note:** Clone the repo, `cd services/xhs`, `npm install`, copy `.env.example` to `.env`, fill in `ANTHROPIC_API_KEY`, and set `DATA_DIR=../../shared_volume`. Run `node scripts/test-gen.js` to test post generation. Race data is read from `shared_volume/scraper/races.json` — ensure the scraper has run at least once, or seed that file manually.
+**Local testing note:** Clone the repo, `cd services/xhs`, `npm install`, copy `.env.example` to `.env`, fill in `ANTHROPIC_API_KEY` and `DATABASE_URL`. Run `node scripts/test-gen.js` to test post generation. Race data is read from the `races` table in PostgreSQL — ensure the scraper has run at least once, or seed the table manually.
 
-**Shared volume — local dev:** `shared_volume/` at repo root, set `DATA_DIR=../../shared_volume` in `.env`.
+**PostgreSQL — tables this service interacts with:**
 
-**Shared volume — files this service interacts with:**
-
-| File | Direction | Contains |
+| Table | Direction | Contains |
 |---|---|---|
-| `shared_volume/scraper/races.json` | XHS reads | Race data — used by generator to pick race context |
-| `shared_volume/xhs/config.json` | Dashboard writes → XHS reads | Per-day post schedule — scheduler watches for changes |
-| `shared_volume/xhs/pipeline_state.json` | XHS writes | `{ state: "idle \| running \| failed" }` |
-| `shared_volume/xhs/run_log.json` | XHS writes | Per-run: type, outcome, error stage/msg, token counts |
-| `shared_volume/xhs/post_history.json` | XHS reads + writes | Race names already posted — dedup tracker |
-| `shared_volume/xhs/auth.json` | xhs-login.js writes → publisher reads | XHS session cookies |
-| `shared_volume/xhs/post_archive/` | XHS writes | Weekly JSON files — one per published post |
+| `races` | XHS reads | Race data from scraper — used by generator to pick race context |
+| `xhs_schedule` | Dashboard writes → XHS reads | Per-day post schedule — scheduler polls for changes |
+| `pipeline_state` | XHS writes | `{ service: "xhs", state: "idle \| running \| failed" }` |
+| `xhs_run_logs` | XHS writes | Per-run: type, outcome, error stage/msg, token counts |
+| `xhs_post_history` | XHS reads + writes | Race names already posted — dedup tracker, reset monthly |
+| `xhs_post_archive` | XHS writes | One row per published post — keyed by ISO timestamp |
+
+**Exception:** `auth.json` stays as a file on the container filesystem — XHS session cookies are a runtime artifact, not configuration data. Never transmitted to clients.
 
 ---
 

@@ -129,21 +129,36 @@ x
   - [x] POST /api/request-product endpoint — Chinese keyword → genre validation → upsert DB → push WC → return { success, productIds }
   - [ ] Embed request form widget on WooCommerce search results page (shortcode) — show loading state on submit, render inline product grid on success via [products ids="..."]
 
+- [ ] Dynamic genre expansion → §9.4, §11.15
+  - [ ] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
+  - [ ] Load genre map from DB at startup in `app.ts` — replaces `allGenres` import from `genres.ts`
+  - [ ] Add `appendGenreId(subcategoryId, genreId)` query in `queries.ts` — `array_append` + updates in-memory map
+  - [ ] Claude classification call in `controller.ts` — when unknown genre IDs found, pass subcategory list to Claude, get back `subcategoryId | null`
+  - [ ] If Claude returns null (off-theme) → `{ success: false }`; if on-theme → append to DB + proceed with push
+  - [ ] Remove `genres.ts` and all imports of `allGenres` once DB-driven map is in place
+
 - [ ] Rate limiting → §11.14
   - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
   - [ ] Install `express-rate-limit` (+ Redis store for production-grade persistence)
   - [ ] Apply per-IP limits on public endpoints
   - [ ] Hide VPS IP behind WordPress PHP proxy — IP never exposed to client
 
+- [ ] Shared volume → PostgreSQL migration → §11.16
+  - [ ] Add `config` table to `schema.sql` + `seed.ts` — single row: YenToYuan, markupPercent, pagesPerSubcategory, searchFillThreshold
+  - [ ] Add `getConfig()` and `updateConfig(key, value)` queries in `queries.ts`
+  - [ ] Replace `fs.readFileSync(config.json)` in `controller.ts` + `pricing.ts` with DB config read at startup
+  - [ ] Replace `fs.watch` in `app.ts` with a `POST /api/config` endpoint — updates DB row + triggers `reloadConfig()` + `updatePrices()`
+  - [ ] Add `run_logs` table to schema — one row per pipeline run (operation, category, fetched, pushed, failures, stale deleted)
+  - [ ] Add `product_stats` table to schema — updated after each run (total cached, total pushed, per-category breakdown)
+  - [ ] Add `import_logs` table to schema — one row per WooCommerce push attempt and outcome
+  - [ ] Replace JSON file writes in `runWeeklySync.ts` with DB inserts into `run_logs` + `product_stats`
+  - [ ] Remove `DATA_DIR` env var dependency once all shared volume reads/writes are gone
+
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /trigger — fetch more products (category + count)
   - [ ] POST /retry — retry failed WooCommerce imports
-  - [ ] Pipeline state written to shared volume for dashboard health card (idle | running | failed)
-
-- [ ] Shared volume output → §13 Shared Volume
-  - [x] Write `rakuten/run_log.json` after each pipeline run (operation, category, products fetched/pushed, failures, stale products deleted)
-  - [x] Write `rakuten/product_stats.json` after each run (total cached, total pushed, per-category breakdown)
-  - [ ] Write `rakuten/import_log.json` per product WooCommerce push attempt and outcome
+  - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices (replaces fs.watch)
+  - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3
   - [ ] `pg_dump rakutenDB > dump.sql` locally → copy to server → `psql rakutenDB < dump.sql` inside postgres container — preserves `wc_product_id` so idempotency check prevents duplicate WC pushes
@@ -156,7 +171,7 @@ x
   - **Markup:** Discount Rules for WooCommerce plugin — how to install, create a percentage markup rule globally or per category, and verify it's applying correctly on product pages
   - **Flat shipping rate:** WooCommerce → Settings → Shipping → Shipping Zones — how to set a flat rate per order and update it when shipping costs change
   - **Shipping policy note:** where the checkout page note lives and how to edit the category-based estimates
-  - **Exchange rate:** how to update `YenToYuan` in `shared_volume/rakuten/config.json` when the JPY→CNY rate changes significantly
+  - **Exchange rate:** how to update `YenToYuan` via the dashboard admin UI when the JPY→CNY rate changes significantly
   - **Running the pipeline:** how to trigger a manual bulk push or re-scrape
 
 ---

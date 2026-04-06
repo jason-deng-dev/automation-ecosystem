@@ -6,7 +6,8 @@
 		<title>Document</title>
 	</head>
 	<body>
-		<div id="product-request-form" style="max-width: 600px; margin: 0 auto; padding: 20px 0">
+		<div style="display: flex; justify-content: center;">
+		<div id="product-request-form" style="width: 100%; max-width: 600px; padding: 20px 0">
 			<h2>找不到想要的商品？</h2>
 			<p>输入您想要的商品关键词，我们将为您从日本进口。</p>
 
@@ -38,13 +39,12 @@
 					"
 					onmouseover="this.style.background='#d41e50'"
 					onmouseout="this.style.background='#F2295E'"
-				>
-					搜索
-				</button>
+				>搜索</button>
 			</div>
 
 			<div id="request-status" style="margin-top: 16px; font-size: 14px; color: #666"></div>
 			<div id="request-results" style="margin-top: 24px"></div>
+		</div>
 		</div>
 
 		<script>
@@ -61,7 +61,7 @@
 				btn.disabled = true;
 
 				try {
-					const res = await fetch("https://YOUR_VPS_IP:3001/api/request-product", {
+					const res = await fetch("http://13.192.170.85:3000/api/request-product", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({ keyword }),
