@@ -4,18 +4,35 @@ Production-grade upgrades across all services. Ordered by priority — security 
 
 ---
 
-## Priority 1 — Dashboard Authentication (Security)
+## Priority 1 — OAuth2 / SSO (Security)
 
 **The gap:** Every trigger endpoint in the dashboard (`POST /api/xhs/trigger`, `POST /api/rakuten/config`, etc.) is unauthenticated. Anyone who finds the URL can fire pipelines, overwrite configs, or wipe the XHS schedule.
 
-**What to build:** HTTP Basic Auth middleware on all dashboard API routes. A single username + password stored in `.env` checked on every request. No session management needed — the dashboard is operator-only.
+**What to build:** Google OAuth via Auth.js (NextAuth.js v5). A single whitelisted Google account — yours. No user table, no passwords to manage. Auth.js handles the OAuth handshake, issues a JWT session cookie, and middleware enforces it on every request.
+
+**Why OAuth2 over Basic Auth:**
+- No credentials stored in `.env` that can leak — Google handles authentication
+- Token-based sessions (JWT) are stateless — no server-side session store needed
+- Expandable: adding a second user or swapping to GitHub OAuth is a config change, not a rewrite
+- Shows you understand delegated auth, not just password checking
 
 **Implementation:**
-- Add `DASHBOARD_USER` and `DASHBOARD_PASS` to `.env`
-- Write a Next.js middleware (`middleware.ts`) that reads the `Authorization` header and returns 401 if missing or wrong
-- Apply to all `/api/*` routes
+- `npm install next-auth` in dashboard service
+- Configure `GoogleProvider` with `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` from Google Cloud Console
+- Add `ALLOWED_EMAIL` to `.env` — checked in the `signIn` callback to block any Google account that isn't yours
+- `NEXTAUTH_SECRET` for JWT signing
+- `middleware.ts` calls `auth()` and redirects unauthenticated requests to the login page
+- Applies to all `/api/*` routes and the dashboard UI
 
-**Resume signal:** Security boundary on an internal tool — shows you think about attack surface, not just happy path.
+**Resume signal:** OAuth2 is the industry standard for delegated authentication — every fintech system uses it. Showing you can implement it (not just use it as a consumer) is a strong signal. SSO via a trusted provider also demonstrates you understand why rolling your own auth is an anti-pattern.
+
+**Flow:**
+```
+User visits dashboard → middleware checks JWT session cookie
+→ no session: redirect to /api/auth/signin → Google login
+→ Google returns token → signIn callback checks email === ALLOWED_EMAIL
+→ Auth.js issues session cookie → user lands on dashboard
+```
 
 ---
 
@@ -74,11 +91,19 @@ Production-grade upgrades across all services. Ordered by priority — security 
 
 ---
 
-## Priority 5 — Move Run Logs to PostgreSQL with Prisma (Data Integrity)
+## Priority 5 — Migrate All File-Based Data to PostgreSQL with Prisma (Data Integrity)
 
-**The gap:** `xhs/run_log.json` and `scraper/run_log.json` grow unbounded, can't be queried, have no schema enforcement, and are vulnerable to partial-write corruption if a run crashes mid-write. The dashboard computes 30-day success rates by loading the entire file into memory and filtering in JS.
+**The gap:** The ecosystem stores critical state in flat JSON files — run logs, race data, pipeline state. These files grow unbounded, can't be queried, have no schema enforcement, and are vulnerable to partial-write corruption if a process crashes mid-write. The dashboard computes stats by loading entire files into memory and filtering in JS.
 
-**What to build:** Two new tables in the existing Rakuten PostgreSQL instance. Prisma schema additions. All run log writes go through `prisma.xhsRun.create()` instead of file I/O.
+**What to build:** New tables in the existing Rakuten PostgreSQL instance for every file-based data store that benefits from a relational model. Prisma schema additions. All writes go through Prisma instead of file I/O.
+
+**Files to migrate:**
+
+| File | Problem | New table |
+|---|---|---|
+| `xhs/run_log.json` | Unbounded, no queries, corruption risk | `XhsRun` |
+| `scraper/run_log.json` | Same as above | `ScraperRun` |
+| `races.json` (shared volume) | Read by race-hub on every WP request, no schema | `Race` |
 
 **Schema additions (`schema.prisma`):**
 ```prisma
@@ -102,6 +127,16 @@ model ScraperRun {
   failedUrls   String[]
   errorMsg     String?
 }
+
+model Race {
+  id          Int      @id @default(autoincrement())
+  name        String
+  date        DateTime
+  location    String
+  url         String   @unique
+  distances   String[]
+  updatedAt   DateTime @updatedAt
+}
 ```
 
 **Dashboard query examples:**
@@ -109,9 +144,11 @@ model ScraperRun {
 - Failure rate by post type: `GROUP BY type, outcome` — impossible with flat JSON
 - Token usage over time: `SUM(input_tokens + output_tokens) GROUP BY date_trunc('week', timestamp)`
 
-**Why Prisma:** You already have it set up and know it. Consistent ORM across the project. Type-safe queries catch schema mismatches at compile time.
+**race-hub change:** Instead of reading `races.json` from a shared Docker volume, race-hub queries `prisma.race.findMany()`. The shared volume dependency is eliminated entirely — race-hub and the scraper are decoupled through the DB.
 
-**Resume signal:** Migrating from flat file storage to a relational model mid-project — shows architectural thinking and understanding of when file-based approaches break down.
+**Why Prisma:** Already set up and in use for Rakuten. Consistent ORM across the project. Type-safe queries catch schema mismatches at compile time. One `prisma migrate dev` command to apply changes.
+
+**Resume signal:** Migrating from flat file storage to a relational model mid-project — shows architectural thinking and understanding of when file-based approaches break down. The races.json → DB migration also removes a Docker volume dependency, which is a real infrastructure simplification.
 
 ---
 
@@ -189,6 +226,44 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
+## Priority 10 — Redis Caching Layer (Performance + Cost)
+
+**The gap:** Several operations in this ecosystem repeat expensive work on every call — Rakuten API fetches, DeepL translations, dashboard stat computations from log files. Each redundant call costs latency, API quota, or both.
+
+**What to build:** A cache-aside layer backed by the Redis instance already introduced by BullMQ (Priority 4) — no extra infrastructure. A shared `cache.ts` util wraps get/set with TTL. Services check the cache first; on a miss they do the real work and populate the cache for next time.
+
+**Cache-aside pattern:**
+```ts
+// src/utils/cache.ts (shared)
+async function getOrSet<T>(key: string, fn: () => Promise<T>, ttlSeconds: number): Promise<T> {
+  const cached = await redis.get(key);
+  if (cached) return JSON.parse(cached);
+  const result = await fn();
+  await redis.set(key, JSON.stringify(result), 'EX', ttlSeconds);
+  return result;
+}
+```
+
+**Where to apply it:**
+
+| Data | Cache key | TTL | Source (without cache) | Why cache it |
+|---|---|---|---|---|
+| Rakuten API product rankings | `rakuten:rankings:<keyword>` | 1 hour | Rakuten API (rate-limited, slow) | Rankings don't change minute-to-minute |
+| DeepL translations | `deepl:<hash(sourceText)>` | 7 days | DeepL API (paid per character) | Same JP product names repeat across runs |
+| Dashboard 30-day success stats | `dashboard:stats:30d` | 5 min | Postgres aggregation query | Avoids re-running the same GROUP BY on every page load |
+| Race list (race-hub → WordPress) | `racehub:races` | Invalidated on scrape | Postgres `race.findMany()` | WordPress calls this on every page load; DB query on every request is wasteful |
+
+**Why the Redis reuse matters:** BullMQ already requires Redis for its queue backend. Using the same instance as a cache means zero added infrastructure — just a second logical use of the connection you already have.
+
+**Invalidation strategy:**
+- TTL-based for API data and stats — let them expire naturally
+- Explicit `redis.del('racehub:races')` triggered at the end of a successful scraper run, after the DB write commits — ensures race-hub always serves fresh data after a new scrape
+- No invalidation needed for translations — source text is the cache key, same input always maps to same output
+
+**Resume signal:** Cache design is a core system design topic. Being able to explain cache-aside vs write-through, TTL choices, and invalidation strategies is exactly what gets asked in fintech interviews. Building a real one (not a tutorial) and attaching it to real latency/cost problems shows you understand *when* to cache, not just *how*.
+
+---
+
 ## Deferred — Terraform (Infrastructure as Code)
 
 **What it is:** Define the Lightsail instance, firewall rules, and DNS in Terraform so the entire infrastructure can be recreated with `terraform apply`.
@@ -207,7 +282,7 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 | Priority | Item | Effort | Value |
 |---|---|---|---|
-| 1 | Dashboard auth | Low | Critical — security hole |
+| 1 | OAuth2 / SSO (Auth.js + Google) | Low | Critical — security hole, industry-standard auth |
 | 2 | Telegram alerts | Low | High — closes open question |
 | 3 | Zod validation | Low | High — protects config integrity |
 | 4 | BullMQ job queue | High | High — biggest architectural signal |
@@ -216,4 +291,5 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 | 7 | Pino structured logging | Low | Medium — production observability |
 | 8 | Health check endpoints | Low | Medium — real-time service status |
 | 9 | Claude failure diagnosis | Medium | High — impressive differentiator |
+| 10 | Redis caching layer | Low | Medium — performance + cost reduction |
 | — | Terraform | Medium | Low — resume polish only |
