@@ -91,64 +91,62 @@ User visits dashboard → middleware checks JWT session cookie
 
 ---
 
-## Priority 5 — Migrate All File-Based Data to PostgreSQL with Prisma (Data Integrity)
+## Priority 5 — Migrate File-Based Data to PostgreSQL (Data Integrity)
 
-**The gap:** The ecosystem stores critical state in flat JSON files — run logs, race data, pipeline state. These files grow unbounded, can't be queried, have no schema enforcement, and are vulnerable to partial-write corruption if a process crashes mid-write. The dashboard computes stats by loading entire files into memory and filtering in JS.
+**The gap:** The ecosystem stores critical state in flat JSON files — run logs, race data. These grow unbounded, can't be queried, and are vulnerable to partial-write corruption if a process crashes mid-write. The dashboard computes stats by loading entire files into memory and filtering in JS.
 
-**What to build:** New tables in the existing Rakuten PostgreSQL instance for every file-based data store that benefits from a relational model. Prisma schema additions. All writes go through Prisma instead of file I/O.
+**What to build:** New tables in the existing PostgreSQL instance using `pg` (node-postgres) directly — no new ORM. All file writes become `INSERT` queries. Dashboard stats become SQL queries instead of in-memory file filtering.
 
 **Files to migrate:**
 
 | File | Problem | New table |
 |---|---|---|
-| `xhs/run_log.json` | Unbounded, no queries, corruption risk | `XhsRun` |
-| `scraper/run_log.json` | Same as above | `ScraperRun` |
-| `races.json` (shared volume) | Read by race-hub on every WP request, no schema | `Race` |
+| `xhs/run_log.json` | Unbounded, no queries, corruption risk | `xhs_runs` |
+| `scraper/run_log.json` | Same as above | `scraper_runs` |
+| `races.json` (shared volume) | Read by race-hub on every WP request, no schema | `races` |
 
-**Schema additions (`schema.prisma`):**
-```prisma
-model XhsRun {
-  id           Int      @id @default(autoincrement())
-  timestamp    DateTime @default(now())
-  type         String
-  outcome      String
-  errorStage   String?
-  errorMsg     String?
-  inputTokens  Int?
-  outputTokens Int?
-}
+**Schema (raw SQL):**
+```sql
+CREATE TABLE xhs_runs (
+  id SERIAL PRIMARY KEY,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  type TEXT,
+  outcome TEXT,
+  error_stage TEXT,
+  error_msg TEXT,
+  input_tokens INT,
+  output_tokens INT
+);
 
-model ScraperRun {
-  id           Int      @id @default(autoincrement())
-  timestamp    DateTime @default(now())
-  outcome      String
-  racesScraped Int
-  failureCount Int
-  failedUrls   String[]
-  errorMsg     String?
-}
+CREATE TABLE scraper_runs (
+  id SERIAL PRIMARY KEY,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  outcome TEXT,
+  races_scraped INT,
+  failure_count INT,
+  failed_urls TEXT[],
+  error_msg TEXT
+);
 
-model Race {
-  id          Int      @id @default(autoincrement())
-  name        String
-  date        DateTime
-  location    String
-  url         String   @unique
-  distances   String[]
-  updatedAt   DateTime @updatedAt
-}
+CREATE TABLE races (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  date TIMESTAMPTZ,
+  location TEXT,
+  url TEXT UNIQUE,
+  distances TEXT[],
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
 **Dashboard query examples:**
-- 30-day success rate: `WHERE timestamp > NOW() - INTERVAL '30 days'` — one indexed query, no file reads
-- Failure rate by post type: `GROUP BY type, outcome` — impossible with flat JSON
+- 30-day success rate: `WHERE timestamp > NOW() - INTERVAL '30 days'`
+- Failure rate by post type: `GROUP BY type, outcome`
 - Token usage over time: `SUM(input_tokens + output_tokens) GROUP BY date_trunc('week', timestamp)`
 
-**race-hub change:** Instead of reading `races.json` from a shared Docker volume, race-hub queries `prisma.race.findMany()`. The shared volume dependency is eliminated entirely — race-hub and the scraper are decoupled through the DB.
+**race-hub change:** Queries `SELECT * FROM races` instead of reading `races.json` from the shared Docker volume — decoupling scraper and race-hub through the DB instead of a shared filesystem.
 
-**Why Prisma:** Already set up and in use for Rakuten. Consistent ORM across the project. Type-safe queries catch schema mismatches at compile time. One `prisma migrate dev` command to apply changes.
-
-**Resume signal:** Migrating from flat file storage to a relational model mid-project — shows architectural thinking and understanding of when file-based approaches break down. The races.json → DB migration also removes a Docker volume dependency, which is a real infrastructure simplification.
+**Resume signal:** Migrating from flat file storage to a relational model mid-project — recognising when a tool breaks down and upgrading it. The races.json → DB change also eliminates a Docker volume dependency, a real infrastructure simplification.
 
 ---
 
@@ -272,12 +270,6 @@ async function getOrSet<T>(key: string, fn: () => Promise<T>, ttlSeconds: number
 
 ---
 
-## Not Doing — Log Rotation
-
-**Why:** Moot once run logs move to PostgreSQL (Priority 5). File-based logs that grow unbounded are a symptom of the file storage approach, not a standalone problem to fix.
-
----
-
 ## Summary Table
 
 | Priority | Item | Effort | Value |
@@ -286,7 +278,7 @@ async function getOrSet<T>(key: string, fn: () => Promise<T>, ttlSeconds: number
 | 2 | Telegram alerts | Low | High — closes open question |
 | 3 | Zod validation | Low | High — protects config integrity |
 | 4 | BullMQ job queue | High | High — biggest architectural signal |
-| 5 | Postgres run logs + Prisma | Medium | High — enables real queries, removes file I/O |
+| 5 | Migrate file-based data to PostgreSQL | Medium | High — removes file I/O, enables real queries |
 | 6 | Retry/backoff | Low | Medium — self-healing pipelines |
 | 7 | Pino structured logging | Low | Medium — production observability |
 | 8 | Health check endpoints | Low | Medium — real-time service status |
