@@ -632,6 +632,23 @@ FETCH → NORMALIZE → TRANSLATE (DeepL, name only) → PRICE → STORE → PUS
 
 **Result:** The catalogue expands automatically as customers request products in genres we haven't seen before, while off-theme requests are blocked by Claude. No redeploying to add genre IDs.
 
+### 11.17 Description Formatting — itemCaption Cleanup
+
+**Challenge:** Rakuten `itemCaption` fields are raw promotional text — unstructured walls of text that render poorly on WooCommerce product pages. Common issues:
+- The same description is repeated twice in the same string (Rakuten API behaviour)
+- Key-value product specs (`商品名：X 色：Y 素材：Z`) are inline with sentences rather than in a structured format
+- `・`-prefixed lines and `。`-terminated sentences are mixed together with no visual separation
+
+**Approach:** Analyze real `itemCaption` values from the DB across all categories before writing the formatter — patterns vary by product type. A `dumpCaptions.ts` script pulls a sample and writes to JSON for inspection.
+
+**Solution:** `cleanDescription(caption: string): string` in `utils.ts`:
+1. **Dedup** — detect and remove repeated blocks (compare halves; if similar, keep one)
+2. **Key-value extraction** — find segments matching `短いラベル：値` (short label + full-width colon + value) and render as an HTML `<table>`
+3. **Sentence bullets** — split remaining text on `。`, strip `・` prefixes, render as `<ul><li>` list
+4. Returns an HTML string pushed directly as WooCommerce `description`
+
+**Why HTML output:** WooCommerce stores and renders description as HTML. Returning a formatted HTML string from `cleanDescription` means no post-processing needed on the WordPress side — TranslatePress still translates the inner text lazily on first page view.
+
 ### 11.10 Ranking API Has No `hits` Parameter
 
 **Challenge:** The Rakuten Ranking API does not accept a `hits` parameter — passing it is silently ignored. Initial implementation passed `count` as `hits`, resulting in the API returning its default page size (30 products) regardless of the requested count.
