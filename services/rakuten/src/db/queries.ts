@@ -8,19 +8,31 @@ export interface Config {
 	searchFillThreshold: number;
 }
 
+// to
+
+export const appendGenreId = async (subcategoryId: number, genreId: number) => {
+	await pool.query(
+		`
+		UPDATE subcategories
+		SET genre_ids = array_append(genre_ids, $2)
+		WHERE id = $1
+		
+		`,
+		[subcategoryId, genreId],
+	);
+};
+
 // feeds context to ClaudeAPI to assign to correct subcateogry
 // should be {id, name, category name}
-export const getSubcategoriesWithCategory = async() => {
+export const getSubcategoriesWithCategory = async () => {
 	const res = await pool.query(`
 		SELECT subcategories.id AS "subcategoryId" , subcategories.name AS "subcategoryName", categories.name AS "categoryName"
 		FROM subcategories
 		LEFT JOIN categories
 		ON categories.id = subcategories.category_id
-		`)
-	return res.rows as {subcategoryId:number, subcategoryName:string, categoryName:string} [];
-}
-
-
+		`);
+	return res.rows as { subcategoryId: number; subcategoryName: string; categoryName: string }[];
+};
 
 // categories = {'category':[genre_ids]}
 export const getCategoryIds = async (): Promise<Record<string, number[]>> => {
@@ -48,9 +60,9 @@ export const getAllGenres = async (): Promise<Record<string, number[]>> => {
 	const res = await pool.query(`
 		SELECT name, genre_ids
 		FROM subcategories
-		`)
+		`);
 
-	const allGenres = Object.fromEntries(res.rows.map(r => [r.name, r.genre_ids]));
+	const allGenres = Object.fromEntries(res.rows.map((r) => [r.name, r.genre_ids]));
 	return allGenres;
 };
 
