@@ -2,8 +2,20 @@ import "dotenv/config";
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { calculatePrice } from "../services/pricing";
 import { DbItem } from "../utils";
-import { getSubcategoryNameByProductId, updateWoocommerceProductId, getAllPushedProducts, insertImportLog } from "../db/queries";
-import wpCategoryIds from "../config/wpCategoryIds";
+import {
+	getSubcategoryNameByProductId,
+	updateWoocommerceProductId,
+	getAllPushedProducts,
+	insertImportLog,
+	getWPSubcategoryIds
+} from "../db/queries";
+
+// should be a Record<'Category name', id>
+let wpCategoryIds: Record<string, number> = {};
+
+getWPSubcategoryIds().then(rows => {
+	wpCategoryIds = Object.fromEntries(rows.map(r => [r.name, r.wc_category_id]));
+});
 
 const WooCommerce = new WooCommerceRestApi({
 	url: process.env.WP_URL!,
@@ -85,14 +97,13 @@ const SUBCATEGORIES: { name: string; parent: string }[] = [
 	{ name: "Sports Gloves", parent: "Sportswear" },
 ];
 
-
 export async function setupCategories(): Promise<Record<string, number>> {
 	// Step 1 — create parent categories
 	const parentRes = await WooCommerce.post("products/categories/batch", {
 		create: CATEGORIES.map((name) => ({ name })),
 	});
 
-	const decodeHtml = (str: string) => str.replace(/&amp;/g, '&');
+	const decodeHtml = (str: string) => str.replace(/&amp;/g, "&");
 
 	const categoryIdMap: Record<string, number> = {};
 	for (const cat of parentRes.data.create) {
@@ -119,7 +130,13 @@ async function pushProduct(product: DbItem) {
 	const price = calculatePrice(product.itemPrice);
 	const subcategory = await getSubcategoryNameByProductId(product.subcategory_id);
 	if (!subcategory) {
-		await insertImportLog({ itemUrl: product.itemUrl, itemName: product.itemName, wcProductId: null, status: "skipped", errorMsg: `unmapped subcategory_id: ${product.subcategory_id}` });
+		await insertImportLog({
+			itemUrl: product.itemUrl,
+			itemName: product.itemName,
+			wcProductId: null,
+			status: "skipped",
+			errorMsg: `unmapped subcategory_id: ${product.subcategory_id}`,
+		});
 		return null;
 	}
 	const subcategoryName = subcategory.name;
@@ -135,16 +152,14 @@ async function pushProduct(product: DbItem) {
 			},
 		],
 		images: product.mediumImageUrls.map(({ imageUrl }) => ({ src: imageUrl })),
-		meta_data: [
-			{ key: "_rakuten_url", value: product.itemUrl },
-		],
+		meta_data: [{ key: "_rakuten_url", value: product.itemUrl }],
 	};
 	const res = await WooCommerce.post("products", data);
 	return res.data.id;
 }
 
 export async function pushProducts(products: DbItem[]) {
-	const wc_ids = []
+	const wc_ids = [];
 	for (const product of products) {
 		if (product.wc_product_id) {
 			console.log(`skipped ${product.itemUrl} — already in WooCommerce (wc_product_id: ${product.wc_product_id})`);
@@ -158,13 +173,24 @@ export async function pushProducts(products: DbItem[]) {
 			}
 			wc_ids.push(wcId);
 			await updateWoocommerceProductId(product.id, wcId);
-			await insertImportLog({ itemUrl: product.itemUrl, itemName: product.itemName, wcProductId: wcId, status: "success" });
+			await insertImportLog({
+				itemUrl: product.itemUrl,
+				itemName: product.itemName,
+				wcProductId: wcId,
+				status: "success",
+			});
 		} catch (err) {
 			console.log(err);
-			await insertImportLog({ itemUrl: product.itemUrl, itemName: product.itemName, wcProductId: null, status: "failed", errorMsg: String(err) });
+			await insertImportLog({
+				itemUrl: product.itemUrl,
+				itemName: product.itemName,
+				wcProductId: null,
+				status: "failed",
+				errorMsg: String(err),
+			});
 		}
 	}
-	return wc_ids
+	return wc_ids;
 }
 
 export async function deleteWcProduct(wcProductId: number) {
@@ -193,5 +219,5 @@ export async function updatePrices() {
 			console.error(`Failed to update price for wc_product_id ${product.wc_product_id}:`, err);
 		}
 	}
-	console.log('Price update complete');
+	console.log("Price update complete");
 }

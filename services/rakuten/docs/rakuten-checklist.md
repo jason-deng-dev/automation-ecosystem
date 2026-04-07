@@ -134,6 +134,12 @@ x
   - [x] Replace `fs.readFileSync(config.json)` in `runRankingPopulate.ts` + `runRankingPopulateShowcase.ts` with `getConfig()` + `initPricing()`
   - [x] Run `npm run db` to re-seed with new tables
 
+- [x] Migrate `wc_category_id` to DB → `seed.ts`
+  - [x] Add `wc_category_id INTEGER` to `categories` table in `seed.ts` — seed values from `wpCategoryIds.ts` (Running Gear: 441, Training: 442, etc.)
+  - [x] Add `wc_category_id INTEGER` to `subcategories` table in `seed.ts` — seed all subcategory WC IDs from `wpCategoryIds.ts`
+  - [x] Update `woocommerceAPI.ts` — replace `wpCategoryIds[subcategoryName]` lookup with DB query
+  - [x] Delete `wpCategoryIds.ts`
+
 - [ ] Dynamic genre expansion → §9.4, §11.15
   - [ ] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
   - [ ] Load genre map from DB at startup in `app.ts` — replaces `allGenres` import from `genres.ts`
