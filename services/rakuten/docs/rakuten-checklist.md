@@ -145,10 +145,10 @@
   - [x] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
   - [x] Replace `allGenres` import in `controller.ts` 
   - [x] Replace `categories` import in `runRankingPopulate.ts` + `runWeeklySync.ts` — call `getCategoryIds()` instead of importing from `genres.ts`
-  - [ ] Add `appendGenreId(subcategoryId, genreId)` query in `queries.ts` — `array_append` + updates in-memory map
+  - [x] Add `appendGenreId(subcategoryId, genreId)` query in `queries.ts` — `array_append` + updates in-memory map
   - [ ] Claude classification call in `controller.ts` — when unknown genre IDs found, pass subcategory list to Claude, get back `subcategoryId | null`
   - [ ] If Claude returns null (off-theme) → `{ success: false }`; if on-theme → append to DB + proceed with push
-  - [ ] Remove `genres.ts` once all imports replaced
+  - [x] Remove `genres.ts` once all imports replaced
 
 - [ ] `productsPerCategory` scrape config
   - [ ] Add `products_per_category INTEGER` to `config` table in `seed.ts`
@@ -188,9 +188,9 @@
 
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /trigger — fetch more products (category + count)
+  - [ ] POST /api/trigger-category — `{ category: string, count: number }` — fetch top X ranked products for the given category, upsert DB, push new ones to WooCommerce; called by dashboard "Add X" button → §3.2 controller.ts
   - [ ] POST /retry — retry failed WooCommerce imports
   - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices (replaces fs.watch)
-  - [ ] DELETE /api/products/:wcProductId — remove product from WooCommerce (DELETE /products/{id}) + delete from DB by wc_product_id
   - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3

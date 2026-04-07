@@ -65,6 +65,9 @@
   - [ ] Pricing config editor — inline editable table, save writes config.json
     - [ ] `GET /api/rakuten/config` — read `rakuten/config.json`
     - [ ] `POST /api/rakuten/config` — write `rakuten/config.json`
+  - [ ] Category product management
+    - [ ] Per-category rows showing current product count and WooCommerce live count
+    - [ ] "Add X" input + button per category — `POST /api/rakuten/trigger` with `{ category, count }` — fetches X more top-ranked products from Rakuten and pushes to WooCommerce
   - [ ] Home card triggers
     - [ ] Fetch products: `POST /api/rakuten/trigger` — category + count via Rakuten :3002
     - [ ] Retry failed imports: `POST /api/rakuten/retry` — via Rakuten :3002

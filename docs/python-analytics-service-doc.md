@@ -49,13 +49,18 @@ More importantly: Python for data analysis is the fintech industry standard. Thi
 
 ## 4. Architecture
 
+Two phases. Phase 1 ships with the core pipelines. Phase 2 activates once enough performance-enriched archive rows exist.
+
+### Phase 1 — Analytics + Performance Backfill
+
 ```
 XHS Creator Studio → manual Excel export → shared_volume/xhs/performance_export.xlsx
                                                           ↓
 XHS Scheduler (Node) ──→ POST /analyze/xhs ──→ FastAPI (Python)
                                                           ↓
                                                    pd.read_excel
-                                                   join against post_archive (get post type)
+                                                   match rows to xhs_post_archive by title/timestamp
+                                                   write views/saves/CTR onto archive rows (backfill)
                                                    pandas scoring per post type
                                                           ↓
                                               JSON response (content_weights + top posts per type)
@@ -70,7 +75,33 @@ XHS Scheduler (Node) ──→ POST /analyze/xhs ──→ FastAPI (Python)
                                                                          write updated prompt to prompts.json
 ```
 
-The Python service is its own Docker container. The XHS scheduler calls it once per month (or on demand) after a new export is dropped into the shared volume.
+### Phase 2 — RAG Pipeline (activates after performance backfill)
+
+```
+POST /embed/xhs (analytics service)
+        ↓
+For each row in xhs_post_archive with no embedding:
+    embed(title + hook) → text-embedding-3-small
+    store in embedding vector(1536) column (pgvector)
+        ↓
+xhs_post_archive now has: content + post_type + views + saves + ctr + embedding
+
+At generation time (XHS generator — Node):
+    embed(candidate topic) → pgvector query
+        ORDER BY embedding <-> $candidate LIMIT 5
+        WHERE post_type = $type
+        ORDER BY views DESC          ← performance-weighted, not just semantic
+        ↓
+    Top 3 posts injected into Claude prompt as few-shot examples
+    Claude writes toward proven content, not just instructions
+
+Before generation (semantic dedup):
+    Same vector query against last 30 days
+    If cosine similarity > 0.85 → steer to different angle
+    Prevents repeated topic angles (post_history.json only deduplicates race names)
+```
+
+The Python service is its own Docker container. The XHS scheduler calls it once per month (or on demand) after a new export is dropped into the shared volume. `/embed/xhs` is called once after each `/analyze/xhs` run to keep embeddings current.
 
 ---
 
@@ -109,6 +140,21 @@ Post type is inferred by matching 笔记标题 against `xhs/post_archive/` — t
 **Output also includes:** `top_posts` per post type (top 3 by composite score) — title + full content from post archive. This is passed directly to `/tune/xhs`.
 
 **Node pipeline action:** Scheduler writes `content_weights` to `xhs/config.json`, overwriting the existing post type weights. Next cron cycle picks up the updated config automatically (scheduler already watches config.json for changes).
+
+**Performance backfill:** As a side effect of reading the Excel export, `/analyze/xhs` also writes views/saves/CTR back onto the matching `xhs_post_archive` rows. This is the data that Phase 2 RAG retrieval sorts on — without it, RAG can only retrieve semantically similar posts, not the ones that actually performed well.
+
+---
+
+### `POST /embed/xhs` *(Phase 2)*
+
+Generates and stores embeddings for all `xhs_post_archive` rows that don't yet have one. Called automatically after `/analyze/xhs` completes as part of the monthly calibration flow.
+
+**What it does:**
+- Queries `xhs_post_archive` for rows where `embedding IS NULL`
+- For each row: calls `text-embedding-3-small` (OpenAI) with `title + " " + hook` as input
+- Stores the resulting `vector(1536)` in the `embedding` column (pgvector)
+
+**Result:** The archive becomes a searchable vector store. The XHS generator (Node) queries it directly at generation time — no round-trip to the analytics service needed at generation time, just a Postgres query.
 
 ---
 
@@ -164,8 +210,10 @@ Weights (0.4 / 0.35 / 0.25) are configurable — stored in a config file, not ha
 
 | Layer | Choice | Why |
 |---|---|---|
-| Framework | FastAPI | Standard in quant/fintech Python backends; async-native; matches Investment Simulator stack |
+| Framework | FastAPI | Standard in quant/fintech Python backends; async-native |
 | Data analysis | pandas + numpy | Industry standard; DataFrames make scoring logic clean and auditable |
+| Embeddings | OpenAI `text-embedding-3-small` | Cheapest reliable embedding model; 1536-dim vectors; same API key as any OpenAI setup |
+| Vector store | pgvector (Postgres extension) | No new infrastructure — runs on the existing PostgreSQL instance; right tool for this data volume vs. Pinecone/Weaviate |
 | Containerization | Docker | Isolated Python runtime; portable; consistent with rest of stack |
 | Config | JSON files | Node pipelines read JSON natively; no extra parsing layer needed |
 
@@ -199,7 +247,11 @@ XHS scheduler calls `http://analytics-service:8000` internally. Not exposed publ
 
 > I built a Python analytics service that the XHS automation pipeline calls monthly to calibrate its content strategy. It reads our cumulative performance export from XHS Creator Studio — views, saves, CTR per post — joins it against our post archive to tag each row by post type, then computes a composite score and normalizes it into content generation weights. The scheduler reads those weights to determine the post type rotation going forward. It also calls a prompt tuning endpoint that sends our top-performing posts per type to Claude along with the current prompt — Claude returns an updated prompt, we archive the old one, and if next month's performance is worse we auto-rollback. The whole thing runs without manual intervention. FastAPI exposes the endpoints, pandas handles Excel ingestion and aggregation. Python for analysis, Node for execution — same separation you'd see in quant research infrastructure.
 
-**One-liner for resume:** Self-adjusting content pipeline — monthly performance export drives automatic rotation weight updates and prompt tuning, with rollback if metrics regress.
+**"Tell me about your RAG experience."**
+
+> The analytics service also drives a RAG pipeline. When it ingests the monthly Excel export it backfills performance data — views, saves, CTR — onto the post archive rows. Then it calls a separate endpoint that generates embeddings for every archive post using OpenAI's text-embedding-3-small and stores them in a pgvector column on the same Postgres instance. At generation time, the XHS pipeline embeds the candidate post topic, queries for the 5 most semantically similar past posts filtered by type and sorted by views, and injects them as few-shot examples into the Claude prompt. There's also a semantic dedup check before generation — if the proposed angle is too close to something published in the last 30 days, it steers away. I chose pgvector over a dedicated vector DB because the data volume didn't justify the infrastructure overhead — it's just a Postgres extension on the instance we already had.
+
+**One-liner for resume:** Self-adjusting content pipeline — monthly performance export drives automatic rotation weight updates, prompt tuning with rollback, and performance-weighted RAG few-shot injection.
 
 ---
 

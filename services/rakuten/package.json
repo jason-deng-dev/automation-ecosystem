@@ -19,6 +19,7 @@
 	"license": "ISC",
 	"type": "commonjs",
 	"dependencies": {
+		"@anthropic-ai/sdk": "^0.82.0",
 		"@woocommerce/woocommerce-rest-api": "^1.0.2",
 		"deepl-node": "^1.25.0",
 		"dotenv": "^17.3.1",

@@ -148,26 +148,37 @@ const { race_name } = toolCall.input; // typed, guaranteed
 
 ---
 
-## Priority 7 — RAG Pipeline (pgvector + Post Archive)
+## Priority 7 — Python Analytics Service + RAG Pipeline
 
-**The gap:** The XHS generator runs cold on every call — it has only the system prompt and race data to work with. It can't learn from what's already worked. The 115-post performance dataset in Section 3 of the design doc is manually curated and baked into static instructions. As the archive grows, that knowledge stays frozen.
+**The gap:** Two connected problems:
 
-**What to build:** A retrieval layer over the `xhs_post_archive` table using pgvector (a Postgres extension — no new infrastructure). Two uses:
+1. The XHS generator runs cold on every call — it has only the system prompt and race data. It can't learn from what's already worked.
+2. The post archive (`xhs_post_archive`) has content but no performance signal. The analytics Excel export from XHS has performance data (views, saves, CTR) but no content. Neither is useful alone.
 
-**A — Few-shot injection from top performers**
-At generation time, embed the post topic/type and retrieve the 3–5 highest-performing past posts that are semantically similar. Inject them into the prompt as live examples. Claude writes toward proven content, not just instructions.
+**What to build:** A Python + FastAPI service that connects these two. Two phases:
 
-**B — Semantic dedup before generation**
-Before generating, check if the proposed topic is too close to anything published in the last 30 days. If cosine similarity > 0.85, steer to a different angle. Prevents audience fatigue — `post_history.json` only deduplicates race names, not topic angles.
+**Phase 1 — Analytics ingestion + performance backfill**
+- Ingest the XHS Excel performance export — match each row back to `xhs_post_archive` by title or timestamp, write views/saves/CTR onto the archive row
+- Expose FastAPI endpoints for the dashboard: content weight trends, token usage over time, post type performance breakdown
+- This is the data layer that makes Phase 2 useful
+
+**Phase 2 — RAG retrieval layer**
+Once performance data is on the archive, enable two things at generation time:
+
+- **Few-shot injection** — embed the candidate post topic, retrieve the 3–5 semantically similar posts with the highest views/saves, inject them into the Claude prompt as live examples. Claude writes toward proven content, not just instructions.
+- **Semantic dedup** — before generating, check cosine similarity against posts from the last 30 days. If similarity > 0.85, steer to a different angle. `post_history.json` only deduplicates race names — this catches repeated topic angles too.
 
 **Implementation:**
-- Enable `pgvector` extension on the existing PostgreSQL instance
-- Add `embedding vector(1536)` column to `xhs_post_archive`
-- On archive write: call Claude's embedding endpoint (or `text-embedding-3-small` via OpenAI — cheaper for embeddings) to embed the post title + hook; store in column
-- At generation time: embed the candidate topic, run `ORDER BY embedding <-> $1 LIMIT 5` to retrieve nearest neighbours
-- Filter by post type and sort by views descending to bias toward top performers
+- Python + FastAPI service (`services/analytics/`) — new service in the ecosystem
+- pgvector extension on existing PostgreSQL — `embedding vector(1536)` column on `xhs_post_archive`
+- Embedding model: `text-embedding-3-small` (OpenAI) or Claude's embedding endpoint — called at archive write time, stored in column
+- Retrieval query: `ORDER BY embedding <-> $1 LIMIT 5` filtered by post type, ranked by views descending
+- Phase 1 (analytics endpoints) unblocks the dashboard Rakuten + XHS stats sections
+- Phase 2 (RAG) activates once enough performance-enriched archive rows exist
 
-**Resume signal:** RAG is the most-requested LLM skill on AI engineering JDs right now. Building it on pgvector (rather than a standalone vector DB like Pinecone) shows architectural judgement — you chose the right tool for the data volume, not the most impressive-sounding one.
+**Build order dependency:** Phase 1 must run and backfill performance data before Phase 2 is worth turning on — RAG without performance weighting just retrieves similar posts, not good ones.
+
+**Resume signal:** This is the combination that makes the project stand out — Python + FastAPI (closes the language gap for AI roles), pgvector RAG (most-requested LLM skill), and performance-weighted retrieval (shows you understand *why* RAG works, not just how to call the API). Building it on pgvector rather than Pinecone also shows architectural judgement — right tool for the data volume.
 
 ---
 
@@ -273,7 +284,7 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
-## Priority 11 — Health Check Endpoints (Observability)
+## Priority 8 — Health Check Endpoints (Observability)
 
 **The gap:** The dashboard pipeline cards show last run status from log files — but if the XHS container itself crashes (OOM, runtime error), the log never gets written and the card shows "idle" forever. There's no way to distinguish "pipeline hasn't run yet" from "container is down."
 
@@ -288,7 +299,7 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
-## Priority 12 — Claude-Assisted Failure Diagnosis (Observability)
+## Priority 9 — Claude-Assisted Failure Diagnosis (Observability)
 
 **The gap:** When a pipeline fails, the dashboard shows an error message — but figuring out what actually went wrong still requires reading raw logs and understanding the pipeline internals. This defeats the goal of making the system operable without technical knowledge.
 
@@ -304,25 +315,7 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
-## Priority 13 — LangChain / Python Generator (Learning + JD Coverage)
-
-**The gap:** The JD explicitly requires LangChain and/or LangGraph experience. Your existing generator is Node.js + raw Anthropic SDK — functionally solid, but not what hiring managers mean when they ask about "LLM orchestration frameworks."
-
-**What to build:** A Python port of `generator.js` using LangChain + `ChatAnthropic`. Not a replacement — run it as a parallel implementation (`services/xhs/generator.py`). The goal is framework familiarity, not shipping.
-
-**Why LangChain over raw SDK:**
-- `PromptTemplate` / `ChatPromptTemplate` — parameterized prompts with typed variables, same concept as your `prompts.json` substitution but standardized
-- `StructuredOutputParser` — enforces JSON schema on Claude responses without manual parsing
-- `RunnableSequence` (LCEL) — chains prompt → model → parser into a single composable pipeline
-
-**Stretch: LangGraph**
-The Rakuten request flow (validate keyword → classify genre → fetch Rakuten → push WooCommerce) maps naturally to a LangGraph state machine. Each node is a step; edges are conditional on whether the previous step succeeded. Builds the mental model for agentic workflows without over-engineering the production pipeline.
-
-**Resume signal:** LangChain is the first thing most teams reach for when building LLM apps. Being able to say "I've used both the raw SDK and LangChain — here's when I'd use each" is a stronger answer than either alone.
-
----
-
-## Priority 14 — Redis Caching Layer (Performance + Cost)
+## Priority 10 — Redis Caching Layer (Performance + Cost)
 
 **The gap:** Several operations in this ecosystem repeat expensive work on every call — Rakuten API fetches, DeepL translations, dashboard stat computations from log files. Each redundant call costs latency, API quota, or both.
 
@@ -378,7 +371,7 @@ async function getOrSet<T>(key: string, fn: () => Promise<T>, ttlSeconds: number
 | 4 | LangFuse LLM observability | Low | High — direct JD requirement, 1-day integration |
 | 5 | BullMQ job queue | High | High — biggest architectural signal |
 | 6 | Claude tool use / function calling | Medium | High — removes brittle JSON parsing, core LLM skill |
-| 7 | RAG pipeline (pgvector + post archive) | High | High — improves XHS quality + top JD signal |
+| 7 | Python Analytics Service + RAG pipeline | High | High — closes Python gap, improves XHS quality, top JD signal |
 | 8 | Migrate file-based data to PostgreSQL | Medium | High — removes file I/O, enables real queries |
 | 9 | Retry/backoff | Low | Medium — self-healing pipelines |
 | 10 | Pino structured logging | Low | Medium — production observability |

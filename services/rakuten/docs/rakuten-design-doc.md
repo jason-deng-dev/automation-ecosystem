@@ -125,6 +125,7 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 
 - Handles all route logic — bulk push, product request flow, cron sync, product queries
 - Orchestrates: Rakuten fetch → normalize → price → PostgreSQL store → WooCommerce push
+- `POST /api/trigger-category` — `{ category: string, count: number }` — fetch top `count` ranked products for the given category, upsert DB, push any new ones to WooCommerce; called by the dashboard "Add X" button per category. Reuses the same ranking fetch + upsert + push loop as the bulk push, scoped to a single category.
 
 ### 3.3 Data Flow
 
