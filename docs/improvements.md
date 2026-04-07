@@ -72,7 +72,30 @@ User visits dashboard → middleware checks JWT session cookie
 
 ---
 
-## Priority 4 — BullMQ Job Queue (Architecture)
+## Priority 4 — LangFuse LLM Observability
+
+**The gap:** Every Claude API call in the ecosystem is a black box. You log token counts and outcome to `run_log.json`, but you have no visibility into prompt/response pairs over time, latency per call, error patterns, or quality trends across post types. When a generated post is bad, there's no trace to inspect.
+
+**What to build:** Instrument all Claude calls with LangFuse. Every call becomes a traced span — you see the full prompt, response, latency, token usage, and outcome in a UI. LangFuse is open-source and self-hostable (runs as a Docker container alongside the other services).
+
+**Implementation:**
+- Add LangFuse as a service in `docker-compose.yml` (Postgres-backed, single container)
+- `npm install langfuse` in `xhs/` service
+- Wrap each `anthropic.messages.create()` call with a LangFuse trace: `langfuse.trace({ name: 'generate-post', input: { type, prompt }, output: response })`
+- Tag each trace with post type so you can filter by `race` vs `training` vs `nutrition` in the UI
+- Self-host at `langfuse.yourdomain.com` — internal only, not public-facing
+
+**What you get:**
+- Full prompt/response history queryable by date, post type, outcome
+- Latency and token usage graphs over time — spot regressions after prompt changes
+- A/B comparison if you ever test prompt variants
+- The observability layer the JD explicitly names
+
+**Resume signal:** "LLM observability" is now on the required list for AI engineering roles. LangFuse specifically is what teams use when they outgrow console.log. Being able to say you ran it in production (not just a tutorial) is a direct checkmark on this JD.
+
+---
+
+## Priority 5 — BullMQ Job Queue (Architecture)
 
 **The gap:** Manual triggers work via `docker exec` — fire and forget. No retry, no visibility into what's running, no backpressure. If a trigger fires while a run is already in progress, you get two concurrent pipeline runs with no coordination.
 
@@ -91,7 +114,64 @@ User visits dashboard → middleware checks JWT session cookie
 
 ---
 
-## Priority 5 — Migrate File-Based Data to PostgreSQL (Data Integrity)
+## Priority 6 — Claude Tool Use / Function Calling
+
+**The gap:** Two places in the ecosystem parse free-text Claude responses and hope they're valid: `chooseRace()` in the XHS generator, and the planned genre classifier in the Rakuten pipeline. Both use JSON.parse on Claude's output — fragile, and the XHS pipeline has already crashed from this (the double-quote ban workaround in the system prompt is a symptom).
+
+**What to build:** Refactor both to use the Claude tools API. Define a typed schema for the expected output; Claude returns a structured tool call instead of a JSON string embedded in prose. The response is guaranteed to match the schema — no parsing, no guarding.
+
+**XHS — `chooseRace()`:**
+```js
+// Define a tool
+const tools = [{
+  name: 'select_race',
+  description: 'Select the most relevant race for this post',
+  input_schema: {
+    type: 'object',
+    properties: {
+      race_name: { type: 'string', description: 'Exact race name from the provided list' }
+    },
+    required: ['race_name']
+  }
+}];
+// Claude returns tool_use block — no JSON.parse needed
+const toolCall = response.content.find(b => b.type === 'tool_use');
+const { race_name } = toolCall.input; // typed, guaranteed
+```
+
+**Rakuten — genre classifier (planned):**
+- Same pattern: define a `classify_genre` tool with `{ subcategory_id: number | null }`
+- Claude picks the best subcategory ID from the list, or returns null for off-theme
+- Replaces the free-text classification response that currently feeds into a fragile lookup
+
+**Resume signal:** Tool/function calling is the core primitive of agentic LLM systems. Every serious AI engineering role uses it. Showing you've replaced brittle JSON parsing with native tool use — and explaining *why* — demonstrates real production experience with LLMs, not just API call wrappers.
+
+---
+
+## Priority 7 — RAG Pipeline (pgvector + Post Archive)
+
+**The gap:** The XHS generator runs cold on every call — it has only the system prompt and race data to work with. It can't learn from what's already worked. The 115-post performance dataset in Section 3 of the design doc is manually curated and baked into static instructions. As the archive grows, that knowledge stays frozen.
+
+**What to build:** A retrieval layer over the `xhs_post_archive` table using pgvector (a Postgres extension — no new infrastructure). Two uses:
+
+**A — Few-shot injection from top performers**
+At generation time, embed the post topic/type and retrieve the 3–5 highest-performing past posts that are semantically similar. Inject them into the prompt as live examples. Claude writes toward proven content, not just instructions.
+
+**B — Semantic dedup before generation**
+Before generating, check if the proposed topic is too close to anything published in the last 30 days. If cosine similarity > 0.85, steer to a different angle. Prevents audience fatigue — `post_history.json` only deduplicates race names, not topic angles.
+
+**Implementation:**
+- Enable `pgvector` extension on the existing PostgreSQL instance
+- Add `embedding vector(1536)` column to `xhs_post_archive`
+- On archive write: call Claude's embedding endpoint (or `text-embedding-3-small` via OpenAI — cheaper for embeddings) to embed the post title + hook; store in column
+- At generation time: embed the candidate topic, run `ORDER BY embedding <-> $1 LIMIT 5` to retrieve nearest neighbours
+- Filter by post type and sort by views descending to bias toward top performers
+
+**Resume signal:** RAG is the most-requested LLM skill on AI engineering JDs right now. Building it on pgvector (rather than a standalone vector DB like Pinecone) shows architectural judgement — you chose the right tool for the data volume, not the most impressive-sounding one.
+
+---
+
+## Priority 8 — Migrate File-Based Data to PostgreSQL (Data Integrity)
 
 **The gap:** The ecosystem stores critical state in flat JSON files — run logs, race data. These grow unbounded, can't be queried, and are vulnerable to partial-write corruption if a process crashes mid-write. The dashboard computes stats by loading entire files into memory and filtering in JS.
 
@@ -150,7 +230,7 @@ CREATE TABLE races (
 
 ---
 
-## Priority 6 — Retry with Exponential Backoff on External API Calls (Reliability)
+## Priority 9 — Retry with Exponential Backoff on External API Calls (Reliability)
 
 **The gap:** A single timeout on any of Rakuten API, DeepL, WooCommerce REST, or Claude API kills the entire pipeline run and logs a failure. Most of these are transient — a retry 5 seconds later would succeed.
 
@@ -177,7 +257,7 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
-## Priority 7 — Structured Logging with Pino (Observability)
+## Priority 10 — Structured Logging with Pino (Observability)
 
 **The gap:** All services use `console.log`. The dashboard's live log stream is a raw string stream that requires regex matching to colour-code by severity. Log lines have no consistent structure — finding errors requires reading every line.
 
@@ -193,7 +273,7 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
-## Priority 8 — Health Check Endpoints (Observability)
+## Priority 11 — Health Check Endpoints (Observability)
 
 **The gap:** The dashboard pipeline cards show last run status from log files — but if the XHS container itself crashes (OOM, runtime error), the log never gets written and the card shows "idle" forever. There's no way to distinguish "pipeline hasn't run yet" from "container is down."
 
@@ -208,7 +288,7 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
-## Priority 9 — Claude-Assisted Failure Diagnosis (Observability)
+## Priority 12 — Claude-Assisted Failure Diagnosis (Observability)
 
 **The gap:** When a pipeline fails, the dashboard shows an error message — but figuring out what actually went wrong still requires reading raw logs and understanding the pipeline internals. This defeats the goal of making the system operable without technical knowledge.
 
@@ -224,7 +304,25 @@ Wrap all external calls: `withRetry(() => rakutenAPI.getRanking(...))`, `withRet
 
 ---
 
-## Priority 10 — Redis Caching Layer (Performance + Cost)
+## Priority 13 — LangChain / Python Generator (Learning + JD Coverage)
+
+**The gap:** The JD explicitly requires LangChain and/or LangGraph experience. Your existing generator is Node.js + raw Anthropic SDK — functionally solid, but not what hiring managers mean when they ask about "LLM orchestration frameworks."
+
+**What to build:** A Python port of `generator.js` using LangChain + `ChatAnthropic`. Not a replacement — run it as a parallel implementation (`services/xhs/generator.py`). The goal is framework familiarity, not shipping.
+
+**Why LangChain over raw SDK:**
+- `PromptTemplate` / `ChatPromptTemplate` — parameterized prompts with typed variables, same concept as your `prompts.json` substitution but standardized
+- `StructuredOutputParser` — enforces JSON schema on Claude responses without manual parsing
+- `RunnableSequence` (LCEL) — chains prompt → model → parser into a single composable pipeline
+
+**Stretch: LangGraph**
+The Rakuten request flow (validate keyword → classify genre → fetch Rakuten → push WooCommerce) maps naturally to a LangGraph state machine. Each node is a step; edges are conditional on whether the previous step succeeded. Builds the mental model for agentic workflows without over-engineering the production pipeline.
+
+**Resume signal:** LangChain is the first thing most teams reach for when building LLM apps. Being able to say "I've used both the raw SDK and LangChain — here's when I'd use each" is a stronger answer than either alone.
+
+---
+
+## Priority 14 — Redis Caching Layer (Performance + Cost)
 
 **The gap:** Several operations in this ecosystem repeat expensive work on every call — Rakuten API fetches, DeepL translations, dashboard stat computations from log files. Each redundant call costs latency, API quota, or both.
 
@@ -277,11 +375,15 @@ async function getOrSet<T>(key: string, fn: () => Promise<T>, ttlSeconds: number
 | 1 | OAuth2 / SSO (Auth.js + Google) | Low | Critical — security hole, industry-standard auth |
 | 2 | Telegram alerts | Low | High — closes open question |
 | 3 | Zod validation | Low | High — protects config integrity |
-| 4 | BullMQ job queue | High | High — biggest architectural signal |
-| 5 | Migrate file-based data to PostgreSQL | Medium | High — removes file I/O, enables real queries |
-| 6 | Retry/backoff | Low | Medium — self-healing pipelines |
-| 7 | Pino structured logging | Low | Medium — production observability |
-| 8 | Health check endpoints | Low | Medium — real-time service status |
-| 9 | Claude failure diagnosis | Medium | High — impressive differentiator |
-| 10 | Redis caching layer | Low | Medium — performance + cost reduction |
+| 4 | LangFuse LLM observability | Low | High — direct JD requirement, 1-day integration |
+| 5 | BullMQ job queue | High | High — biggest architectural signal |
+| 6 | Claude tool use / function calling | Medium | High — removes brittle JSON parsing, core LLM skill |
+| 7 | RAG pipeline (pgvector + post archive) | High | High — improves XHS quality + top JD signal |
+| 8 | Migrate file-based data to PostgreSQL | Medium | High — removes file I/O, enables real queries |
+| 9 | Retry/backoff | Low | Medium — self-healing pipelines |
+| 10 | Pino structured logging | Low | Medium — production observability |
+| 11 | Health check endpoints | Low | Medium — real-time service status |
+| 12 | Claude failure diagnosis | Medium | High — impressive differentiator |
+| 13 | LangChain / Python generator | Medium | Medium — JD coverage, learning exercise |
+| 14 | Redis caching layer | Low | Medium — performance + cost reduction |
 | — | Terraform | Medium | Low — resume polish only |
