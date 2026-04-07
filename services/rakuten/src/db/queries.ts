@@ -260,3 +260,11 @@ export const getProductTotals = async () => {
 	);
 	return res.rows[0] as { total: string; pushed: string };
 };
+
+export const getWPSubcategoryIds = async () => {
+	const res = await pool.query(`
+		SELECT name, wc_category_id
+		FROM subcategories
+		`)
+	return res.rows as {name: string, wc_category_id: number}[];
+}
