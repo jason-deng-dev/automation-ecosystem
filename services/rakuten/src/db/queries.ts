@@ -7,9 +7,42 @@ export interface Config {
 	pagesPerSubcategory: number;
 	searchFillThreshold: number;
 }
+// categories = {'category':[genre_ids]}
+export const getCategoryIds = async (): Promise<Record<string, number[]>> => {
+	const res = await pool.query(`
+		SELECT categories.name, subcategories.genre_ids
+		FROM categories 
+		LEFT JOIN subcategories
+		ON categories.id = subcategories.category_id
+		`);
+	const categoryIds = res.rows.reduce((accumulator, currentValue) => {
+		const name = currentValue.name;
+		const genre_ids = currentValue.genre_ids;
+		if (accumulator.hasOwnProperty(name)) {
+			accumulator[name] = accumulator[name].concat(genre_ids);
+		} else {
+			accumulator[name] = genre_ids;
+		}
+		return accumulator;
+	}, {});
+	return categoryIds;
+};
+
+// allGenres = {genreIds[]}
+export const getAllGenres = async (): Promise<Record<string, number[]>> => {
+	const res = await pool.query(`
+		SELECT name, genre_ids
+		FROM subcategories
+		`)
+
+	const allGenres = Object.fromEntries(res.rows.map(r => [r.name, r.genre_ids]));
+	return allGenres;
+};
 
 export const getConfig = async (): Promise<Config> => {
-	const res = await pool.query(`SELECT yen_to_yuan, markup_percent, pages_per_subcategory, search_fill_threshold FROM config WHERE id = 1`);
+	const res = await pool.query(
+		`SELECT yen_to_yuan, markup_percent, pages_per_subcategory, search_fill_threshold FROM config WHERE id = 1`,
+	);
 	const row = res.rows[0];
 	return {
 		yenToYuan: Number(row.yen_to_yuan),
@@ -40,7 +73,7 @@ export const insertRunLog = async (log: {
 	await pool.query(
 		`INSERT INTO run_logs (operation, new_products_pushed, price_updates, removed_unavailable, removed_stale, errors)
 		 VALUES ($1, $2, $3, $4, $5, $6)`,
-		[log.operation, log.newProductsPushed, log.priceUpdates, log.removedUnavailable, log.removedStale, log.errors]
+		[log.operation, log.newProductsPushed, log.priceUpdates, log.removedUnavailable, log.removedStale, log.errors],
 	);
 };
 
@@ -57,7 +90,7 @@ export const upsertProductStats = async (stats: {
 		 	total_pushed = EXCLUDED.total_pushed,
 		 	per_category = EXCLUDED.per_category,
 		 	last_updated = NOW()`,
-		[stats.totalCached, stats.totalPushed, JSON.stringify(stats.perCategory)]
+		[stats.totalCached, stats.totalPushed, JSON.stringify(stats.perCategory)],
 	);
 };
 
@@ -71,11 +104,9 @@ export const insertImportLog = async (log: {
 	await pool.query(
 		`INSERT INTO import_logs (item_url, item_name, wc_product_id, status, error_msg)
 		 VALUES ($1, $2, $3, $4, $5)`,
-		[log.itemUrl, log.itemName, log.wcProductId, log.status, log.errorMsg ?? null]
+		[log.itemUrl, log.itemName, log.wcProductId, log.status, log.errorMsg ?? null],
 	);
 };
-
-
 
 export const upsertProduct = async ({
 	itemName,
@@ -124,17 +155,17 @@ export const upsertProduct = async ({
 		],
 	);
 	const row = res.rows[0];
-	return row.inserted ? [row.itemurl]:[]; // returns products that were newly added
+	return row.inserted ? [row.itemurl] : []; // returns products that were newly added
 };
 
-export const upsertProducts = async(products: RakutenDbQueryItem[]) => {
-	const urls:string[] = []
-	for (const product of products){
-		const urlArr = await upsertProduct(product)
-		urls.push(...urlArr)
+export const upsertProducts = async (products: RakutenDbQueryItem[]) => {
+	const urls: string[] = [];
+	for (const product of products) {
+		const urlArr = await upsertProduct(product);
+		urls.push(...urlArr);
 	}
-	return urls
-}
+	return urls;
+};
 
 export const getProductByUrls = async (URLs: string[]) => {
 	const res = await pool.query(
@@ -215,26 +246,25 @@ export const getSubcategoryNameByProductId = async (product_id: number) => {
 	return res.rows[0];
 };
 
-export const updateWoocommerceProductId = async (product_id:number, woocommerce_product_id:number)=> {
+export const updateWoocommerceProductId = async (product_id: number, woocommerce_product_id: number) => {
 	await pool.query(
 		`
 		UPDATE products
 		SET wc_product_id = $1, wc_pushed_at = NOW()
 		WHERE id = $2
-		`, [woocommerce_product_id, product_id]
-	)
-}
+		`,
+		[woocommerce_product_id, product_id],
+	);
+};
 
 export const getAllPushedProducts = async () => {
-	const res = await pool.query(
-		`SELECT id, "itemPrice", wc_product_id FROM products WHERE wc_product_id IS NOT NULL`
-	);
+	const res = await pool.query(`SELECT id, "itemPrice", wc_product_id FROM products WHERE wc_product_id IS NOT NULL`);
 	return res.rows as { id: number; itemPrice: number; wc_product_id: number }[];
-}
+};
 
 export const getStaleProductsWithWcId = async () => {
 	const res = await pool.query(
-		`SELECT id, wc_product_id FROM products WHERE missed_scrapes >= 3 AND wc_product_id IS NOT NULL`
+		`SELECT id, wc_product_id FROM products WHERE missed_scrapes >= 3 AND wc_product_id IS NOT NULL`,
 	);
 	return res.rows as { id: number; wc_product_id: number }[];
 };
@@ -255,9 +285,7 @@ export const getProductStatsByCategory = async () => {
 };
 
 export const getProductTotals = async () => {
-	const res = await pool.query(
-		`SELECT COUNT(*) AS total, COUNT(wc_product_id) AS pushed FROM products`
-	);
+	const res = await pool.query(`SELECT COUNT(*) AS total, COUNT(wc_product_id) AS pushed FROM products`);
 	return res.rows[0] as { total: string; pushed: string };
 };
 
@@ -265,6 +293,6 @@ export const getWPSubcategoryIds = async () => {
 	const res = await pool.query(`
 		SELECT name, wc_category_id
 		FROM subcategories
-		`)
-	return res.rows as {name: string, wc_category_id: number}[];
-}
+		`);
+	return res.rows as { name: string; wc_category_id: number }[];
+};
