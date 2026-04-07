@@ -73,11 +73,19 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 - `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
 - Returns normalized + translated product objects — `normalizeItems` then `translateNames` (DeepL, names only) called internally before returning; all call sites already await these functions so no changes needed at call sites
 
-#### genres.ts (removed — migrated to DB)
+#### genres.ts (being removed — migration in progress)
 
-- Genre ID map previously hardcoded here — now lives in the `subcategories` table
-- Loaded into memory at startup via `getSubcategoriesWithCategory()` query
-- See §11.6, §11.15 for migration rationale
+- Genre ID map previously hardcoded here — being migrated to DB
+- `categories` export (category → genre IDs) replaced by `getCategoryIds()` query — loads from `subcategories` table, groups genre IDs by category name
+- `allGenres` export (subcategory name → genre ID) replaced by `getAllGenres()` query — loads from `subcategories` table, returns `Record<string, number[]>` (name → all genre IDs); callers flatten with `.flat()` to build validation sets
+- Removal blocked on: replacing `categories` loop in `runRankingPopulate.ts` + `runWeeklySync.ts`, and `allGenres` usage in `controller.ts`
+
+#### wpCategoryIds.ts (removed)
+
+- Previously a hardcoded `Record<string, number>` mapping WC category/subcategory names → WC category IDs
+- Replaced by `wc_category_id` column on `categories` and `subcategories` tables in PostgreSQL
+- `woocommerceAPI.ts` now calls `getWPSubcategoryIds()` at startup and builds the lookup map in memory via `Object.fromEntries`
+- Running Gear Shoes (446) and Wear (447) are distinct WC category IDs from Training Shoes (464) and Training Wear (463) — previously conflated in the static file
 
 #### db/pool.ts (new)
 
@@ -122,7 +130,7 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 
 #### Bulk push (initial load + ranking)
 
-**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via the `page` parameter (1–34). `pagesPerSubcategory` in the `config` DB table sets how many pages to fetch per subcategory (each page = 30 products). Minimum is 1 page = 30 products per subcategory.
+**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via `productsPerCategory` in the `config` DB table. The scrape loop divides this across genre IDs in each subcategory: `pagesNeeded = ceil(productsPerCategory / genreIds.length / 30)` pages fetched per genre ID, combined results sliced to `productsPerCategory`. Minimum is 1 page (30 products) per genre ID.
 
 ```
 For each genre in genres.js:
@@ -204,15 +212,17 @@ TranslatePress translates on first view, caches in WordPress DB
 CREATE DATABASE rakutenDB;
 
 CREATE TABLE categories (
-  id   SERIAL PRIMARY KEY,
-  name TEXT
+  id             SERIAL PRIMARY KEY,
+  name           TEXT,
+  wc_category_id INTEGER
 );
 
 CREATE TABLE subcategories (
-  id          SERIAL PRIMARY KEY,
-  name        TEXT,
-  genre_ids   INTEGER[],
-  category_id INTEGER REFERENCES categories(id)
+  id             SERIAL PRIMARY KEY,
+  name           TEXT,
+  genre_ids      INTEGER[],
+  category_id    INTEGER REFERENCES categories(id),
+  wc_category_id INTEGER
 );
 
 CREATE TABLE products (
@@ -274,6 +284,7 @@ Markup applied separately in WooCommerce plugin (e.g. +20% → ¥168 CNY display
 |`GET`|`/api/products/:itemCode`|Single product detail|
 |`POST`|`/api/request-product`|Product request flow — fetch by keyword, push to WooCommerce, return redirect URL|
 |`POST`|`/api/cron/sync`|Trigger weekly re-scrape manually|
+|`DELETE`|`/api/products/:wcProductId`|Remove product from WooCommerce + delete from DB by `wc_product_id` — dashboard use only|
 
 ---
 
@@ -352,7 +363,7 @@ Before every push:
   └── Bags & Accessories
 ```
 
-See `src/config/genres.ts` for the full genre ID map.
+The full genre ID map lives in the `subcategories` table in PostgreSQL — loaded at startup via `getCategoryIds()` and `getAllGenres()` queries. `genres.ts` is being removed.
 
 ---
 

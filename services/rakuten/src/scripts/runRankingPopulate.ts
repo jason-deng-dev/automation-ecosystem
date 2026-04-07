@@ -1,9 +1,11 @@
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
-import { categories } from "../config/genres";
 import "dotenv/config";
 import { pushProducts } from "../services/woocommerceAPI";
-import { upsertProducts, getProductByUrls, getConfig } from "../db/queries";
+import { upsertProducts, getProductByUrls, getConfig, getCategoryIds } from "../db/queries";
 import { initPricing } from "../services/pricing";
+
+const categories = getCategoryIds();
+
 
 async function runRankingPopulate() {
 	await initPricing();

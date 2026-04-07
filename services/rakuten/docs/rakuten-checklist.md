@@ -1,4 +1,3 @@
-x
 - [x] Setup → §13 Repo Structure
   - [x] Initialize package.json
   - [x] Write .env.example (Rakuten API key, PostgreSQL credentials, WooCommerce credentials)
@@ -141,12 +140,21 @@ x
   - [x] Delete `wpCategoryIds.ts`
 
 - [ ] Dynamic genre expansion → §9.4, §11.15
-  - [ ] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
-  - [ ] Load genre map from DB at startup in `app.ts` — replaces `allGenres` import from `genres.ts`
+  - [x] Add `getCategoryIds()` query in `queries.ts` — returns `Record<string, number[]>` (category name → all genre IDs across subcategories); replaces `categories` export from `genres.ts`
+  - [x] Add `getAllGenres()` query in `queries.ts` — returns `Record<string, number[]>` (subcategory name → genre IDs); replaces `allGenres` export from `genres.ts`
+  - [x] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
+  - [x] Replace `allGenres` import in `controller.ts` 
+  - [x] Replace `categories` import in `runRankingPopulate.ts` + `runWeeklySync.ts` — call `getCategoryIds()` instead of importing from `genres.ts`
   - [ ] Add `appendGenreId(subcategoryId, genreId)` query in `queries.ts` — `array_append` + updates in-memory map
   - [ ] Claude classification call in `controller.ts` — when unknown genre IDs found, pass subcategory list to Claude, get back `subcategoryId | null`
   - [ ] If Claude returns null (off-theme) → `{ success: false }`; if on-theme → append to DB + proceed with push
-  - [ ] Remove `genres.ts` and all imports of `allGenres` once DB-driven map is in place
+  - [ ] Remove `genres.ts` once all imports replaced
+
+- [ ] `productsPerCategory` scrape config
+  - [ ] Add `products_per_category INTEGER` to `config` table in `seed.ts`
+  - [ ] Add to `getConfig()` / `updateConfig()` in `queries.ts`
+  - [ ] In ranking scrape loop — divide `productsPerCategory` across genre IDs in subcategory: `pagesNeeded = ceil(productsPerCategory / genreIds.length / 30)`, fetch that many pages per ID, slice combined results to `productsPerCategory`
+  - [ ] Rework `runRankingPopulate.ts` + `runWeeklySync.ts` — replace `categories` loop from `genres.ts` with DB query; use new per-category product limit
 
 - [ ] Description formatting (`cleanDescription()`) → §11.17
   - Approach: analyze real `itemCaption` values first — write a script to dump captions from DB across categories, inspect patterns, then build the formatter
@@ -182,6 +190,7 @@ x
   - [ ] POST /trigger — fetch more products (category + count)
   - [ ] POST /retry — retry failed WooCommerce imports
   - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices (replaces fs.watch)
+  - [ ] DELETE /api/products/:wcProductId — remove product from WooCommerce (DELETE /products/{id}) + delete from DB by wc_product_id
   - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3

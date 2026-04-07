@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
-import { categories } from "../config/genres";
 import { calculatePrice } from "../services/pricing";
 import { pushProducts, deleteWcProduct, updateWcPrice } from "../services/woocommerceAPI";
 import {
@@ -15,7 +14,10 @@ import {
 	getConfig,
 	insertRunLog,
 	upsertProductStats,
+	getCategoryIds
 } from "../db/queries";
+
+const categories = getCategoryIds();
 
 export default async function runWeeklySync() {
 	const log = {

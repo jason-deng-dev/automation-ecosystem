@@ -1,11 +1,12 @@
 import { getProductsByKeyword } from "./services/rakutenAPI";
-import { allGenres } from "./config/genres";
-import { upsertProducts, getProductByUrls, getConfig } from "./db/queries";
+import { upsertProducts, getProductByUrls, getConfig, getAllGenres} from "./db/queries";
 import { pushProducts } from "./services/woocommerceAPI";
 // |`POST`|`/api/push/bulk`|Fetch top N per genre from Ranking API → normalize → price → push to WooCommerce|
 // |`GET`|`/api/products`|Products stored in PostgreSQL (by genre or category)|
 // |`GET`|`/api/products/:itemCode`|Single product detail|
 // |`POST`|`/api/request-product`|Product request flow — fetch by keyword, push to WooCommerce, return wc_product_ids|
+
+const allGenres = getAllGenres();
 
 export function bulkFetch() {}
 
