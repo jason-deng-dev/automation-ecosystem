@@ -7,6 +7,21 @@ export interface Config {
 	pagesPerSubcategory: number;
 	searchFillThreshold: number;
 }
+
+// feeds context to ClaudeAPI to assign to correct subcateogry
+// should be {id, name, category name}
+export const getSubcategoriesWithCategory = async() => {
+	const res = await pool.query(`
+		SELECT subcategories.id AS "subcategoryId" , subcategories.name AS "subcategoryName", categories.name AS "categoryName"
+		FROM subcategories
+		LEFT JOIN categories
+		ON categories.id = subcategories.category_id
+		`)
+	return res.rows as {subcategoryId:number, subcategoryName:string, categoryName:string} [];
+}
+
+
+
 // categories = {'category':[genre_ids]}
 export const getCategoryIds = async (): Promise<Record<string, number[]>> => {
 	const res = await pool.query(`
