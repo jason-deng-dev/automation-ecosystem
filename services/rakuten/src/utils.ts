@@ -7,6 +7,20 @@ export function cleanDescription(raw: string): string {
 
 	let text = raw;
 
+	// 0. Decode HTML entities
+	text = text
+		.replace(/&nbsp;/g, ' ')
+		.replace(/&amp;/g, '&')
+		.replace(/&lt;/g, '<')
+		.replace(/&gt;/g, '>')
+		.replace(/&emsp;/g, ' ');
+
+	// 0b. Strip leading store navigation prefix ("お店TOP＞カテゴリ＞...")
+	text = text.replace(/^お店TOP＞[^\n]*\n?/, '').trim();
+
+	// 0c. Strip Adidas official shop prefix block (everything up to the actual description)
+	text = text.replace(/^Brand：[\s\S]*?スポーツブランドアディダス公式ショップ返品・交換について/, '').trim();
+
 	// 1. Remove duplicate second copy (many listings paste description twice)
 	const probeLen = Math.min(80, Math.floor(text.length / 3));
 	if (probeLen > 5) {
@@ -15,11 +29,29 @@ export function cleanDescription(raw: string): string {
 		if (dupeStart > probeLen) text = text.slice(0, dupeStart).trim();
 	}
 
-	// 2. Hard-cut at boilerplate anchors — everything after is junk
+	// 2. Hard-cut at boilerplate anchors — everything from this point on is junk
 	const hardCuts = [
 		'メーカー希望小売価格はメーカーサイトに基づいて掲載しています',
+		'メーカー希望小売価格はメーカーカタログに基づいて掲載しています',
+		'メーカー希望小売価格はメーカー商品タグに基づいて掲載しています',
 		'楽天BOX受取対象商品',
 		'smtb-m',
+		'【商品の購入にあたっての注意事項】',
+		'アルペン alpen スポーツデポ SPORTSDEPO',
+		'スーパースポーツゼビオ ゼビオ Super Sports XEBIO',
+		'関連キーワード',   // covers 【関連キーワード】, ※関連キーワード※, etc.
+		'検索ワード：',
+		'商品キーワード',
+		'関連ワード',       // covers ■関連ワード／用途
+		'関連商品はこちら',
+		'Other Color',
+		'■当店利用時のご注意',
+		'参考検索キーワード',
+		'HOT KEYWORD',
+		'様々なシーンで利用できます',
+		'様々なシーンで活用いただけます',
+		'検索関連ワード',
+		'よくある打ち間違い',
 	];
 	for (const cut of hardCuts) {
 		const idx = text.indexOf(cut);
@@ -28,20 +60,26 @@ export function cleanDescription(raw: string): string {
 
 	// 3. Strip inline spam patterns
 	text = text
-		.replace(/(\[[\w\uFF00-\uFFEF\u3040-\u9FFF\s]+\]){2,}/g, '') // [ABCマート][ABCmart]... store tag clusters
-		.replace(/#[\w\u3040-\u9FFF]+/g, '') // hashtags
-		.replace(/(\d{2}\.?\d?cm[\s\u3000]){3,}/g, '') // size keyword lists (25cm 25.5cm...)
-		.replace(/\bcpn[\w]+([\s\u3000]+cpn[\w]+)*/g, '') // cpn tracking codes
-		.replace(/\d+%OFF[\s\S]*?23:59/g, '') // coupon block
-		.replace(/カラーバリエーション\s*$/, ''); // trailing カラーバリエーション marker
+		.replace(/(\[[\w\uFF00-\uFFEF\u3040-\u9FFF\s]+\]){2,}/g, '')   // [店名][店名]... tag clusters
+		.replace(/\[[^\]]*\/[^\]]*\]/g, '')                               // [スポーツ/ブランド：X/] taxonomy tags
+		.replace(/#[\w\u3040-\u9FFF]+/g, '')                             // hashtags
+		.replace(/(\d{2}\.?\d?cm[\s\u3000]){3,}/g, '')                  // size keyword lists (25cm 25.5cm...)
+		.replace(/\bcpn[\w]+([\s\u3000]+cpn[\w]+)*/g, '')               // cpn tracking codes
+		.replace(/\d+%OFF[\s\S]*?23:59/g, '')                           // coupon block
+		.replace(/カラーバリエーション\s*$/, '')                          // trailing marker
+		.replace(/【(?:color|size):[^】]*】\s*/gi, '')                   // 【color:X】 【size:X】 Adidas tags
+		.replace(/【\d{2}[a-z]+】\s*/gi, '')                            // 【26cc】 size tags
+		.replace(/\([A-Z]{4}[A-Z0-9]{2,}[^)]{0,80}\)/g, '');          // (BFJBAJ NIKE 靴 クツ...) SEO blocks
 
 	// 4. Filter boilerplate sentences (split on 。)
-	const boilerplatePatterns = [
+	const boilerplatePatterns: RegExp[] = [
 		/在庫を共有/,
 		/お荷物伝票/,
 		/お使いのモニター/,
 		/ブラウザ.{0,40}(色|異なる)/,
 		/モニター.{0,40}色.{0,20}異なる/,
+		/モニタにより実際/,
+		/モニターの発色/,
 		/ディスプレイ.{0,40}(色|異なる)/,
 		/掲載画像と実際/,
 		/実際の商品と色味が異なる/,
@@ -56,22 +94,88 @@ export function cleanDescription(raw: string): string {
 		/ご了承の上.*ご注文/,
 		/メール便.*配送/,
 		/送料無料.*対象商品/,
+		/掲載の価格.*予告なく変更/,
+		/シューズの製造過程で.*接着剤/,
+		/靴ひもの長さについては/,
+		/一部商品において弊社カラー表記/,
+		/ブランドやシリーズによっては甲高/,
+		/足のサイズは甲高.*個人差/,
+		/ワイズを確認の上お買い求め/,
+		/システム上在庫の反映/,
+		/弊社独自の採寸/,
+		/個人輸入.*お取り扱い/,
+		/第三者への譲渡.*転売/,
+		/通関時.*関税/,
+		/代引きはご利用いただけません/,
+		/日時指定は出来ません/,
+		/ポスト投函.*お届け/,
+		/LINE友だち登録/,
+		/クリックすると.*一覧/,
+		/商品価格は為替変動/,
+		/広告文責/,
 	];
 	const sentences = text.split('。');
-	text = sentences.filter(s => !boilerplatePatterns.some(re => re.test(s))).join('。').trim();
+	// Preserve sentences that contain structural markers (■ specs, ◇●◆ bullets, ・ lists)
+	// even if they also contain boilerplate phrases embedded in the same chunk
+	text = sentences.filter(s =>
+		/[■◇●◆・]/.test(s) || !boilerplatePatterns.some(re => re.test(s))
+	).join('。').trim();
 
+	// 5. Route to correct formatter
+	if (/^商品名[:：]/.test(text)) {
+		return handleInlineSpecFormat(text);
+	}
 	return formatDescriptionHtml(text);
 }
 
+// ASICS inline format: "商品名:X カラー:X アッパー:X ... コメント: actual description text"
+function handleInlineSpecFormat(text: string): string {
+	const commentMatch = text.match(/コメント[:：]\s*([\s\S]+)$/);
+	if (!commentMatch) return formatDescriptionHtml(text);
+
+	const descPart = commentMatch[1].trim();
+	const specPart = text.slice(0, text.indexOf(commentMatch[0])).trim();
+
+	// Parse "Key:Value Key:Value ..." from the spec portion
+	const specRows: [string, string][] = [];
+	const keyPattern = /([^\s:：]{1,15})[:：]([^:：]+?)(?=\s+[^\s:：]{1,15}[:：]|$)/g;
+	let m: RegExpExecArray | null;
+	while ((m = keyPattern.exec(specPart)) !== null) {
+		const key = m[1].trim();
+		const val = m[2].replace(/※[^\s][^※\n]*/, '').trim(); // strip ※disclaimer from values
+		if (key && val) specRows.push([key, val]);
+	}
+
+	let html = '';
+	if (specRows.length > 0) {
+		const rows = specRows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+		html += `<table class="product-specs">${rows}</table>\n`;
+	}
+	html += formatDescriptionHtml(descPart);
+	return html;
+}
+
 function formatDescriptionHtml(text: string): string {
+	// Normalize ・ bullets: only when preceded by whitespace (not inline like メンズ・レディース)
+	text = text.replace(/(?<!\S)・/g, '\n・');
+
 	// Insert newline before section markers so we can split cleanly
-	text = text.replace(/([◇●])/g, '\n$1').replace(/(■)/g, '\n■');
+	text = text.replace(/([◇●◆])/g, '\n$1').replace(/(■)/g, '\n■');
 
 	const segments = text.split('\n').map(s => s.trim()).filter(Boolean);
 
 	const parts: string[] = [];
 	const bulletBuffer: string[] = [];
 	const specRows: [string, string][] = [];
+
+	// Bullet content that is boilerplate — suppress these even as bullets
+	const bulletBoilerplate: RegExp[] = [
+		/商品画像について/,
+		/掲載在庫について/,
+		/弊社独自の採寸/,
+		/モニター.*異なる/,
+		/ご了承/,
+	];
 
 	const flushBullets = () => {
 		if (bulletBuffer.length > 0) {
@@ -88,9 +192,18 @@ function formatDescriptionHtml(text: string): string {
 	};
 
 	for (const seg of segments) {
-		if (seg.startsWith('◇') || seg.startsWith('●')) {
-			flushSpecs();
-			bulletBuffer.push(seg.replace(/^[◇●]/, '').trim());
+		if (seg.startsWith('◇') || seg.startsWith('●') || seg.startsWith('◆')) {
+			const content = seg.replace(/^[◇●◆]/, '').trim();
+			if (!bulletBoilerplate.some(re => re.test(content))) {
+				flushSpecs();
+				bulletBuffer.push(content);
+			}
+		} else if (seg.startsWith('・')) {
+			const content = seg.replace(/^・/, '').trim();
+			if (!bulletBoilerplate.some(re => re.test(content))) {
+				flushSpecs();
+				bulletBuffer.push(content);
+			}
 		} else if (seg.startsWith('■')) {
 			flushBullets();
 			const content = seg.replace(/^■/, '').replace(/■$/, '').trim();
@@ -117,7 +230,23 @@ function formatDescriptionHtml(text: string): string {
 // First 1–2 sentences before any ■ spec block — used for WooCommerce short_description
 export function extractShortDescription(raw: string): string {
 	if (!raw) return '';
-	const beforeSpecs = raw.split('■')[0].replace(/^[◇●]/, '').trim();
+
+	let text = raw;
+
+	// ASICS inline format: extract description part after コメント:
+	if (/^商品名[:：]/.test(text)) {
+		const m = text.match(/コメント[:：]\s*([\s\S]+)$/);
+		if (m) text = m[1].trim();
+	}
+
+	// Adidas prefix block: extract after the boilerplate header
+	if (text.startsWith('Brand：')) {
+		const marker = 'スポーツブランドアディダス公式ショップ返品・交換について';
+		const idx = text.indexOf(marker);
+		if (idx !== -1) text = text.slice(idx + marker.length).trim();
+	}
+
+	const beforeSpecs = text.split('■')[0].replace(/^[◇●◆]/, '').trim();
 	const sentences = beforeSpecs.split('。').filter(Boolean);
 	return (sentences.slice(0, 2).join('。') + '。').slice(0, 250);
 }

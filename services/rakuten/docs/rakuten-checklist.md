@@ -156,17 +156,24 @@
   - [x] In ranking scrape loop — divide `productsPerCategory` across genre IDs in subcategory: `ceil(productsPerCategory / subcategoryIds.length)` products per ID, slice via Ranking API page param
   - [x] Rework `runRankingPopulate.ts` + `runWeeklySync.ts` — use `productsPerCategory` from DB config
 
-- [ ] Description formatting (`cleanDescription()`) → §11.17
-  - Approach: analyze real `itemCaption` values first — write a script to dump captions from DB across categories, inspect patterns, then build the formatter
-  - [ ] Write `src/scripts/dumpCaptions.ts` — query DB for `itemCaption` across all categories, write to `scrape_output/captions.json`
-  - [ ] Analyze output — identify all patterns: `。`-separated sentences, `key：value` pairs, `・key：value` prefixed lines, duplicate blocks
-  - [ ] Implement `cleanDescription(caption: string): string` in `utils.ts`:
-    - Deduplicate repeated blocks (Rakuten often returns the same description twice)
-    - Extract `key：value` pairs (full-width colon, short label before it) → render as HTML table
-    - Split remaining text on `。` → render as `<ul><li>` bullet points
-    - Strip `・` prefixes from lines already formatted as bullets
-  - [ ] Call `cleanDescription()` in `woocommerceAPI.ts` before pushing `description` to WooCommerce
-  - [ ] Add `cleanDescription` test cases to `utils.test.ts` once patterns are confirmed
+- [x] Description formatting (`cleanDescription()`) → §11.17
+  - Approach: dumped captions live from Rakuten API (not DB) across all 325 genre IDs — `scrape_output/captions.json` (1594 captions)
+  - [x] Write `src/scripts/dumpCaptions.ts` — fetches 5 products per genre ID via Ranking API, writes to `scrape_output/captions.json`
+  - [x] Analyze output — read all 1594 captions across 325 genre IDs in 100-line chunks; patterns identified across shops: Alpen/Zebio SEO keyword dumps, Adidas official prefix block, ASICS inline spec format, iHerb import shop boilerplate, North Face `◆` bullets, supplement shops, sportswear `・` bullet lists
+  - [x] Implement `cleanDescription(caption: string): string` in `utils.ts` (comprehensive rewrite):
+    - Decodes HTML entities (`&nbsp;`, `&amp;`, etc.)
+    - Strips `お店TOP＞` store navigation prefix
+    - Strips Adidas `Brand：...スポーツブランドアディダス公式ショップ返品・交換について` prefix block
+    - Removes duplicate second copy (adaptive probe length)
+    - Hard-cuts at 20+ boilerplate anchors (Alpen/Zebio store tags, `関連キーワード` variants, `メーカー希望小売価格` variants, iHerb `■当店利用時のご注意`, `HOT KEYWORD`, `よくある打ち間違い`, etc.)
+    - Strips inline spam: `[taxonomy/tags]`, `【color:X】`/`【size:X】` tags, parenthetical SEO blocks `(BFJBAJ NIKE...)`, `【26cc】` size tags
+    - Filters 35+ boilerplate sentence patterns on `。`-split (preserves sentences containing `■◇●◆・` structural markers)
+    - Routes ASICS inline format (`商品名:X ... コメント: text`) through `handleInlineSpecFormat()` → spec `<table>` + description
+    - Formats as HTML: `◇/●/◆` → `<ul><li>`, `・` (whitespace-preceded) → `<ul><li>`, `■key：value` → `<table class="product-specs">`, `■header` → `<p><strong>`, `【xxx】` → `<strong>`, plain text → `<p>`; bullet boilerplate filter suppresses `商品画像について`, `掲載在庫について` etc.
+  - [x] `extractShortDescription(caption)` — handles ASICS `コメント:` format and Adidas `Brand:` prefix; returns first 2 sentences ≤250 chars → WooCommerce `short_description`
+  - [x] Call `cleanDescription()` + `extractShortDescription()` in `woocommerceAPI.ts` before pushing to WooCommerce
+  - [x] Add `cleanDescription` + `extractShortDescription` test cases to `utils.test.ts` (20 tests covering all stripping + formatting behaviors)
+  - Add CSS to WordPress for `.product-specs` table styling (2-col, bordered, `th` background)
 
 - [ ] Product request flow → §9 Product Request Flow
   - Approach: always fetch X products fresh from Rakuten — no DB fill calculation.
