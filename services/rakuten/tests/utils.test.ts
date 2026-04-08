@@ -297,6 +297,99 @@ describe("cleanDescription", () => {
 		expect(result).not.toContain("在庫を共有");
 		expect(result).not.toContain("初期不良以外");
 	});
+
+	it("converts ◆ bullets (North Face) to <ul><li>", () => {
+		const input = "◆ 商品詳細情報 ◆ ブランド プーマ ◆画像のカラーについて◆ 商品画像のカラーにつきましては。";
+		const result = cleanDescription(input);
+		expect(result).toContain("<ul>");
+		expect(result).toContain("<li>");
+	});
+
+	it("converts whitespace-preceded ・ bullets to <ul><li>", () => {
+		const input = "商品説明 ・軽量設計 ・通気性に優れたアッパー ・快適な履き心地";
+		const result = cleanDescription(input);
+		expect(result).toContain("<ul>");
+		expect(result).toContain("<li>軽量設計");
+		expect(result).toContain("<li>通気性に優れたアッパー");
+	});
+
+	it("does NOT convert inline ・ (e.g. メンズ・レディース) to a bullet", () => {
+		const input = "メンズ・レディース兼用のシューズです。";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("<ul>");
+		expect(result).toContain("メンズ・レディース");
+	});
+
+	it("strips HTML entities (&nbsp; &amp;)", () => {
+		const input = "素材：ポリエステル&nbsp;100%。ブランド&amp;スタイル。";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("&nbsp;");
+		expect(result).not.toContain("&amp;");
+		expect(result).toContain("100%");
+		expect(result).toContain("ブランド&スタイル");
+	});
+
+	it("strips Adidas Brand: prefix block", () => {
+		const input = "Brand：adidas Sports：Running Category：Shoes 【color:001】 【size:26cm】 スポーツブランドアディダス公式ショップ返品・交換について高機能ランニングシューズです。軽量で快適。";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("Brand：adidas");
+		expect(result).not.toContain("スポーツブランドアディダス");
+		expect(result).toContain("高機能ランニングシューズです");
+	});
+
+	it("strips 【color:X】 and 【size:X】 Adidas tags", () => {
+		const input = "【color:001】【size:26cm】快適なランニングシューズ。";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("【color:001】");
+		expect(result).not.toContain("【size:26cm】");
+		expect(result).toContain("快適なランニングシューズ");
+	});
+
+	it("hard-cuts at 関連キーワード", () => {
+		const input = "快適なシューズ。関連キーワード ランニング ジョギング マラソン";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("関連キーワード");
+		expect(result).not.toContain("ジョギング マラソン");
+		expect(result).toContain("快適なシューズ");
+	});
+
+	it("hard-cuts at アルペン alpen スポーツデポ SPORTSDEPO", () => {
+		const input = "優れたランニングシューズ。アルペン alpen スポーツデポ SPORTSDEPO ランニングシューズ マラソンシューズ";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("アルペン alpen");
+		expect(result).not.toContain("マラソンシューズ");
+		expect(result).toContain("優れたランニングシューズ");
+	});
+
+	it("strips parenthetical SEO blocks (BFJBAJ NIKE...)", () => {
+		const input = "快適なシューズ。(BFJBAJ NIKE ナイキ 4-nc-m 靴 クツ シューズ)";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("BFJBAJ");
+		expect(result).not.toContain("クツ シューズ");
+		expect(result).toContain("快適なシューズ");
+	});
+
+	it("strips お店TOP＞ store navigation prefix", () => {
+		const input = "お店TOP＞スポーツ＞ランニング\n快適なシューズです。";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("お店TOP");
+		expect(result).toContain("快適なシューズです");
+	});
+
+	it("handles ASICS inline spec format (商品名: ... コメント: description)", () => {
+		const input = "商品名：SUPER BLAST 3 カラー：コバルトブルー アッパー：メッシュ ソール：EVAフォーム コメント：高速ランニングに最適なシューズです。反発力に優れ、長距離でも快適。";
+		const result = cleanDescription(input);
+		expect(result).toContain('<table class="product-specs">');
+		expect(result).toContain("<th>商品名</th>");
+		expect(result).toContain("高速ランニングに最適なシューズです");
+	});
+
+	it("hard-cuts at メーカー希望小売価格はメーカーカタログに基づいて掲載しています", () => {
+		const input = "優れた性能を持つシューズ。メーカー希望小売価格はメーカーカタログに基づいて掲載しています 以降は削除";
+		const result = cleanDescription(input);
+		expect(result).not.toContain("メーカーカタログ");
+		expect(result).toContain("優れた性能を持つシューズ");
+	});
 });
 
 describe("extractShortDescription", () => {
@@ -344,5 +437,20 @@ describe("extractShortDescription", () => {
 		expect(result).toContain("バランスの良い履き心地");
 		expect(result).not.toContain("■カラー");
 		expect(result.length).toBeLessThanOrEqual(250);
+	});
+
+	it("ASICS inline format: extracts description after コメント:", () => {
+		const input = "商品名：SUPER BLAST 3 カラー：コバルトブルー コメント：高速ランニングに最適なシューズです。反発力に優れています。長距離でも快適。";
+		const result = extractShortDescription(input);
+		expect(result).toContain("高速ランニングに最適なシューズです");
+		expect(result).not.toContain("商品名：");
+		expect(result).not.toContain("カラー：");
+	});
+
+	it("Adidas Brand: format: extracts description after prefix block", () => {
+		const input = "Brand：adidas Sports：Running スポーツブランドアディダス公式ショップ返品・交換についてレース対応の高機能シューズです。軽量設計。さらに長距離向け。";
+		const result = extractShortDescription(input);
+		expect(result).toContain("レース対応の高機能シューズです");
+		expect(result).not.toContain("Brand：");
 	});
 });
