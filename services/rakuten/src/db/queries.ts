@@ -8,6 +8,14 @@ export interface Config {
 	searchFillThreshold: number;
 }
 
+export const getSubcategoryIdByGenreId = async (genreId: number): Promise<number | null> => {
+	const res = await pool.query(
+		`SELECT id FROM subcategories WHERE $1 = ANY(genre_ids)`,
+		[genreId],
+	);
+	return res.rows[0]?.id ?? null;
+};
+
 export const appendGenreIds = async (subcategoryId: number, genreIds: number[]) => {
 	await pool.query(
 		`
