@@ -217,8 +217,11 @@ function formatDescriptionHtml(text: string): string {
 		} else {
 			flushBullets();
 			flushSpecs();
-			const formatted = seg.replace(/【(.+?)】/g, '<strong>$1</strong>');
-			if (formatted.trim()) parts.push(`<p>${formatted}</p>`);
+			const subSentences = seg.split('。').map(s => s.trim()).filter(Boolean);
+			for (const s of subSentences) {
+				const formatted = s.replace(/【(.+?)】/g, '<strong>$1</strong>');
+				parts.push(`<p>${formatted}。</p>`);
+			}
 		}
 	}
 	flushBullets();
