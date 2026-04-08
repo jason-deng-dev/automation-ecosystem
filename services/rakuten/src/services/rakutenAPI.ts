@@ -57,10 +57,10 @@ export const getProductsByGenresId = async (
 
 export const getProductsByRankingGenre = async (
 	genreId: number,
-	pageNumber: number,
+	count: number,
 ) => {
-	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601?format=json&genreId=${genreId}&pages=${pageNumber}&applicationId=${process.env.RAKUTEN_APP_ID}`
-	
+	const page = Math.ceil(count / 20)
+	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601?format=json&genreId=${genreId}&page=${page}&applicationId=${process.env.RAKUTEN_APP_ID}`
 	try {
 		const res = await fetch(itemSearchEndpoint, {
 			headers: {
@@ -70,7 +70,7 @@ export const getProductsByRankingGenre = async (
 			},
 		});
 		const resJson = await res.json();
-		const items = resJson.Items;
+		const items = resJson.Items.slice(0,count);
 		if (!items) return null;
 		const normalizedItems = normalizeItems(items)
 		const translatedItems = await translateNames(normalizedItems)
