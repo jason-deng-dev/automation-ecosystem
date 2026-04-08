@@ -1,10 +1,124 @@
 import * as deepl from "deepl-node";
 import 'dotenv/config'
 
-export function cleanDescription(description: string) {
-	
+// Strips boilerplate/SEO junk from Rakuten captions and returns clean HTML
+export function cleanDescription(raw: string): string {
+	if (!raw) return '';
 
+	let text = raw;
+
+	// 1. Remove duplicate second copy (many listings paste description twice)
+	const probe = text.slice(0, 80);
+	const dupeStart = text.indexOf(probe, 100);
+	if (dupeStart > 100) text = text.slice(0, dupeStart).trim();
+
+	// 2. Hard-cut at boilerplate anchors — everything after is junk
+	const hardCuts = [
+		'メーカー希望小売価格はメーカーサイトに基づいて掲載しています',
+		'楽天BOX受取対象商品',
+		'smtb-m',
+	];
+	for (const cut of hardCuts) {
+		const idx = text.indexOf(cut);
+		if (idx > 50) text = text.slice(0, idx).trim();
+	}
+
+	// 3. Strip inline spam patterns
+	text = text
+		.replace(/(\[[\w\uFF00-\uFFEF\u3040-\u9FFF\s]+\]){2,}/g, '') // [ABCマート][ABCmart]... store tag clusters
+		.replace(/#[\w\u3040-\u9FFF]+([\s\u3000]+#[\w\u3040-\u9FFF]+){2,}/g, '') // hashtag clusters
+		.replace(/(\d{2}\.?\d?cm[\s\u3000]){3,}/g, '') // size keyword lists (25cm 25.5cm...)
+		.replace(/\bcpn[\w]+([\s\u3000]+cpn[\w]+)*/g, '') // cpn tracking codes
+		.replace(/\d+%OFF[\s\S]*?23:59/g, '') // coupon block
+		.replace(/カラーバリエーション\s*$/, ''); // trailing カラーバリエーション marker
+
+	// 4. Filter boilerplate sentences (split on 。)
+	const boilerplatePatterns = [
+		/在庫を共有/,
+		/お荷物伝票/,
+		/お使いのモニター/,
+		/ブラウザ.{0,40}(色|異なる)/,
+		/モニター.{0,40}色.{0,20}異なる/,
+		/ディスプレイ.{0,40}(色|異なる)/,
+		/掲載画像と実際/,
+		/実際の商品と色味が異なる/,
+		/在庫反映.{0,20}時間/,
+		/楽天\(株\)/,
+		/先着順/,
+		/あす楽/,
+		/ラッピング.*お受けする/,
+		/実店舗.*他ショッピングモール/,
+		/初期不良以外/,
+		/返品交換は致しかねます/,
+		/ご了承の上.*ご注文/,
+		/メール便.*配送/,
+		/送料無料.*対象商品/,
+	];
+	const sentences = text.split('。');
+	text = sentences.filter(s => !boilerplatePatterns.some(re => re.test(s))).join('。').trim();
+
+	return formatDescriptionHtml(text);
 }
+
+function formatDescriptionHtml(text: string): string {
+	// Insert newline before section markers so we can split cleanly
+	text = text.replace(/([◇●])/g, '\n$1').replace(/(■)/g, '\n■');
+
+	const segments = text.split('\n').map(s => s.trim()).filter(Boolean);
+
+	const parts: string[] = [];
+	const bulletBuffer: string[] = [];
+	const specRows: [string, string][] = [];
+
+	const flushBullets = () => {
+		if (bulletBuffer.length > 0) {
+			parts.push('<ul>' + bulletBuffer.map(b => `<li>${b}</li>`).join('') + '</ul>');
+			bulletBuffer.length = 0;
+		}
+	};
+	const flushSpecs = () => {
+		if (specRows.length > 0) {
+			const rows = specRows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+			parts.push(`<table class="product-specs">${rows}</table>`);
+			specRows.length = 0;
+		}
+	};
+
+	for (const seg of segments) {
+		if (seg.startsWith('◇') || seg.startsWith('●')) {
+			flushSpecs();
+			bulletBuffer.push(seg.replace(/^[◇●]/, '').trim());
+		} else if (seg.startsWith('■')) {
+			flushBullets();
+			const content = seg.replace(/^■/, '').replace(/■$/, '').trim();
+			const specMatch = content.match(/^(.{1,20})[：:](.+)$/);
+			if (specMatch) {
+				specRows.push([specMatch[1].trim(), specMatch[2].trim()]);
+			} else {
+				flushSpecs();
+				parts.push(`<p><strong>${content}</strong></p>`);
+			}
+		} else {
+			flushBullets();
+			flushSpecs();
+			const formatted = seg.replace(/【(.+?)】/g, '<strong>$1</strong>');
+			if (formatted.trim()) parts.push(`<p>${formatted}</p>`);
+		}
+	}
+	flushBullets();
+	flushSpecs();
+
+	return parts.join('\n');
+}
+
+// First 1–2 sentences before any ■ spec block — used for WooCommerce short_description
+export function extractShortDescription(raw: string): string {
+	if (!raw) return '';
+	const beforeSpecs = raw.split('■')[0].replace(/^[◇●]/, '').trim();
+	const sentences = beforeSpecs.split('。').filter(Boolean);
+	return (sentences.slice(0, 2).join('。') + '。').slice(0, 250);
+}
+
 
 
 

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { calculatePrice } from "../services/pricing";
-import { DbItem } from "../utils";
+import { DbItem, cleanDescription, extractShortDescription } from "../utils";
 import {
 	getSubcategoryNameByProductId,
 	updateWoocommerceProductId,
@@ -145,7 +145,8 @@ async function pushProduct(product: DbItem) {
 		name: product.itemName,
 		type: "simple",
 		regular_price: String(price),
-		description: product.itemCaption,
+		description: cleanDescription(product.itemCaption),
+		short_description: extractShortDescription(product.itemCaption),
 		categories: [
 			{
 				id: wpCategoryIds[subcategoryName],
