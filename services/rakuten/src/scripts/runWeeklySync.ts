@@ -14,7 +14,8 @@ import {
 
 	insertRunLog,
 	upsertProductStats,
-	getCategoryIds
+	getCategoryIds,
+	getConfig,
 } from "../db/queries";
 
 const categories = getCategoryIds();
@@ -29,6 +30,7 @@ export default async function runWeeklySync() {
 		errors: [] as string[],
 	};
 
+	const { productsPerCategory } = await getConfig();
 	console.log("Starting weekly sync...");
 
 	// Step 1: Bump missed_scrapes for all products — upsert will reset to 0 for any product seen this run
@@ -38,7 +40,8 @@ export default async function runWeeklySync() {
 	for (const [categoryName, subcategoryIds] of Object.entries(categories)) {
 		for (const subcategoryId of subcategoryIds) {
 			try {
-				const rakutenProducts = await getProductsByRankingGenre(subcategoryId, 1);
+				const productsPerSubcategory = Math.ceil(productsPerCategory / subcategoryIds.length);
+				const rakutenProducts = await getProductsByRankingGenre(subcategoryId, productsPerSubcategory);
 				if (!rakutenProducts || rakutenProducts.length === 0) continue;
 
 				const unavailable = rakutenProducts.filter((p) => p.availability === 0);

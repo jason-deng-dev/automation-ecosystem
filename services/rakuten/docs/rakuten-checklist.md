@@ -150,11 +150,11 @@
   - [x] If Claude returns null (off-theme) → `{ success: false }`; if on-theme → append to DB + proceed with push
   - [x] Remove `genres.ts` once all imports replaced
 
-- [ ] `productsPerCategory` scrape config
+- [x] `productsPerCategory` scrape config
   - [x] Add `products_per_category INTEGER` to `config` table in `seed.ts`
   - [x] Add to `getConfig()` / `updateConfig()` in `queries.ts`
-  - [ ] In ranking scrape loop — divide `productsPerCategory` across genre IDs in subcategory: `pagesNeeded = ceil(productsPerCategory / genreIds.length / 30)`, fetch that many pages per ID, slice combined results to `productsPerCategory`
-  - [ ] Rework `runRankingPopulate.ts` + `runWeeklySync.ts` — replace `categories` loop from `genres.ts` with DB query; use new per-category product limit
+  - [x] In ranking scrape loop — divide `productsPerCategory` across genre IDs in subcategory: `ceil(productsPerCategory / subcategoryIds.length)` products per ID, slice via Ranking API page param
+  - [x] Rework `runRankingPopulate.ts` + `runWeeklySync.ts` — use `productsPerCategory` from DB config
 
 - [ ] Description formatting (`cleanDescription()`) → §11.17
   - Approach: analyze real `itemCaption` values first — write a script to dump captions from DB across categories, inspect patterns, then build the formatter

@@ -1,7 +1,7 @@
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
 import "dotenv/config";
 import { pushProducts } from "../services/woocommerceAPI";
-import { upsertProducts, getProductByUrls, getCategoryIds } from "../db/queries";
+import { upsertProducts, getProductByUrls, getCategoryIds, getConfig } from "../db/queries";
 import { initPricing } from "../services/pricing";
 
 const categories = getCategoryIds();
@@ -10,6 +10,7 @@ const categories = getCategoryIds();
 async function runRankingPopulate() {
 	await initPricing();
 	const categoriesArr = Object.entries(categories);
+	const { productsPerCategory } = await getConfig();
 
 	console.log("starting populating by rankings...");
 
@@ -19,7 +20,8 @@ async function runRankingPopulate() {
 
 		for (const subcategoryId of subcategoryIds) {
 			console.log(`Fetching ${subcategoryId} from rakuten`);
-			const rakutenRes = await getProductsByRankingGenre(subcategoryId, 1);
+			const productsPerSubcategory = Math.ceil(productsPerCategory / subcategoryIds.length);
+			const rakutenRes = await getProductsByRankingGenre(subcategoryId, productsPerSubcategory);
 			if (!rakutenRes) {
 				console.error(`No results for genre ${subcategoryId}, skipping`);
 				continue;

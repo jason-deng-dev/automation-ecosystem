@@ -22,6 +22,7 @@ async function runRankingPopulate() {
 	// ── Step 1: Load config from DB ───────────────────────────────────────────
 	await initPricing();
 	const categoriesArr = Object.entries(showcaseCategories);
+	const { productsPerCategory } = await getConfig();
 
 	console.log("starting populating by rankings...");
 	console.log("(showcase mode — 1 genre ID per category; production runs all genre IDs)");
@@ -35,7 +36,10 @@ async function runRankingPopulate() {
 			// Calls the Rakuten Ichiba Ranking API — returns top-selling products
 			// for this genre ID. Each page = 30 products.
 			console.log(`Fetching ${subcategoryId} from rakuten`);
-			const rakutenRes = await getProductsByRankingGenre(subcategoryId, 1);
+
+			const productsPerSubcategory = Math.ceil(productsPerCategory/subcategoryIds.length)
+
+			const rakutenRes = await getProductsByRankingGenre(subcategoryId, productsPerSubcategory);
 			if (!rakutenRes) {
 				console.error(`No results for genre ${subcategoryId}, skipping`);
 				continue;
