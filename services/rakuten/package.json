@@ -12,7 +12,8 @@
 		"setup-categories": "tsx src/scripts/setupCategories.ts",
 		"keyword-search": "tsx src/scripts/runKeywordPopulate",
 		"weekly-sync": "tsx src/scripts/runWeeklySync.ts",
-		"showcase": "tsx src/scripts/showcase/runRankingPopulateShowcase.ts"
+		"showcase": "tsx src/scripts/showcase/runRankingPopulateShowcase.ts",
+		"dump-captions": "tsx src/scripts/dumpCaptions.ts"
 	},
 	"keywords": [],
 	"author": "",
