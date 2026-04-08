@@ -3,6 +3,8 @@ import { normalizeItems, RakutenResponseItem,translateNames } from "../utils";
 
 
 
+
+
 export const getProductsByKeyword = async (keyword: string, count: number, sortMode: string = 'standard') => {
 	const translatedKeyword = keyword;
 	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&keyword=${translatedKeyword}&hits=${count}&availability=1&applicationId=${process.env.RAKUTEN_APP_ID}&sort=${sortMode}`;

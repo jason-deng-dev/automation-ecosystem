@@ -23,8 +23,11 @@ export async function itemRequestByKeyword(keywordZH: string) {
 	const allGenres = await getAllGenres();
 	const { searchFillThreshold } = await getConfig();
 
+	console.log(`searchFillThreshold: ${searchFillThreshold}`);
+
 	// 1. Rakuten keyword search (count from searchFillThreshold in DB config)
 	const res = await getProductsByKeyword(keywordZH, searchFillThreshold);
+	console.log(`getProductsByKeyword returned ${res?.length ?? 0} products`);
 	if (!res) return { success: false };
 
 	// 2. Validate: first checking if genreIds exist in db, then calling claudeAPI to validate products
