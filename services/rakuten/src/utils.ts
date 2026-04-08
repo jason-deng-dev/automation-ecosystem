@@ -8,9 +8,12 @@ export function cleanDescription(raw: string): string {
 	let text = raw;
 
 	// 1. Remove duplicate second copy (many listings paste description twice)
-	const probe = text.slice(0, 80);
-	const dupeStart = text.indexOf(probe, 100);
-	if (dupeStart > 100) text = text.slice(0, dupeStart).trim();
+	const probeLen = Math.min(80, Math.floor(text.length / 3));
+	if (probeLen > 5) {
+		const probe = text.slice(0, probeLen);
+		const dupeStart = text.indexOf(probe, probeLen);
+		if (dupeStart > probeLen) text = text.slice(0, dupeStart).trim();
+	}
 
 	// 2. Hard-cut at boilerplate anchors — everything after is junk
 	const hardCuts = [
@@ -20,13 +23,13 @@ export function cleanDescription(raw: string): string {
 	];
 	for (const cut of hardCuts) {
 		const idx = text.indexOf(cut);
-		if (idx > 50) text = text.slice(0, idx).trim();
+		if (idx !== -1) text = text.slice(0, idx).trim();
 	}
 
 	// 3. Strip inline spam patterns
 	text = text
 		.replace(/(\[[\w\uFF00-\uFFEF\u3040-\u9FFF\s]+\]){2,}/g, '') // [ABCマート][ABCmart]... store tag clusters
-		.replace(/#[\w\u3040-\u9FFF]+([\s\u3000]+#[\w\u3040-\u9FFF]+){2,}/g, '') // hashtag clusters
+		.replace(/#[\w\u3040-\u9FFF]+/g, '') // hashtags
 		.replace(/(\d{2}\.?\d?cm[\s\u3000]){3,}/g, '') // size keyword lists (25cm 25.5cm...)
 		.replace(/\bcpn[\w]+([\s\u3000]+cpn[\w]+)*/g, '') // cpn tracking codes
 		.replace(/\d+%OFF[\s\S]*?23:59/g, '') // coupon block

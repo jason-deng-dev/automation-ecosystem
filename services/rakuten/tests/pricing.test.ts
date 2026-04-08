@@ -4,8 +4,8 @@ vi.mock('../src/db/queries', () => ({
 	getConfig: vi.fn().mockResolvedValue({
 		yenToYuan: 0.043,
 		markupPercent: 0,
-		pagesPerSubcategory: 1,
 		searchFillThreshold: 10,
+		productsPerCategory: 30,
 	}),
 }));
 
