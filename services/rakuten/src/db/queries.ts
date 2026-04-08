@@ -8,17 +8,15 @@ export interface Config {
 	searchFillThreshold: number;
 }
 
-// to
-
-export const appendGenreId = async (subcategoryId: number, genreId: number) => {
+export const appendGenreIds = async (subcategoryId: number, genreIds: number) => {
 	await pool.query(
 		`
 		UPDATE subcategories
-		SET genre_ids = array_append(genre_ids, $2)
+		SET genre_ids = array_cat(genre_ids, $2::integer[])
 		WHERE id = $1
 		
 		`,
-		[subcategoryId, genreId],
+		[subcategoryId, genreIds],
 	);
 };
 
