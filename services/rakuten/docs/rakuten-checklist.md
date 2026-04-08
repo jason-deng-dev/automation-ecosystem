@@ -187,10 +187,10 @@
 
 
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
-  - [ ] POST /trigger — fetch more products (category + count)
+  - [ ] POST /api/sync — manually trigger `runWeeklySync()` on demand (same logic as cron, callable from dashboard)
   - [ ] POST /api/trigger-category — `{ category: string, count: number }` — fetch top X ranked products for the given category, upsert DB, push new ones to WooCommerce; called by dashboard "Add X" button → §3.2 controller.ts
   - [ ] POST /retry — retry failed WooCommerce imports
-  - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices (replaces fs.watch)
+  - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices
   - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3

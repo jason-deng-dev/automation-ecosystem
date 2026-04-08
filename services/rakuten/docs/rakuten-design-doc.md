@@ -28,7 +28,7 @@ Product ingestion needs to be:
 ### 1.4 Non-Goals
 
 - Custom React SPA storefront — WooCommerce is the storefront
-- Pipeline-level translation — TranslatePress + Google Translate handles all translation lazily on the WordPress side, including the product request flow (Rakuten search API accepts Chinese keywords natively; TranslatePress handles JA→ZH on first page view)
+- Custom storefront translation pipeline — DeepL translates product names JA→ZH at ingestion time; descriptions stay Japanese and are translated lazily by TranslatePress on first page view. Keywords submitted via product request flow are translated ZH→JA via DeepL before hitting the Rakuten search API.
 - Real-time price sync after initial WooCommerce import (v1 is import-only, re-scrape updates changed prices)
 - Sourcing products from marketplaces other than Rakuten in v1
 
@@ -73,12 +73,12 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 - `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
 - Returns normalized + translated product objects — `normalizeItems` then `translateNames` (DeepL, names only) called internally before returning; all call sites already await these functions so no changes needed at call sites
 
-#### genres.ts (being removed — migration in progress)
+#### genres.ts (removed)
 
-- Genre ID map previously hardcoded here — being migrated to DB
-- `categories` export (category → genre IDs) replaced by `getCategoryIds()` query — loads from `subcategories` table, groups genre IDs by category name
-- `allGenres` export (subcategory name → genre ID) replaced by `getAllGenres()` query — loads from `subcategories` table, returns `Record<string, number[]>` (name → all genre IDs); callers flatten with `.flat()` to build validation sets
-- Removal blocked on: replacing `categories` loop in `runRankingPopulate.ts` + `runWeeklySync.ts`, and `allGenres` usage in `controller.ts`
+- Genre ID map previously hardcoded here — fully migrated to DB
+- `categories` export replaced by `getCategoryIds()` query — loads from `subcategories` table, groups genre IDs by category name
+- `allGenres` export replaced by `getAllGenres()` query — returns `Record<string, number[]>` (subcategory name → genre IDs)
+- File deleted; all imports replaced across `controller.ts`, `runRankingPopulate.ts`, `runWeeklySync.ts`
 
 #### wpCategoryIds.ts (removed)
 
@@ -125,13 +125,15 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 
 - Handles all route logic — bulk push, product request flow, cron sync, product queries
 - Orchestrates: Rakuten fetch → normalize → price → PostgreSQL store → WooCommerce push
-- `POST /api/trigger-category` — `{ category: string, count: number }` — fetch top `count` ranked products for the given category, upsert DB, push any new ones to WooCommerce; called by the dashboard "Add X" button per category. Reuses the same ranking fetch + upsert + push loop as the bulk push, scoped to a single category.
+- `POST /api/request-product` — Chinese keyword → DeepL ZH→JA translation → Rakuten keyword search → genre validation (DB check → Claude fallback) → upsert DB → push WC → return `{ success, productIds }`
+- `POST /api/sync` — manually trigger `runWeeklySync()` on demand; same logic as the weekly cron, callable from dashboard
+- `POST /api/trigger-category` — `{ category: string, count: number }` — fetch top `count` ranked products for the given category, upsert DB, push any new ones to WooCommerce; called by the dashboard "Add X" button per category
 
 ### 3.3 Data Flow
 
 #### Bulk push (initial load + ranking)
 
-**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — it returns a fixed 30 products per page. Volume is controlled via `productsPerCategory` in the `config` DB table. The scrape loop divides this across genre IDs in each subcategory: `pagesNeeded = ceil(productsPerCategory / genreIds.length / 30)` pages fetched per genre ID, combined results sliced to `productsPerCategory`. Minimum is 1 page (30 products) per genre ID.
+**Ranking API pagination:** The Rakuten Ranking API has no `hits` parameter — volume is controlled via `productsPerCategory` in the `config` DB table. The scrape loop divides this across genre IDs in each subcategory: `productsPerSubcategory = ceil(productsPerCategory / subcategoryIds.length)`. The Ranking API `page` param (1–34, 30 products/page) is derived as `ceil(productsPerSubcategory / 20)` for buffer, then results sliced to `productsPerSubcategory`.
 
 ```
 For each genre in genres.js:
