@@ -67,6 +67,12 @@ export function cleanTitle(name: string): { title: string; promoText: string } {
 	};
 }
 
+export async function translateKeyword(keyword: string): Promise<string> {
+	const deeplClient = new deepl.DeepLClient(process.env.DEEPL_API_KEY!);
+	const result = await deeplClient.translateText(keyword, null, "ja");
+	return result.text;
+}
+
 export async function translateNames(normalizedItems: RakutenDbQueryItem[]): Promise<RakutenDbQueryItem[]> {
 	const names = normalizedItems.map((product) => cleanTitle(product.itemName).title);
 
