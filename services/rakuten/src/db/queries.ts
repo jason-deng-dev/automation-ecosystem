@@ -8,7 +8,7 @@ export interface Config {
 	searchFillThreshold: number;
 }
 
-export const appendGenreIds = async (subcategoryId: number, genreIds: number) => {
+export const appendGenreIds = async (subcategoryId: number, genreIds: number[]) => {
 	await pool.query(
 		`
 		UPDATE subcategories
