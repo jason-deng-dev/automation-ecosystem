@@ -151,8 +151,8 @@
   - [x] Remove `genres.ts` once all imports replaced
 
 - [ ] `productsPerCategory` scrape config
-  - [ ] Add `products_per_category INTEGER` to `config` table in `seed.ts`
-  - [ ] Add to `getConfig()` / `updateConfig()` in `queries.ts`
+  - [x] Add `products_per_category INTEGER` to `config` table in `seed.ts`
+  - [x] Add to `getConfig()` / `updateConfig()` in `queries.ts`
   - [ ] In ranking scrape loop — divide `productsPerCategory` across genre IDs in subcategory: `pagesNeeded = ceil(productsPerCategory / genreIds.length / 30)`, fetch that many pages per ID, slice combined results to `productsPerCategory`
   - [ ] Rework `runRankingPopulate.ts` + `runWeeklySync.ts` — replace `categories` loop from `genres.ts` with DB query; use new per-category product limit
 

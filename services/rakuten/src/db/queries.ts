@@ -4,8 +4,8 @@ import { RakutenDbQueryItem } from "../utils";
 export interface Config {
 	yenToYuan: number;
 	markupPercent: number;
-	pagesPerSubcategory: number;
 	searchFillThreshold: number;
+	productsPerCategory: number;
 }
 
 export const getSubcategoryIdByGenreId = async (genreId: number): Promise<number | null> => {
@@ -74,14 +74,14 @@ export const getAllGenres = async (): Promise<Record<string, number[]>> => {
 
 export const getConfig = async (): Promise<Config> => {
 	const res = await pool.query(
-		`SELECT yen_to_yuan, markup_percent, pages_per_subcategory, search_fill_threshold FROM config WHERE id = 1`,
+		`SELECT yen_to_yuan, markup_percent, search_fill_threshold, products_per_category FROM config WHERE id = 1`,
 	);
 	const row = res.rows[0];
 	return {
 		yenToYuan: Number(row.yen_to_yuan),
 		markupPercent: Number(row.markup_percent),
-		pagesPerSubcategory: Number(row.pages_per_subcategory),
 		searchFillThreshold: Number(row.search_fill_threshold),
+		productsPerCategory: Number(row.products_per_category),
 	};
 };
 
@@ -89,8 +89,8 @@ export const updateConfig = async (key: keyof Config, value: number) => {
 	const colMap: Record<keyof Config, string> = {
 		yenToYuan: "yen_to_yuan",
 		markupPercent: "markup_percent",
-		pagesPerSubcategory: "pages_per_subcategory",
 		searchFillThreshold: "search_fill_threshold",
+		productsPerCategory: "products_per_category",
 	};
 	await pool.query(`UPDATE config SET ${colMap[key]} = $1, updated_at = NOW() WHERE id = 1`, [value]);
 };

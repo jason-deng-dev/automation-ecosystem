@@ -26,8 +26,8 @@ CREATE TABLE
         id INTEGER PRIMARY KEY DEFAULT 1,
         yen_to_yuan DECIMAL(10, 4) NOT NULL,
         markup_percent INTEGER NOT NULL DEFAULT 0,
-        pages_per_subcategory INTEGER NOT NULL DEFAULT 1,
         search_fill_threshold INTEGER NOT NULL DEFAULT 10,
+        products_per_category INTEGER NOT NULL DEFAULT 30,
         updated_at TIMESTAMP DEFAULT NOW()
     );
 
@@ -85,8 +85,8 @@ CREATE TABLE
         subcategory_id INTEGER REFERENCES subcategories (id)
     );
 
-INSERT INTO config (id, yen_to_yuan, markup_percent, pages_per_subcategory, search_fill_threshold)
-VALUES (1, 0.043, 0, 1, 10);
+INSERT INTO config (id, yen_to_yuan, markup_percent, search_fill_threshold, products_per_category)
+VALUES (1, 0.043, 0, 10, 30);
 
 INSERT INTO
     categories (name, wc_category_id)
