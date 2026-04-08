@@ -139,15 +139,15 @@
   - [x] Update `woocommerceAPI.ts` — replace `wpCategoryIds[subcategoryName]` lookup with DB query
   - [x] Delete `wpCategoryIds.ts`
 
-- [ ] Dynamic genre expansion → §9.4, §11.15
+- [x] Dynamic genre expansion → §9.4, §11.15
   - [x] Add `getCategoryIds()` query in `queries.ts` — returns `Record<string, number[]>` (category name → all genre IDs across subcategories); replaces `categories` export from `genres.ts`
   - [x] Add `getAllGenres()` query in `queries.ts` — returns `Record<string, number[]>` (subcategory name → genre IDs); replaces `allGenres` export from `genres.ts`
   - [x] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
   - [x] Replace `allGenres` import in `controller.ts` 
   - [x] Replace `categories` import in `runRankingPopulate.ts` + `runWeeklySync.ts` — call `getCategoryIds()` instead of importing from `genres.ts`
   - [x] Add `appendGenreId(subcategoryId, genreId)` query in `queries.ts` — `array_append` + updates in-memory map
-  - [ ] Claude classification call in `controller.ts` — when unknown genre IDs found, pass subcategory list to Claude, get back `subcategoryId | null`
-  - [ ] If Claude returns null (off-theme) → `{ success: false }`; if on-theme → append to DB + proceed with push
+  - [x] Claude classification call in `controller.ts` — when unknown genre IDs found, pass subcategory list to Claude, get back `subcategoryId | null`
+  - [x] If Claude returns null (off-theme) → `{ success: false }`; if on-theme → append to DB + proceed with push
   - [x] Remove `genres.ts` once all imports replaced
 
 - [ ] `productsPerCategory` scrape config

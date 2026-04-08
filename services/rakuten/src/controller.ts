@@ -1,5 +1,12 @@
 import { getProductsByKeyword } from "./services/rakutenAPI";
-import { upsertProducts, getProductByUrls, getConfig, getAllGenres} from "./db/queries";
+import {
+	upsertProducts,
+	getProductByUrls,
+	getConfig,
+	getAllGenres,
+	appendGenreIds,
+	getSubcategoryIdByGenreId,
+} from "./db/queries";
 import { pushProducts } from "./services/woocommerceAPI";
 import { validateKeyword } from "./services/claudeAPI";
 
@@ -7,9 +14,6 @@ import { validateKeyword } from "./services/claudeAPI";
 // |`GET`|`/api/products`|Products stored in PostgreSQL (by genre or category)|
 // |`GET`|`/api/products/:itemCode`|Single product detail|
 // |`POST`|`/api/request-product`|Product request flow — fetch by keyword, push to WooCommerce, return wc_product_ids|
-
-
-
 
 export function bulkFetch() {}
 
@@ -26,21 +30,32 @@ export async function itemRequestByKeyword(keywordZH: string) {
 	// 2. Validate: first checking if genreIds exist in db, then calling claudeAPI to validate products
 	const allGenreIds = new Set(Object.values(allGenres).flat().map(String));
 	// all unqiue fetchedGenreIds
-	const fetchedGenreIds = [...new Set(res.map((p) => p.genreId))]; 
+	const fetchedGenreIds = [...new Set(res.map((p) => p.genreId))];
 	const genreIdsExists = fetchedGenreIds.some((genreId) => allGenreIds.has(genreId));
 
-	let validSubcategoryId: number|null;
-	if (!genreIdsExists){
+	let validSubcategoryId: number | null;
+	if (!genreIdsExists) {
 		validSubcategoryId = await validateKeyword(keywordZH);
 		if (validSubcategoryId == null) return { success: false };
 		// add all the fetchedGenreIds to validSubcategoryId
+		await appendGenreIds(
+			validSubcategoryId,
+			fetchedGenreIds.map((val) => Number(val)),
+		);
+	} else {
+		// find out which fetchedGenreIds is not in allGenreIds
+		const newFetchedIds = fetchedGenreIds.filter((value) => !allGenreIds.has(value));
+		if (newFetchedIds.length > 0) {
+			// find for the fetchedGenreIds that exists in db, which category they belong to
+			const existingFetchedIds = fetchedGenreIds.filter((value) => allGenreIds.has(value));
+			const existingSubcategoryId = Number(await getSubcategoryIdByGenreId(Number(existingFetchedIds[0])));
+			// add the new fetchedGenreIds to db to the category we got
+			await appendGenreIds(
+				existingSubcategoryId,
+				newFetchedIds.map((val) => Number(val)),
+			);
+		}
 	}
-
-	
-	
-
-
-	
 
 	// 3. Upsert to DB → get back newly inserted products
 	const newProductsUrl = await upsertProducts(res);
