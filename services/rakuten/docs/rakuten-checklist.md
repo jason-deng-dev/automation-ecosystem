@@ -198,14 +198,14 @@
   - [x] Verify rakuten container connects to DB and pipeline runs on Lightsail
   - [x] Paste `wp/rakuten-proxy.php` into WordPress `functions.php` — replace `YOUR_VPS_IP` with `13.192.170.85`
 
-- [ ] Product request flow bug fixes & improvements (found during live testing)
+- [x] Product request flow bug fixes & improvements (found during live testing)
   - [x] Fix `upsertProduct` subquery — `SELECT id FROM subcategories WHERE $12 = ANY(genre_ids)` returns multiple rows when a genre ID matches multiple subcategories; add `LIMIT 1`
   - [x] Fix empty `productIds` when products already exist in DB — fetch all product URLs from Rakuten result, split by `wc_product_id` presence, return existing + newly pushed IDs combined
   - [x] Fix WooCommerce image 404 — catch `woocommerce_product_image_upload_error` in `pushProduct`, retry with only first image
   - [x] Fix keyword translation — skip DeepL if keyword has no Chinese characters (brand names like "Nike", "ASICS" pass through as-is); hardcode source lang to `"zh"` to prevent misdetection
   - [x] Add extensive pipeline logging — `[api]`, `[request]`, `[push]`, `[translateKeyword]` tags across `app.ts`, `controller.ts`, `woocommerceAPI.ts`, `rakutenAPI.ts`
-  - [ ] DB keyword pre-search — before Rakuten fetch, query DB for products with `itemName ILIKE '%keyword%'`; include matching `wc_product_id`s in return alongside newly pushed ones
-  - [ ] Pipeline run logging — write keyword, translated keyword, genre validation result, Claude result, products pushed, and errors to `run_logs` for every `itemRequestByKeyword` operation (same pattern as `runWeeklySync`)
+  - [x] DB keyword pre-search — before Rakuten fetch, query DB for products with `itemName ILIKE '%keyword%'`; include matching `wc_product_id`s in return alongside newly pushed ones
+  - [x] Pipeline run logging — write keyword, translated keyword, genre validation result, Claude result, products pushed, and errors to `run_logs` for every `itemRequestByKeyword` operation (same pattern as `runWeeklySync`)
 
 - [ ] Rate limiting → §11.14
   - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
