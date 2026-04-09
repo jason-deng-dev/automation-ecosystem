@@ -11,8 +11,9 @@
 | XHS | Feature complete — Dockerfile written, awaiting docker-compose & deploy |
 | Scraper | Feature complete — awaiting Dockerfile & deploy |
 | Race Hub | SPA + i18n complete — Vite bundle + WP plugin + deploy remaining |
-| Rakuten | Core pipeline complete — product request flow + TranslatePress remaining |
+| Rakuten | Feature complete — deployed on Lightsail, dashboard integration + docker-compose remaining |
 | Dashboard | Home cards done (XHS + Scraper) — detail pages not started |
+| Analytics | Not started — planned FastAPI service, XHS weights endpoint first |
 
 ---
 
@@ -75,12 +76,12 @@
 - [x] Category names corrected in WooCommerce admin (Chinese, human-reviewed)
 - [x] Currency set to 元 (CNY) in WooCommerce settings
 - [x] Default language redirect — visitors land on Chinese version without toggling
-- [ ] Product request flow (keyword → Rakuten search → push WC → SSE progress)
-- [ ] Dashboard integration (POST /trigger, /retry, pipeline_state)
-- [ ] Shared volume output (import_log.json)
-- [ ] Dockerfile
+- [x] Product request flow (keyword → genre validation → Rakuten fetch → push WC → return product IDs)
+- [x] Dockerfile
+- [x] Deploy to Lightsail — container live, CD pipeline active (cicd-rakuten.yml)
+- [ ] Rate limiting (express-rate-limit on public endpoints)
+- [ ] Dashboard integration (POST /trigger, /retry, POST /api/config)
 - [ ] docker-compose integration
-- [ ] Deploy (pg_dump migration approach)
 
 ---
 
@@ -101,17 +102,30 @@
 
 ---
 
+## Analytics Service (`services/analytics/`)
+> Python FastAPI service — reads XHS post performance data from PostgreSQL, returns content weight recommendations for the XHS generator
+
+**Critical path:** core pipelines deployed + real post data flowing → build this
+
+- [ ] Setup — Python project, FastAPI, psycopg2, Dockerfile
+- [ ] XHS weights endpoint — `GET /api/xhs/weights` — reads `xhs_run_logs` + `xhs_post_archive`, returns per-post-type performance scores + recommended schedule weights
+- [ ] Rakuten endpoint — `GET /api/rakuten/insights` — category performance, price sensitivity analysis
+- [ ] Dashboard integration — weights surface in XHS schedule editor
+- [ ] docker-compose integration
+
+---
+
 ## CI/CD & Deploy
 > Full checklist: `docs/cicd-checklist.md`
 
 - [x] CI workflows for XHS + Scraper (GitHub Actions)
-- [ ] CI workflow for Rakuten
-- [ ] Provision AWS Lightsail VPS
-- [ ] SSH keys + GitHub Secrets
-- [ ] Docker Hub account + credentials
-- [ ] Dockerfiles for all services
-- [ ] docker-compose.yml (all services + shared volume)
-- [ ] CD workflows per service
+- [x] CI/CD workflow for Rakuten (cicd-rakuten.yml — test on push, deploy to Lightsail on main)
+- [x] Provision AWS Lightsail VPS
+- [x] SSH keys + GitHub Secrets (DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VPS_HOST, VPS_SSH_KEY)
+- [x] Docker Hub account + credentials
+- [ ] Dockerfiles for all services (Rakuten ✓, XHS ✓ — Scraper, Race Hub, Dashboard, Analytics pending)
+- [ ] docker-compose.yml (all services + PostgreSQL)
+- [ ] CD workflows per service (Rakuten ✓ — XHS, Scraper, Race Hub, Dashboard, Analytics pending)
 - [ ] Smoke test all pipelines end-to-end on Lightsail
 
 ---
