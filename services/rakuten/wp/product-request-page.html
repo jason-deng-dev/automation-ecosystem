@@ -4,10 +4,46 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Document</title>
+		<style>
+			@keyframes spin {
+				to { transform: rotate(360deg); }
+			}
+			@keyframes fadeIn {
+				from { opacity: 0; transform: translateY(4px); }
+				to   { opacity: 1; transform: translateY(0); }
+			}
+			.spinner {
+				display: inline-block;
+				width: 14px;
+				height: 14px;
+				border: 2px solid #ddd;
+				border-top-color: #F2295E;
+				border-radius: 50%;
+				animation: spin 0.75s linear infinite;
+				vertical-align: middle;
+				margin-right: 8px;
+				flex-shrink: 0;
+			}
+			.status-row {
+				display: flex;
+				align-items: center;
+				animation: fadeIn 0.3s ease;
+			}
+			.step-done { color: #22c55e; margin-right: 8px; }
+			.step-active { color: #F2295E; margin-right: 8px; }
+			#request-results .woocommerce-loop-product__title {
+				display: -webkit-box !important;
+				-webkit-line-clamp: 2 !important;
+				line-clamp: 2 !important;
+				-webkit-box-orient: vertical !important;
+				overflow: hidden !important;
+				white-space: normal !important;
+			}
+		</style>
 	</head>
 	<body>
 		<div style="display: flex; justify-content: center;">
-		<div id="product-request-form" style="width: 100%; max-width: 600px; padding: 20px 0">
+		<div style="width: 100%; max-width: 600px; padding: 20px 0">
 			<h2>找不到想要的商品？</h2>
 			<p>输入您想要的商品关键词，我们将为您从日本进口。</p>
 
@@ -17,6 +53,7 @@
 					id="request-keyword"
 					placeholder="例如：耐克跑步鞋"
 					style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 4px; font-size: 15px; height: 44px; box-sizing: border-box;"
+				onkeydown="if(event.key==='Enter') submitProductRequest()"
 				/>
 				<button
 					id="request-submit"
@@ -43,11 +80,53 @@
 			</div>
 
 			<div id="request-status" style="margin-top: 16px; font-size: 14px; color: #666"></div>
-			<div id="request-results" style="margin-top: 24px"></div>
 		</div>
 		</div>
 
+		<div id="request-results" style="margin-top: 24px; max-width: 1100px; margin-left: auto; margin-right: auto; padding: 0 20px;"></div>
+
 		<script>
+			const STEPS = [
+				{ label: "正在数据库中搜索已有商品...", delay: 0 },
+				{ label: "正在搜索日本商品...", delay: 2500 },
+				{ label: "正在验证商品分类...", delay: 7000 },
+				{ label: "正在导入商品数据...", delay: 11000 },
+				{ label: "正在同步至商城，请稍候...", delay: 16000 },
+			];
+
+			let stepTimers = [];
+
+			function renderLoadingStatus(currentIndex) {
+				const statusEl = document.getElementById("request-status");
+				const rows = STEPS.slice(0, currentIndex + 1).map((step, i) => {
+					if (i < currentIndex) {
+						return `<div class="status-row" style="margin-bottom: 6px;">
+							<span class="step-done">✓</span>
+							<span style="color: #999">${step.label.replace("...", "")}</span>
+						</div>`;
+					}
+					return `<div class="status-row" style="margin-bottom: 6px;">
+						<span class="spinner"></span>
+						<span class="step-active">${step.label}</span>
+					</div>`;
+				});
+				statusEl.innerHTML = rows.join("");
+			}
+
+			function startLoadingAnimation() {
+				renderLoadingStatus(0);
+				STEPS.forEach((step, i) => {
+					if (i === 0) return;
+					const t = setTimeout(() => renderLoadingStatus(i), step.delay);
+					stepTimers.push(t);
+				});
+			}
+
+			function clearLoadingAnimation() {
+				stepTimers.forEach(clearTimeout);
+				stepTimers = [];
+			}
+
 			async function submitProductRequest() {
 				const keyword = document.getElementById("request-keyword").value.trim();
 				if (!keyword) return;
@@ -56,9 +135,12 @@
 				const results = document.getElementById("request-results");
 				const btn = document.getElementById("request-submit");
 
-				status.textContent = "正在搜索，请稍候...";
 				results.innerHTML = "";
 				btn.disabled = true;
+				btn.style.opacity = "0.6";
+				btn.style.cursor = "not-allowed";
+
+				startLoadingAnimation();
 
 				try {
 					const res = await fetch("/wp-json/rakuten/v1/request-product", {
@@ -68,16 +150,28 @@
 					});
 					const data = await res.json();
 
+					clearLoadingAnimation();
+
 					if (data.html) {
-						status.textContent = "找到相关商品：";
+						status.innerHTML = `<div style="color: #22c55e; font-weight: 500;">✓ 找到相关商品：</div>`;
 						results.innerHTML = data.html;
+						results.querySelectorAll('.woocommerce-loop-product__title a').forEach(el => {
+							el.style.display = '-webkit-box';
+							el.style.webkitLineClamp = '2';
+							el.style.webkitBoxOrient = 'vertical';
+							el.style.overflow = 'hidden';
+							el.style.whiteSpace = 'normal';
+						});
 					} else {
-						status.textContent = "暂时未找到相关商品，请尝试其他关键词。";
+						status.innerHTML = `<div style="color: #999;">暂时未找到相关商品，请尝试其他关键词。</div>`;
 					}
 				} catch (err) {
-					status.textContent = "请求失败，请稍后再试。";
+					clearLoadingAnimation();
+					status.innerHTML = `<div style="color: #e53e3e;">请求失败，请稍后再试。</div>`;
 				} finally {
 					btn.disabled = false;
+					btn.style.opacity = "1";
+					btn.style.cursor = "pointer";
 				}
 			}
 		</script>

@@ -11,7 +11,6 @@ import {
 	deleteProductByUrl,
 	getProductStatsByCategory,
 	getProductTotals,
-
 	insertRunLog,
 	upsertProductStats,
 	getCategoryIds,
@@ -110,7 +109,7 @@ export default async function runWeeklySync() {
 
 	console.log(
 		`Weekly sync complete — new: ${log.newProductsPushed}, price updates: ${log.priceUpdates}, ` +
-		`removed unavailable: ${log.removedUnavailable}, removed stale: ${log.removedStale}, errors: ${log.errors.length}`
+			`removed unavailable: ${log.removedUnavailable}, removed stale: ${log.removedStale}, errors: ${log.errors.length}`,
 	);
 
 	// Step 4: Write run log + product stats to DB
@@ -120,8 +119,7 @@ export default async function runWeeklySync() {
 		totalCached: Number(totals.total),
 		totalPushed: Number(totals.pushed),
 		perCategory: Object.fromEntries(
-			byCategory.map((r) => [r.categoryName, { cached: Number(r.total), pushed: Number(r.pushed) }])
+			byCategory.map((r) => [r.categoryName, { cached: Number(r.total), pushed: Number(r.pushed) }]),
 		),
 	});
 }
-
