@@ -411,7 +411,25 @@ These are routine tasks that require manual action once a month.
 
 ---
 
-## Section 8 — Emergency Contacts & Resources
+## Section 8 — Account Access Handoff
+
+These accounts need to be transferred to the operator before the developer leaves.
+
+### AWS (Lightsail — server hosting)
+- The Lightsail instance runs all automation containers
+- **Action required:** Developer must add operator as an IAM user with MFA, or transfer the root account MFA device (authenticator app) in person
+- Without access: you cannot restart the server, check logs, or manage infrastructure
+- AWS console: lightsail.aws.amazon.com
+
+### Stripe (payment processing)
+- Stripe is connected to WooCommerce for customer payments
+- **Action required:** Developer must reassign the MFA authenticator to operator's phone, or switch to SMS-based MFA before handoff
+- Without access: you cannot view payouts, manage disputes, or update payment settings
+- Stripe dashboard: dashboard.stripe.com
+
+---
+
+## Section 9 — Emergency Contacts & Resources
 
 | Need | Resource |
 |---|---|
@@ -426,6 +444,8 @@ These are routine tasks that require manual action once a month.
 ---
 
 ## Quick Reference — Error Message Lookup
+
+
 
 | Error message | What it means | Go to |
 |---|---|---|

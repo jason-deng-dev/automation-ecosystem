@@ -222,6 +222,8 @@
   - **Shipping policy note:** where the checkout page note lives and how to edit the category-based estimates
   - **Exchange rate:** how to update `YenToYuan` via the dashboard admin UI when the JPY→CNY rate changes significantly
   - **Running the pipeline:** how to trigger a manual bulk push or re-scrape
+  - **AWS account access:** transfer MFA to boss — add them as IAM user with MFA, or transfer root MFA device (authenticator app handoff)
+  - **Stripe account access:** transfer MFA to boss — reassign authenticator app or switch to SMS-based MFA before handoff
 
 ---
 
