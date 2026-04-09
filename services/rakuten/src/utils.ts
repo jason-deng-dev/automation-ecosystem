@@ -317,8 +317,13 @@ export function cleanTitle(name: string): { title: string; promoText: string } {
 }
 
 export async function translateKeyword(keyword: string): Promise<string> {
+	const hasChinese = /[\u4e00-\u9fff]/.test(keyword);
+	if (!hasChinese) {
+		console.log(`[translateKeyword] no Chinese detected — using keyword as-is: "${keyword}"`);
+		return keyword;
+	}
 	const deeplClient = new deepl.DeepLClient(process.env.DEEPL_API_KEY!);
-	const result = await deeplClient.translateText(keyword, null, "ja");
+	const result = await deeplClient.translateText(keyword, "zh", "ja");
 	return result.text;
 }
 
