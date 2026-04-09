@@ -53,5 +53,6 @@ jobs:
               --name rakuten \
               --env-file ~/rakuten/.env \
               --restart unless-stopped \
-              -p 3000:3000 \
+              --network host \
               ${{ secrets.DOCKERHUB_USERNAME }}/rakuten:latest
+
