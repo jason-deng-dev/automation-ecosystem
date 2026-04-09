@@ -128,8 +128,11 @@ export async function setupCategories(): Promise<Record<string, number>> {
 
 async function pushProduct(product: DbItem) {
 	const price = calculatePrice(product.itemPrice);
+	console.log(`[push] "${product.itemName}" — ¥${product.itemPrice} → ${price} CNY`);
+
 	const subcategory = await getSubcategoryNameByProductId(product.subcategory_id);
 	if (!subcategory) {
+		console.log(`[push] skipped — unmapped subcategory_id: ${product.subcategory_id}`);
 		await insertImportLog({
 			itemUrl: product.itemUrl,
 			itemName: product.itemName,
@@ -140,6 +143,7 @@ async function pushProduct(product: DbItem) {
 		return null;
 	}
 	const subcategoryName = subcategory.name;
+	console.log(`[push] subcategory: "${subcategoryName}" (wc_category_id: ${wpCategoryIds[subcategoryName]})`);
 
 	const data = {
 		name: product.itemName,
@@ -147,21 +151,21 @@ async function pushProduct(product: DbItem) {
 		regular_price: String(price),
 		description: cleanDescription(product.itemCaption),
 		short_description: extractShortDescription(product.itemCaption),
-		categories: [
-			{
-				id: wpCategoryIds[subcategoryName],
-			},
-		],
+		categories: [{ id: wpCategoryIds[subcategoryName] }],
 		images: product.mediumImageUrls.map(({ imageUrl }) => ({ src: imageUrl })),
 		meta_data: [{ key: "_rakuten_url", value: product.itemUrl }],
 	};
+	console.log(`[push] sending to WooCommerce with ${data.images.length} image(s)...`);
 	try {
 		const res = await WooCommerce.post("products", data);
+		console.log(`[push] success — wc_product_id: ${res.data.id}`);
 		return res.data.id;
 	} catch (err: any) {
 		if (err?.response?.data?.code === "woocommerce_product_image_upload_error") {
+			console.log(`[push] image upload error — retrying with first image only`);
 			data.images = data.images.slice(0, 1);
 			const res = await WooCommerce.post("products", data);
+			console.log(`[push] retry success — wc_product_id: ${res.data.id}`);
 			return res.data.id;
 		}
 		throw err;
@@ -170,17 +174,15 @@ async function pushProduct(product: DbItem) {
 
 export async function pushProducts(products: DbItem[]) {
 	const wc_ids = [];
+	console.log(`[pushProducts] pushing ${products.length} product(s) to WooCommerce`);
 	for (const product of products) {
 		if (product.wc_product_id) {
-			console.log(`skipped ${product.itemUrl} — already in WooCommerce (wc_product_id: ${product.wc_product_id})`);
+			console.log(`[pushProducts] skipped "${product.itemName}" — already pushed (wc_product_id: ${product.wc_product_id})`);
 			continue;
 		}
 		try {
 			const wcId = await pushProduct(product);
-			if (wcId === null) {
-				console.log(`skipped ${product.itemUrl} — unmapped subcategory_id ${product.subcategory_id}`);
-				continue;
-			}
+			if (wcId === null) continue;
 			wc_ids.push(wcId);
 			await updateWoocommerceProductId(product.id, wcId);
 			await insertImportLog({
@@ -190,7 +192,7 @@ export async function pushProducts(products: DbItem[]) {
 				status: "success",
 			});
 		} catch (err) {
-			console.log(err);
+			console.error(`[pushProducts] failed "${product.itemName}":`, err);
 			await insertImportLog({
 				itemUrl: product.itemUrl,
 				itemName: product.itemName,
@@ -200,6 +202,7 @@ export async function pushProducts(products: DbItem[]) {
 			});
 		}
 	}
+	console.log(`[pushProducts] done — ${wc_ids.length} pushed successfully`);
 	return wc_ids;
 }
 

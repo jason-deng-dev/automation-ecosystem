@@ -215,8 +215,10 @@
 
 - [ ] Product request flow bug fixes (found during live testing)
   - [x] Fix `upsertProduct` subquery — `SELECT id FROM subcategories WHERE $12 = ANY(genre_ids)` returns multiple rows when a genre ID matches multiple subcategories; add `LIMIT 1`
-  - [ ] Fix empty `productIds` when products already exist in DB — `upsertProducts` only returns newly inserted URLs; controller returns `{ success: true, productIds: [] }` for repeat requests; fix by also returning `wc_product_id` of already-existing products
-  - [ ] Fix WooCommerce image 404 — some Rakuten image URLs return 404 causing the entire product push to fail; filter out bad image URLs before pushing (HEAD check or strip secondary images)
+  - [x] Fix empty `productIds` when products already exist in DB — fetch all product URLs from Rakuten result, split by `wc_product_id` presence, return existing + newly pushed IDs combined
+  - [x] Fix WooCommerce image 404 — catch `woocommerce_product_image_upload_error` in `pushProduct`, retry with only first image
+  - [ ] Add keyword translation logging — `console.log` translated keyword in `rakutenAPI.ts` so Rakuten search input is visible in logs
+  - [ ] Pipeline run logging — write keyword, translated keyword, genre validation result, Claude result, products pushed, and errors to `run_logs` for every `itemRequestByKeyword` operation (same pattern as `runWeeklySync`)
 
 ---
 
