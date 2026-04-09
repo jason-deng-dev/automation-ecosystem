@@ -57,13 +57,16 @@ export async function itemRequestByKeyword(keywordZH: string) {
 		}
 	}
 
-	// 3. Upsert to DB → get back newly inserted products
-	const newProductsUrl = await upsertProducts(res);
-	const newProducts = await getProductByUrls(newProductsUrl);
+	// 3. Upsert to DB → fetch all products (newly inserted + already existing)
+	await upsertProducts(res);
+	const allProducts = await getProductByUrls(res.map((p) => p.itemUrl));
 
-	// 4. Push new products to WooCommerce
-	const wc_ids = await pushProducts(newProducts);
+	// 4. Split: already in WooCommerce vs needs push
+	const alreadyPushedIds = allProducts.filter((p) => p.wc_product_id).map((p) => p.wc_product_id);
+	const needsPush = allProducts.filter((p) => !p.wc_product_id);
+	const newWcIds = await pushProducts(needsPush);
 
-	// 5. Return { success: true, productIds: [wc_ids] }
-	return { success: true, productIds: wc_ids };
+	// 5. Return all wc_product_ids (existing + newly pushed)
+	const allWcIds = [...alreadyPushedIds, ...newWcIds];
+	return { success: true, productIds: allWcIds };
 }

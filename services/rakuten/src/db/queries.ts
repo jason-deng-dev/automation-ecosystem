@@ -163,7 +163,7 @@ export const upsertProduct = async ({
 			shopName, shopCode, availability, subcategory_id
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-			(SELECT id FROM subcategories WHERE $12 = ANY(genre_ids))
+			(SELECT id FROM subcategories WHERE $12 = ANY(genre_ids) LIMIT 1)
 		)
 		ON CONFLICT (itemURL) DO UPDATE SET
 			itemPrice = EXCLUDED.itemPrice,

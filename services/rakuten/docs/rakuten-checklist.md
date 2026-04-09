@@ -181,7 +181,7 @@
   - Names already in Chinese via pipeline DeepL translation — no extra translation needed for request flow
   - Result: returns { productIds: [...] } — shortcode renders [products ids="..."] grid inline (see §11.11)
   - [x] POST /api/request-product endpoint — Chinese keyword → genre validation → upsert DB → push WC → return { success, productIds }
-  - [x] Build WordPress PHP proxy endpoint (WP REST API) — registers `/wp-json/rakuten/v1/request-product`, calls Express via `wp_remote_post()`, runs `do_shortcode('[products ids="..."]')` server-side, returns rendered HTML (fixes mixed content + shortcode rendering — see §9.5)
+  <!-- - [x] Build WordPress PHP proxy endpoint (WP REST API) — registers `/wp-json/rakuten/v1/request-product`, calls Express via `wp_remote_post()`, runs `do_shortcode('[products ids="..."]')` server-side, returns rendered HTML (fixes mixed content + shortcode rendering — see §9.5) -->
   - [x] Update `product-request-page.html` — fetch to `/wp-json/rakuten/v1/request-product` instead of VPS IP directly; inject `data.html` into `#request-results`
   - [x] Embed request form widget on WooCommerce search results page
 
@@ -205,12 +205,18 @@
   - [x] Write `Dockerfile` for rakuten — single-stage: `npm ci`, `npm run build` (tsc), `node dist/app.js`
   - [x] Write `.dockerignore` for rakuten
   - [x] Transfer `.env` to VPS — `scp services/rakuten/.env lightsail:~/rakuten/.env` (one-time manual step)
+  - Note: VPS `.env` uses `DATABASE_URL=...@localhost:5432/rakutendb` (port 5432 direct); local `.env` uses `5433` (SSH tunnel mapping)
   - [x] Write `ci-rakuten.yml` — run `npm test` on push to `services/rakuten/**`
   - [x] Rename `ci-rakuten.yml` → `cicd-rakuten.yml` — combine CI + CD; test job on push/PR, deploy job on push to main only
   - [x] Add deploy job to `cicd-rakuten.yml` — docker build → push to Docker Hub → SSH into Lightsail → pull + restart container
   - [x] Add GitHub Secrets — `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `VPS_HOST` (13.192.170.85), `VPS_SSH_KEY` (~/.ssh/automation-ecosystem.pem)
-  - [ ] Verify rakuten container connects to DB and pipeline runs on Lightsail
-  - [ ] Paste `wp/rakuten-proxy.php` into WordPress `functions.php` — replace `YOUR_VPS_IP` with `13.192.170.85`
+  - [x] Verify rakuten container connects to DB and pipeline runs on Lightsail
+  - [x] Paste `wp/rakuten-proxy.php` into WordPress `functions.php` — replace `YOUR_VPS_IP` with `13.192.170.85`
+
+- [ ] Product request flow bug fixes (found during live testing)
+  - [x] Fix `upsertProduct` subquery — `SELECT id FROM subcategories WHERE $12 = ANY(genre_ids)` returns multiple rows when a genre ID matches multiple subcategories; add `LIMIT 1`
+  - [ ] Fix empty `productIds` when products already exist in DB — `upsertProducts` only returns newly inserted URLs; controller returns `{ success: true, productIds: [] }` for repeat requests; fix by also returning `wc_product_id` of already-existing products
+  - [ ] Fix WooCommerce image 404 — some Rakuten image URLs return 404 causing the entire product push to fail; filter out bad image URLs before pushing (HEAD check or strip secondary images)
 
 ---
 

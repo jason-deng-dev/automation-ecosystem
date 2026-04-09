@@ -155,8 +155,17 @@ async function pushProduct(product: DbItem) {
 		images: product.mediumImageUrls.map(({ imageUrl }) => ({ src: imageUrl })),
 		meta_data: [{ key: "_rakuten_url", value: product.itemUrl }],
 	};
-	const res = await WooCommerce.post("products", data);
-	return res.data.id;
+	try {
+		const res = await WooCommerce.post("products", data);
+		return res.data.id;
+	} catch (err: any) {
+		if (err?.response?.data?.code === "woocommerce_product_image_upload_error") {
+			data.images = data.images.slice(0, 1);
+			const res = await WooCommerce.post("products", data);
+			return res.data.id;
+		}
+		throw err;
+	}
 }
 
 export async function pushProducts(products: DbItem[]) {
