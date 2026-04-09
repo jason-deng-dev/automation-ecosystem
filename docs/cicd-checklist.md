@@ -4,42 +4,39 @@
 
 
 
-## Phase 1 — CI (GitHub Actions, no server needed)
+## Phase 1 — CI (GitHub Actions)
 
 - [x] Create `.github/workflows/` folder at repo root
 - [x] `ci-scraper.yml` — on push to `services/scraper/**`, run `npm test`
 - [x] `ci-xhs.yml` — on push to `services/xhs/**`, run `npm test`
-- [x] Verify both workflows pass on GitHub (push a small change to trigger them)
-- [ ] Write tests for `rakuten` service
+- [x] Verify both workflows pass on GitHub
 - [ ] `ci-rakuten.yml` — on push to `services/rakuten/**`, run `npm test`
 
 ---
 
 ## Phase 2 — Lightsail VPS Setup
-> Deferred — staying in code mode to finish rakuten CI and bot detection fixes first. Infrastructure work (Lightsail, Docker Hub, secrets) is a separate context switch.
 
-- [ ] Provision AWS Lightsail instance (Linux, Ubuntu 22.04, $10–20/mo plan)
-- [ ] SSH into instance and install Docker + Docker Compose
-- [ ] Open required ports in Lightsail firewall (3000, 3001, 3002 — internal only; 22 SSH)
-- [ ] Generate SSH key pair — add public key to Lightsail instance
-- [ ] Add private key as `LIGHTSAIL_SSH_KEY` in GitHub Secrets
-- [ ] Add `LIGHTSAIL_HOST` and `LIGHTSAIL_USER` to GitHub Secrets
-
----
-
-## Phase 3 — Docker Registry
-
-- [ ] Create Docker Hub account (or use AWS ECR)
-- [ ] Add `DOCKER_USERNAME` and `DOCKER_PASSWORD` to GitHub Secrets
-- [ ] Test pushing a local image manually to confirm credentials work
+- [x] Provision AWS Lightsail instance (Ubuntu 24.04 LTS, Docker 29.3.1 + Compose v5.1.1)
+- [x] SSH key downloaded + configured (`ssh lightsail` works)
+- [x] Firewall configured (22 SSH, 80/443 public, 3000/3001/3002 internal only, 5432 never open)
+- [x] PostgreSQL running natively on VPS — `rakutendb` created, user `goodsoft` set up
+- [ ] GitHub Secrets populated (`LIGHTSAIL_HOST`, `LIGHTSAIL_USER`, `LIGHTSAIL_SSH_KEY`)
+- [ ] Docker Hub account created + `DOCKER_USERNAME` / `DOCKER_PASSWORD` added to GitHub Secrets
 
 ---
 
-## Phase 4 — CD Workflows (one per service, in deploy order)
+## Phase 3 — CD Workflows (deploy order)
 
-### scraper (deploy first — no dependencies)
+### rakuten (deploy first — PostgreSQL already on VPS, no service dependencies)
+- [ ] Write `Dockerfile` for rakuten
+- [ ] Transfer `.env` to VPS
+- [ ] Seed DB on VPS (`npm run db`)
+- [ ] Write `cd-rakuten.yml` — build image, push to Docker Hub, SSH deploy to Lightsail
+- [ ] Verify rakuten container connects to DB and pipeline runs on Lightsail
+
+### scraper (no dependencies)
 - [ ] Write `Dockerfile` for scraper
-- [ ] Write `cd-scraper.yml` — build image, push to registry, SSH deploy to Lightsail
+- [ ] Write `cd-scraper.yml`
 - [ ] Verify scraper container starts and cron fires on Lightsail
 
 ### race-hub (depends on scraper shared volume)
@@ -54,12 +51,6 @@
 - [ ] Write `cd-xhs.yml`
 - [ ] Verify xhs container runs and cron fires on Lightsail
 
-### rakuten (depends on PostgreSQL)
-- [ ] Provision PostgreSQL on Lightsail (or use RDS)
-- [ ] Write `Dockerfile` for rakuten
-- [ ] Write `cd-rakuten.yml`
-- [ ] Verify rakuten container connects to DB and pipeline runs on Lightsail
-
 ### dashboard (depends on all services running)
 - [ ] Build dashboard service
 - [ ] Write `Dockerfile` for dashboard
@@ -68,7 +59,7 @@
 
 ---
 
-## Phase 5 — docker-compose (ties everything together on Lightsail)
+## Phase 4 — docker-compose (ties everything together)
 
 - [ ] Write `docker-compose.yml` at repo root — all services + shared volume
 - [ ] Verify `docker-compose up` starts all containers correctly on Lightsail

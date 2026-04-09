@@ -1,0 +1,57 @@
+name: CICD — rakuten
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'services/rakuten/**'
+  pull_request:
+    paths:
+      - 'services/rakuten/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: services/rakuten
+      - run: npm test
+        working-directory: services/rakuten
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: services/rakuten
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rakuten:latest
+      - name: Deploy to Lightsail
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ubuntu
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/rakuten:latest
+            docker stop rakuten || true
+            docker rm rakuten || true
+            docker run -d \
+              --name rakuten \
+              --env-file ~/rakuten/.env \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              ${{ secrets.DOCKERHUB_USERNAME }}/rakuten:latest

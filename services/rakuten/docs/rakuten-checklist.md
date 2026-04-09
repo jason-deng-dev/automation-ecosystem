@@ -175,15 +175,15 @@
   - [x] Add `cleanDescription` + `extractShortDescription` test cases to `utils.test.ts` (20 tests covering all stripping + formatting behaviors)
   - Add CSS to WordPress for `.product-specs` table styling (2-col, bordered, `th` background)
 
-- [ ] Product request flow → §9 Product Request Flow
+- [x] Product request flow → §9 Product Request Flow
   - Approach: always fetch X products fresh from Rakuten — no DB fill calculation.
     Products aren't indexed by keyword so there's no reliable way to count existing matches.
   - Names already in Chinese via pipeline DeepL translation — no extra translation needed for request flow
   - Result: returns { productIds: [...] } — shortcode renders [products ids="..."] grid inline (see §11.11)
   - [x] POST /api/request-product endpoint — Chinese keyword → genre validation → upsert DB → push WC → return { success, productIds }
-  - [ ] Build WordPress PHP proxy endpoint (WP REST API) — registers `/wp-json/rakuten/v1/request-product`, calls Express via `wp_remote_post()`, runs `do_shortcode('[products ids="..."]')` server-side, returns rendered HTML (fixes mixed content + shortcode rendering — see §9.5)
-  - [ ] Update `product-request-page.html` — fetch to `/wp-json/rakuten/v1/request-product` instead of VPS IP directly; inject `data.html` into `#request-results`
-  - [ ] Embed request form widget on WooCommerce search results page
+  - [x] Build WordPress PHP proxy endpoint (WP REST API) — registers `/wp-json/rakuten/v1/request-product`, calls Express via `wp_remote_post()`, runs `do_shortcode('[products ids="..."]')` server-side, returns rendered HTML (fixes mixed content + shortcode rendering — see §9.5)
+  - [x] Update `product-request-page.html` — fetch to `/wp-json/rakuten/v1/request-product` instead of VPS IP directly; inject `data.html` into `#request-results`
+  - [x] Embed request form widget on WooCommerce search results page
 
 - [ ] Rate limiting → §11.14
   - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
@@ -201,7 +201,16 @@
   - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
 
 - [ ] Deploy to AWS Lightsail → §10.3 Phase 3
-  - [ ] `pg_dump rakutenDB > dump.sql` locally → copy to server → `psql rakutenDB < dump.sql` inside postgres container — preserves `wc_product_id` so idempotency check prevents duplicate WC pushes
+  - Note: DB already on VPS (dev connects via SSH tunnel) — no dump/restore needed
+  - [x] Write `Dockerfile` for rakuten — single-stage: `npm ci`, `npm run build` (tsc), `node dist/app.js`
+  - [x] Write `.dockerignore` for rakuten
+  - [x] Transfer `.env` to VPS — `scp services/rakuten/.env lightsail:~/rakuten/.env` (one-time manual step)
+  - [x] Write `ci-rakuten.yml` — run `npm test` on push to `services/rakuten/**`
+  - [x] Rename `ci-rakuten.yml` → `cicd-rakuten.yml` — combine CI + CD; test job on push/PR, deploy job on push to main only
+  - [x] Add deploy job to `cicd-rakuten.yml` — docker build → push to Docker Hub → SSH into Lightsail → pull + restart container
+  - [x] Add GitHub Secrets — `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `VPS_HOST` (13.192.170.85), `VPS_SSH_KEY` (~/.ssh/automation-ecosystem.pem)
+  - [ ] Verify rakuten container connects to DB and pipeline runs on Lightsail
+  - [ ] Paste `wp/rakuten-proxy.php` into WordPress `functions.php` — replace `YOUR_VPS_IP` with `13.192.170.85`
 
 ---
 

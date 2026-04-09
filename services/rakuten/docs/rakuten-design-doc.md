@@ -476,8 +476,39 @@ See §11.15 for the engineering detail.
 
 - WordPress shortcode added to WooCommerce search results page — form + loading state, renders inline product grid on completion via `[products ids="..."]`, no SSE
 - No translation API needed in the pipeline — Rakuten search accepts Chinese natively; TranslatePress handles JA→ZH lazily for all products including request flow
-- **Mixed content constraint:** WordPress runs on HTTPS. Direct `fetch()` calls from the form to `http://VPS_IP:3000` are blocked by browsers as mixed content. The PHP proxy (§11.14) is required before the form can be embedded in production — the client posts to a WordPress AJAX endpoint, which proxies internally to the Express API. The VPS IP is never exposed to the browser.
+- **Mixed content constraint:** WordPress runs on HTTPS. Direct `fetch()` calls from the form to `http://VPS_IP:3002` are blocked by browsers as mixed content. The PHP proxy (§9.6) is required before the form can be embedded in production — the client posts to a WordPress REST API endpoint, which proxies internally to the Express API. The VPS IP is never exposed to the browser.
 - **Shortcode rendering:** `do_shortcode` is a PHP function — it does not exist in browser JS. The form sets `results.innerHTML` to the raw shortcode string as a stopgap for testing, but actual rendering requires the PHP proxy response to return pre-rendered HTML (WordPress executes `do_shortcode` server-side before responding).
+
+### 9.6 PHP Proxy Implementation
+
+**Approach:** WordPress REST API via `register_rest_route()`. Chosen over the AJAX API (`wp-admin/admin-ajax.php`) because it produces a clean, predictable URL (`/wp-json/rakuten/v1/request-product`), requires no nonce for a public POST endpoint, and follows standard REST conventions.
+
+**Where the code lives:** `functions.php` in the active child theme on running.moximoxi.net.
+
+**Request flow:**
+
+```
+Browser → POST /wp-json/rakuten/v1/request-product  { keyword: "..." }
+              ↓
+          PHP: wp_remote_post("http://VPS_IP:3002/api/request-product", { keyword })
+              ↓
+          Express returns { success: true, productIds: [123, 456, 789] }
+              ↓
+          PHP: implode(",", productIds) → '[products ids="123,456,789"]'
+              ↓
+          PHP: do_shortcode('[products ids="123,456,789"]') → rendered product grid HTML
+              ↓
+Browser ← { html: "<div class='products'>...</div>" }
+              ↓
+          JS: document.querySelector('#request-results').innerHTML = data.html
+```
+
+**VPS URL configuration:** The Express API base URL is defined as a constant at the top of `functions.php` — not hardcoded inline. Update this constant when the VPS IP changes.
+
+**Error handling:**
+- `wp_remote_post` failure (VPS unreachable) → return WP_Error with HTTP 502
+- Express returns `{ success: false }` → return HTTP 422 with error message for the browser to display
+- `do_shortcode` returns empty string (no products rendered) → return HTTP 500
 
 ---
 
@@ -617,7 +648,7 @@ FETCH → NORMALIZE → TRANSLATE (DeepL, name only) → PRICE → STORE → PUS
 
 **Challenge:** Public-facing endpoints trigger third-party API calls (Rakuten, DeepL) and WooCommerce writes. Without rate limiting, anyone who discovers the endpoint can exhaust API quota or spam product imports.
 
-**Solution:** Apply per-IP rate limiting via `express-rate-limit` on all public endpoints. Use a Redis store for production-grade persistence across restarts. VPS IP hidden behind a WordPress PHP proxy — the client never sees the VPS address directly, all requests route through `wp-admin/admin-ajax.php`.
+**Solution:** Apply per-IP rate limiting via `express-rate-limit` on all public endpoints. Use a Redis store for production-grade persistence across restarts. VPS IP hidden behind a WordPress PHP proxy — the client never sees the VPS address directly, all requests route through the WordPress REST API endpoint (see §9.6).
 
 ### 11.16 Shared Volume → PostgreSQL Migration
 
@@ -709,6 +740,9 @@ automation-ecosystem/rakuten/
 │   │   └── schema.sql            # Original table definitions (superseded by seed.ts)
 │   └── config/
 │       └── genres.ts             # Rakuten genre ID map
+├── wp/
+│   ├── rakuten-proxy.php         # PHP proxy snippet — paste into child theme functions.php
+│   └── product-request-page.html # Request form shortcode — embed in WooCommerce search results page
 ├── dist/                         # Compiled JS output (tsc)
 ├── tsconfig.json
 └── package.json
