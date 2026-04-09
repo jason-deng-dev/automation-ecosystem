@@ -322,6 +322,16 @@ export const getProductTotals = async () => {
 	return res.rows[0] as { total: string; pushed: string };
 };
 
+export const searchProductsByKeyword = async (keyword: string) => {
+	const res = await pool.query(
+		`SELECT id, itemurl AS "itemUrl", itemname AS "itemName", wc_product_id
+		 FROM products
+		 WHERE itemname ILIKE $1 AND wc_product_id IS NOT NULL`,
+		[`%${keyword}%`],
+	);
+	return res.rows as { id: number; itemUrl: string; itemName: string; wc_product_id: number }[];
+};
+
 export const getWPSubcategoryIds = async () => {
 	const res = await pool.query(`
 		SELECT name, wc_category_id

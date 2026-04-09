@@ -75,8 +75,8 @@
 
 - [x] Initial bulk push → §10.2 Phase 2, §3.3 Bulk Push Data Flow
   - [x] update arrReference
-  - [x] Complete `runRankingPopulate.ts` loop body — fetch per genre 
-  (`max(1, pagesPerSubcategory)` pages per subcategory — Ranking API returns fixed 30 products/page, no `hits` param; minimum 1 page = 30 products per subcategory), upsert, push
+  - [x] Complete `runRankingPopulate.ts` loop body — fetch per genre
+        (`max(1, pagesPerSubcategory)` pages per subcategory — Ranking API returns fixed 30 products/page, no `hits` param; minimum 1 page = 30 products per subcategory), upsert, push
   - [x] Confirm markup = 0% in `shared_volume/rakuten/config.json` (operator decision — revisit later)
   - [x] Configure flat shipping rate per order in WooCommerce settings — ¥100 flat rate
   - [x] Add shipping policy note to WooCommerce cart page — per-product-type estimates + caveat for heavy orders (Chinese only)
@@ -143,7 +143,7 @@
   - [x] Add `getCategoryIds()` query in `queries.ts` — returns `Record<string, number[]>` (category name → all genre IDs across subcategories); replaces `categories` export from `genres.ts`
   - [x] Add `getAllGenres()` query in `queries.ts` — returns `Record<string, number[]>` (subcategory name → genre IDs); replaces `allGenres` export from `genres.ts`
   - [x] Add `getSubcategoriesWithCategory()` query in `queries.ts` — returns id, name, category name for all subcategories
-  - [x] Replace `allGenres` import in `controller.ts` 
+  - [x] Replace `allGenres` import in `controller.ts`
   - [x] Replace `categories` import in `runRankingPopulate.ts` + `runWeeklySync.ts` — call `getCategoryIds()` instead of importing from `genres.ts`
   - [x] Add `appendGenreId(subcategoryId, genreId)` query in `queries.ts` — `array_append` + updates in-memory map
   - [x] Claude classification call in `controller.ts` — when unknown genre IDs found, pass subcategory list to Claude, get back `subcategoryId | null`
@@ -185,22 +185,7 @@
   - [x] Update `product-request-page.html` — fetch to `/wp-json/rakuten/v1/request-product` instead of VPS IP directly; inject `data.html` into `#request-results`
   - [x] Embed request form widget on WooCommerce search results page
 
-- [ ] Rate limiting → §11.14
-  - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
-  - [ ] Install `express-rate-limit` (+ Redis store for production-grade persistence)
-  - [ ] Apply per-IP limits on public endpoints
-  - [ ] Hide VPS IP behind WordPress PHP proxy — IP never exposed to client
-
-
-
-- [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
-  - [ ] POST /api/sync — manually trigger `runWeeklySync()` on demand (same logic as cron, callable from dashboard)
-  - [ ] POST /api/trigger-category — `{ category: string, count: number }` — fetch top X ranked products for the given category, upsert DB, push new ones to WooCommerce; called by dashboard "Add X" button → §3.2 controller.ts
-  - [ ] POST /retry — retry failed WooCommerce imports
-  - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices
-  - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
-
-- [ ] Deploy to AWS Lightsail → §10.3 Phase 3
+- [x] Deploy to AWS Lightsail → §10.3 Phase 3
   - Note: DB already on VPS (dev connects via SSH tunnel) — no dump/restore needed
   - [x] Write `Dockerfile` for rakuten — single-stage: `npm ci`, `npm run build` (tsc), `node dist/app.js`
   - [x] Write `.dockerignore` for rakuten
@@ -213,12 +198,27 @@
   - [x] Verify rakuten container connects to DB and pipeline runs on Lightsail
   - [x] Paste `wp/rakuten-proxy.php` into WordPress `functions.php` — replace `YOUR_VPS_IP` with `13.192.170.85`
 
-- [ ] Product request flow bug fixes (found during live testing)
+- [ ] Product request flow bug fixes & improvements (found during live testing)
   - [x] Fix `upsertProduct` subquery — `SELECT id FROM subcategories WHERE $12 = ANY(genre_ids)` returns multiple rows when a genre ID matches multiple subcategories; add `LIMIT 1`
   - [x] Fix empty `productIds` when products already exist in DB — fetch all product URLs from Rakuten result, split by `wc_product_id` presence, return existing + newly pushed IDs combined
   - [x] Fix WooCommerce image 404 — catch `woocommerce_product_image_upload_error` in `pushProduct`, retry with only first image
-  - [ ] Add keyword translation logging — `console.log` translated keyword in `rakutenAPI.ts` so Rakuten search input is visible in logs
+  - [x] Fix keyword translation — skip DeepL if keyword has no Chinese characters (brand names like "Nike", "ASICS" pass through as-is); hardcode source lang to `"zh"` to prevent misdetection
+  - [x] Add extensive pipeline logging — `[api]`, `[request]`, `[push]`, `[translateKeyword]` tags across `app.ts`, `controller.ts`, `woocommerceAPI.ts`, `rakutenAPI.ts`
+  - [ ] DB keyword pre-search — before Rakuten fetch, query DB for products with `itemName ILIKE '%keyword%'`; include matching `wc_product_id`s in return alongside newly pushed ones
   - [ ] Pipeline run logging — write keyword, translated keyword, genre validation result, Claude result, products pushed, and errors to `run_logs` for every `itemRequestByKeyword` operation (same pattern as `runWeeklySync`)
+
+- [ ] Rate limiting → §11.14
+  - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
+  - [ ] Install `express-rate-limit` (+ Redis store for production-grade persistence)
+  - [ ] Apply per-IP limits on public endpoints
+  - [ ] Hide VPS IP behind WordPress PHP proxy — IP never exposed to client
+
+- [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
+  - [ ] POST /api/sync — manually trigger `runWeeklySync()` on demand (same logic as cron, callable from dashboard)
+  - [ ] POST /api/trigger-category — `{ category: string, count: number }` — fetch top X ranked products for the given category, upsert DB, push new ones to WooCommerce; called by dashboard "Add X" button → §3.2 controller.ts
+  - [ ] POST /retry — retry failed WooCommerce imports
+  - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices
+  - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
 
 ---
 

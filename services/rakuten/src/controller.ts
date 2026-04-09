@@ -6,6 +6,7 @@ import {
 	getAllGenres,
 	appendGenreIds,
 	getSubcategoryIdByGenreId,
+	searchProductsByKeyword,
 } from "./db/queries";
 import { pushProducts } from "./services/woocommerceAPI";
 import { validateKeyword } from "./services/claudeAPI";
@@ -21,6 +22,12 @@ export function bulkPush() {}
 
 export async function itemRequestByKeyword(keywordZH: string) {
 	console.log(`[request] keyword received: "${keywordZH}"`);
+
+	// 0. Pre-search DB for existing products matching keyword
+	const dbMatches = await searchProductsByKeyword(keywordZH);
+	console.log(`[request] DB pre-search found ${dbMatches.length} existing product(s) matching "${keywordZH}"`);
+	const dbMatchWcIds = dbMatches.map((p) => p.wc_product_id);
+
 	const allGenres = await getAllGenres();
 	const { searchFillThreshold } = await getConfig();
 	console.log(`[request] searchFillThreshold: ${searchFillThreshold}`);
@@ -80,8 +87,8 @@ export async function itemRequestByKeyword(keywordZH: string) {
 	const newWcIds = await pushProducts(needsPush);
 	console.log(`[request] pushed ${newWcIds.length} new products to WooCommerce`);
 
-	// 5. Return all wc_product_ids (existing + newly pushed)
-	const allWcIds = [...alreadyPushedIds, ...newWcIds];
-	console.log(`[request] returning ${allWcIds.length} total product IDs`);
+	// 5. Return all wc_product_ids (db pre-search + existing from fetch + newly pushed)
+	const allWcIds = [...new Set([...dbMatchWcIds, ...alreadyPushedIds, ...newWcIds])];
+	console.log(`[request] returning ${allWcIds.length} total product IDs (${dbMatchWcIds.length} from DB pre-search, ${alreadyPushedIds.length} already in WC, ${newWcIds.length} newly pushed)`);
 	return { success: true, productIds: allWcIds };
 }
