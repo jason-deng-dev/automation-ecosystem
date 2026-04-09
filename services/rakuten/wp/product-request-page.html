@@ -61,18 +61,16 @@
 				btn.disabled = true;
 
 				try {
-					const res = await fetch("http://13.192.170.85:3000/api/request-product", {
+					const res = await fetch("/wp-json/rakuten/v1/request-product", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({ keyword }),
 					});
 					const data = await res.json();
 
-					if (data.success && data.productIds.length > 0) {
-						status.textContent = `找到 ${data.productIds.length} 件商品：`;
-						results.innerHTML = '[products ids="' + data.productIds.join(",") + '"]';
-						// trigger WooCommerce shortcode rendering
-						if (typeof do_shortcode === "function") do_shortcode(results);
+					if (data.html) {
+						status.textContent = "找到相关商品：";
+						results.innerHTML = data.html;
 					} else {
 						status.textContent = "暂时未找到相关商品，请尝试其他关键词。";
 					}
