@@ -6,6 +6,10 @@
 
 ---
 
+**Developer leaving?** See [`handoff-setup.md`](handoff-setup.md) for account transfers, SSH key handoff, and database backup steps.
+
+---
+
 ## How to Use This Document
 
 Something stopped working. Use this document to figure out what broke and how to fix it.
