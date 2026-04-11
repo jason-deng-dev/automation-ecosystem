@@ -69,7 +69,7 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 
 #### rakutenAPI.ts
 
-- `getProductsByKeyword(keyword, count, sortMode)` — Ichiba Item Search API (used for product request flow); max `hits` = 30
+- `getProductsByKeyword(keyword, count, sortMode)` — Ichiba Item Search API (used for product request flow); max `hits` = 30; default sort: `-reviewCount` (most reviewed first — best proxy for purchase volume; Item Search API has no purchase count sort, Ranking API doesn't support keyword search)
 - `getProductsByRankingGenre(genreId, count)` — Ichiba Ranking API — **primary fetch method** for bulk push and weekly cron
 - Returns normalized + translated product objects — `normalizeItems` then `translateNames` (DeepL, names only) called internally before returning; all call sites already await these functions so no changes needed at call sites
 
@@ -127,7 +127,6 @@ FETCH → NORMALIZE → TRANSLATE → PRICE → STORE → PUSH
 - Orchestrates: Rakuten fetch → normalize → price → PostgreSQL store → WooCommerce push
 - `POST /api/request-product` — Chinese keyword → DeepL ZH→JA translation → Rakuten keyword search → genre validation (DB check → Claude fallback) → upsert DB → push WC → return `{ success, productIds }`
 - `POST /api/sync` — manually trigger `runWeeklySync()` on demand; same logic as the weekly cron, callable from dashboard
-- `POST /api/trigger-category` — `{ category: string, count: number }` — fetch top `count` ranked products for the given category, upsert DB, push any new ones to WooCommerce; called by the dashboard "Add X" button per category
 
 ### 3.3 Data Flow
 
@@ -572,7 +571,7 @@ See `docs/rakuten-checklist.md` for current build status.
 
 **Challenge:** WooCommerce REST API calls can fail mid-bulk-import (auth error, timeout, malformed image URL).
 
-**Solution:** Bulk push is sequential with per-product try/catch, not a single transaction. Each result (success/failed/skipped) is written to `import_log` immediately. If 8 of 10 products succeed and 2 fail, the 8 are in WooCommerce and the 2 failures are logged for retry.
+**Solution:** Bulk push is sequential with per-product try/catch, not a single transaction. Each result (success/failed/skipped) is written to `import_log` immediately. If 8 of 10 products succeed and 2 fail, the 8 are in WooCommerce and the 2 failures are logged. Failed products self-heal on the next weekly sync — any product with no `wc_product_id` gets re-pushed automatically.
 
 ### 11.5 Image Handling
 

@@ -47,6 +47,12 @@ app.post("/api/config", async (req: Request, res: Response) => {
 	res.json({ success: true });
 });
 
+// triggers runWeeklySync()
+app.post("/api/sync", async (req:Request, res: Response) => {
+	await runWeeklySync();
+	res.json({ success: true });
+})
+
 async function start() {
 	await initPricing();
 	app.listen(process.env.PORT!, () => {
