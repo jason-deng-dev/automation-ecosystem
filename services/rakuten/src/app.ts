@@ -7,6 +7,7 @@ import { updateConfig, Config } from "./db/queries";
 import runWeeklySync from "./scripts/runWeeklySync";
 import nodeCron from "node-cron";
 import { itemRequestByKeyword } from "./controller";
+import { productRequestLimiter } from "./middleware/rateLimiter";
 
 const app = express();
 
@@ -30,7 +31,7 @@ app.use(express.json());
 
 app.get("/", (_req: Request, res: Response) => res.send("Running"));
 
-app.post("/api/request-product", async (req: Request, res: Response) => {
+app.post("/api/request-product", productRequestLimiter, async (req: Request, res: Response) => {
 	console.log(`[api] POST /api/request-product — keyword: "${req.body.keyword}"`);
 	const result = await itemRequestByKeyword(req.body.keyword);
 	console.log(`[api] /api/request-product response: success=${result.success}, productIds=${JSON.stringify((result as any).productIds ?? [])}`);

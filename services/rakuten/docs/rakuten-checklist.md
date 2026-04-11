@@ -208,10 +208,14 @@
   - [x] Pipeline run logging — write keyword, translated keyword, genre validation result, Claude result, products pushed, and errors to `run_logs` for every `itemRequestByKeyword` operation (same pattern as `runWeeklySync`)
 
 - [ ] Rate limiting → §11.14
-  - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
-  - [ ] Install `express-rate-limit` (+ Redis store for production-grade persistence)
-  - [ ] Apply per-IP limits on public endpoints
-  - [ ] Hide VPS IP behind WordPress PHP proxy — IP never exposed to client
+  - Only public endpoint: `POST /api/request-product` (called by Onamae WP proxy); `/api/config` is internal dashboard only
+  - VPS IP already hidden behind WP PHP proxy (done in deploy section)
+  - [x] Install `express-rate-limit`, `rate-limit-redis`, `redis` (node-redis v4)
+  - [x] Add `REDIS_URL` to `.env.example`
+  - [ ] Add `REDIS_URL=redis://localhost:6379` to `~/rakuten/.env` on VPS — one-time manual step via SSH
+  - [ ] Install Redis on VPS — one-time manual step: `sudo apt install redis-server && sudo systemctl enable redis`
+  - [x] Create `src/middleware/rateLimiter.ts` — Redis-backed limiter, 100 req / 15 min (all users share one IP via WP proxy — per-customer limiting deferred to v2)
+  - [x] Apply rate limiter middleware to `POST /api/request-product` in `app.ts`
 
 - [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
   - [ ] POST /api/sync — manually trigger `runWeeklySync()` on demand (same logic as cron, callable from dashboard)

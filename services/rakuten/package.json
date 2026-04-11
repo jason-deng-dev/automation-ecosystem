@@ -25,8 +25,11 @@
 		"deepl-node": "^1.25.0",
 		"dotenv": "^17.3.1",
 		"express": "^5.2.1",
+		"express-rate-limit": "^8.3.2",
 		"node-cron": "^4.2.1",
-		"pg": "^8.20.0"
+		"pg": "^8.20.0",
+		"rate-limit-redis": "^4.3.1",
+		"redis": "^5.11.0"
 	},
 	"devDependencies": {
 		"@types/express": "^5.0.6",
