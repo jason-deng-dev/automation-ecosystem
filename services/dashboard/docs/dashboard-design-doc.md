@@ -156,7 +156,7 @@ The home page shows one card per pipeline side by side, full height. Each card s
 - **WooCommerce live** — how many products have been pushed to the store
 - **Last activity** — timestamp of last Rakuten fetch or WooCommerce push
 - **Error indicator** — any recent API failures (Rakuten, WooCommerce)
-- **Action triggers** (to be added): fetch products, retry failed imports
+- **Action triggers** (to be added): manual sync trigger
 
 ---
 
@@ -241,7 +241,6 @@ Home card metrics and triggers are in section 7.2. This section covers the detai
 
 - Total products cached in PostgreSQL
 - Products pushed to WooCommerce vs not yet pushed
-- Stale products (cache older than 24h) — count with a force-refresh option per category
 - **Per-category breakdown** — product count for each of the five planned top-level categories:
   - 🏃 Running Gear
   - 💪 Training
@@ -260,14 +259,14 @@ Home card metrics and triggers are in section 7.2. This section covers the detai
 
 ### 10.3 Import Log
 
-- Table of all WooCommerce push attempts from `rakuten_import_logs` table: timestamp, product name, status (success / failed / skipped), error message if failed
-- **Failed imports panel** — products with `status = 'failed'` surfaced as a list with a one-click retry button per product
+- Table of all WooCommerce push attempts from `import_logs` table: timestamp, product name, status (success / failed / skipped), error message if failed
+- Failed products self-heal on the next weekly sync — no manual retry needed
 
-### 10.4 Manual Trigger
+### 10.4 Manual Sync Trigger
 
-- "Fetch more products" button with category dropdown + count input
-- Fetches from Rakuten, normalises, prices, and caches in PostgreSQL — WooCommerce push triggered separately
-- Product request flow trigger: manually submit a keyword to test the on-page request flow end-to-end
+- "Run sync now" button — fires `runWeeklySync()` on demand via `POST /api/rakuten/sync` (calls rakuten `POST /api/sync`)
+- Same logic as the weekly cron — fetches top-ranked products per genre, upserts DB, pushes new ones to WooCommerce, removes stale products
+- To add more products to the store: update `productsPerCategory` in the pricing config editor, then trigger a sync
 
 ---
 
@@ -307,12 +306,11 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/rakuten/stats` | Query `rakuten_product_stats` table — catalog size, WC push count, per-category breakdown |
-| `GET` | `/api/rakuten/import-log` | Query `rakuten_import_logs` table — per-product WC push attempts |
-| `GET` | `/api/rakuten/config` | Query `rakuten_config` table — pricing config |
-| `POST` | `/api/rakuten/config` | Update `rakuten_config` table — triggers price reload + re-push in Rakuten service |
-| `POST` | `/api/rakuten/trigger` | Fetch more products — accepts `{ category, count }`; calls Rakuten :3000 |
-| `POST` | `/api/rakuten/retry` | Retry failed WooCommerce imports — calls Rakuten :3000 |
+| `GET` | `/api/rakuten/stats` | Query `product_stats` table — catalog size, WC push count, per-category breakdown |
+| `GET` | `/api/rakuten/import-log` | Query `import_logs` table — per-product WC push attempts |
+| `GET` | `/api/rakuten/config` | Query `config` table — pricing config |
+| `POST` | `/api/rakuten/config` | Call rakuten `POST /api/config` — updates DB row, triggers price reload + re-push |
+| `POST` | `/api/rakuten/sync` | Call rakuten `POST /api/sync` — triggers `runWeeklySync()` on demand |
 
 ### Shared
 
