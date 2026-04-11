@@ -11,7 +11,7 @@
 | XHS | Feature complete — Dockerfile written, awaiting docker-compose & deploy |
 | Scraper | Feature complete — awaiting Dockerfile & deploy |
 | Race Hub | SPA + i18n complete — Vite bundle + WP plugin + deploy remaining |
-| Rakuten | Feature complete — deployed on Lightsail, dashboard integration + docker-compose remaining |
+| Rakuten | Feature complete — deployed on Lightsail, rate limited, dashboard endpoints done; docker-compose remaining |
 | Dashboard | Home cards done (XHS + Scraper) — detail pages not started |
 | Analytics | Not started — planned FastAPI service, XHS weights endpoint first |
 
@@ -71,16 +71,16 @@
 - [x] WooCommerce integration — push, idempotency check, _rakuten_url meta
 - [x] Initial bulk push across all categories
 - [x] Weekly auto-sync cron — price updates, unavailability removal, stale cleanup
-- [x] fs.watch on config.json — auto-recalculates + re-pushes prices on change
+- [x] Config migrated to PostgreSQL — fs.watch replaced by POST /api/config endpoint
 - [x] TranslatePress installed + configured — Google Translate API key active, JA→ZH verified
+- [x] DeepL translation — product names JA→ZH at ingest time; descriptions lazy-translated by TranslatePress
 - [x] Category names corrected in WooCommerce admin (Chinese, human-reviewed)
 - [x] Currency set to 元 (CNY) in WooCommerce settings
 - [x] Default language redirect — visitors land on Chinese version without toggling
 - [x] Product request flow (keyword → genre validation → Rakuten fetch → push WC → return product IDs)
-- [x] Dockerfile
-- [x] Deploy to Lightsail — container live, CD pipeline active (cicd-rakuten.yml)
-- [ ] Rate limiting (express-rate-limit on public endpoints)
-- [ ] Dashboard integration (POST /trigger, /retry, POST /api/config)
+- [x] Rate limiting — express-rate-limit + Redis, 100 req/15min on POST /api/request-product
+- [x] Dashboard endpoints — POST /api/sync (manual trigger), POST /api/config (already done)
+- [x] Dockerfile + deploy to Lightsail — container live, CD pipeline active (cicd-rakuten.yml)
 - [ ] docker-compose integration
 
 ---

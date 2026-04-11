@@ -87,7 +87,7 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 | **Race Hub** | Persistent Express server (:3001). Always up. Reads from `races` table in PostgreSQL, serves it to WordPress via `GET /api/races`. Public-facing. | — |
 | **XHS** | Daily automation pipeline. Scheduler triggers generator (Claude API) → publisher (Playwright → XHS). Reads race data from PostgreSQL, writes logs and post archive to PostgreSQL. Schedule config read from `xhs_schedule` table; `auth.json` stays as a file (session cookies). | Claude API, XHS web |
 | **Rakuten** | Product ingestion pipeline. Fetches from Rakuten API, normalises, prices, stores permanently in PostgreSQL, pushes to WooCommerce. Internal Express :3000 for dashboard commands. All config and logs in PostgreSQL. | Rakuten API, WooCommerce REST API |
-| **Dashboard** | Operator-facing monitoring UI. Next.js :3000 (App Router + API routes, served via PM2 + NGINX). Reads all pipeline state from PostgreSQL. Updates config via API endpoints that write to DB. Calls Rakuten :3000 for commands (trigger fetch, retry import). | — |
+| **Dashboard** | Operator-facing monitoring UI. Next.js :3000 (App Router + API routes, served via PM2 + NGINX). Reads all pipeline state from PostgreSQL. Updates config via API endpoints that write to DB. Calls Rakuten :3000 for commands (manual sync, config update). | — |
 
 ---
 
@@ -106,10 +106,10 @@ PostgreSQL is the communication bus between all containers. Pipelines write stat
 | `xhs_run_logs` | XHS | Dashboard | Per-run: timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output |
 | `xhs_post_history` | XHS | XHS | Races already posted — dedup tracker, reset monthly |
 | `xhs_post_archive` | XHS | Dashboard | Published post content keyed by timestamp |
-| `rakuten_config` | Dashboard | Rakuten | YenToYuan, markupPercent, pagesPerSubcategory, searchFillThreshold |
-| `rakuten_run_logs` | Rakuten | Dashboard | Per-run: operation, category, products fetched/pushed, failures |
-| `rakuten_product_stats` | Rakuten | Dashboard | Total cached, total pushed, per-category breakdown |
-| `rakuten_import_logs` | Rakuten | Dashboard | Per-product WooCommerce push attempts and outcomes |
+| `config` | Rakuten (via dashboard command) | Rakuten | YenToYuan, markupPercent, productsPerCategory, searchFillThreshold |
+| `run_logs` | Rakuten | Dashboard | Per-run: operation, products pushed, price updates, removals, errors |
+| `product_stats` | Rakuten | Dashboard | Total cached, total pushed, per-category breakdown |
+| `import_logs` | Rakuten | Dashboard | Per-product WooCommerce push attempts and outcomes |
 | `subcategories` | Seed + Claude (runtime) | Rakuten | Genre ID map — dynamically expandable |
 | `products` | Rakuten | Rakuten, Dashboard | Full product store with WooCommerce IDs |
 
