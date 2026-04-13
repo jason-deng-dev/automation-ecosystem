@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { getProductsByRankingGenre } from "../services/rakutenAPI";
-import { calculatePrice } from "../services/pricing";
+import { calculatePrice, initPricing } from "../services/pricing";
 import { pushProducts, deleteWcProduct, updateWcPrice } from "../services/woocommerceAPI";
 import {
 	upsertProducts,
@@ -27,7 +27,7 @@ export default async function runWeeklySync() {
 		errors: [] as string[],
 	};
 
-	const [categories, { productsPerCategory }] = await Promise.all([getCategoryIds(), getConfig()]);
+	const [categories, { productsPerCategory }] = await Promise.all([getCategoryIds(), getConfig(), initPricing()]);
 	console.log("Starting weekly sync...");
 
 	// Step 1: Bump missed_scrapes for all products — upsert will reset to 0 for any product seen this run
@@ -122,4 +122,3 @@ export default async function runWeeklySync() {
 	});
 }
 
-runWeeklySync().catch(console.error);
