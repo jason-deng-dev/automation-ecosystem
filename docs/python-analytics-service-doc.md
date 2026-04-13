@@ -1,6 +1,6 @@
 **Project:** python-analytics-service
 
-**Platform:** running.moximoxi.net — shared analytics layer for the Rakuten and XHS automation pipelines
+**Platform:** running.moximoxi.net — shared analytics layer for the XHS automation pipeline
 
 **Author:** Jason Deng
 
@@ -12,42 +12,45 @@
 
 ## 1. What This Is
 
-A standalone Python microservice (FastAPI) that the XHS content automation pipeline calls to get data-driven content weights. Instead of a hardcoded post type rotation, the scheduler asks this service: "given our performance data, what should our content weights be?" The service analyzes the export, responds with normalized weights, and the scheduler updates its config accordingly.
+A standalone Python/C++ analytics microservice (FastAPI) that the XHS content automation pipeline calls monthly to calibrate its content strategy. Instead of a hardcoded post type rotation, the scheduler asks this service: "given our performance data, what should we post more of?" The service analyzes the export, responds with normalized weights, and the scheduler updates its config automatically.
 
-This is the same pattern used in quant/fintech infrastructure — Python owns data analysis and outputs a strategy, other systems execute it.
+Python owns the API surface, data ingestion, and orchestration. C++ owns the numerical computation via a pybind11 bridge. This is the same two-layer split used in quant research infrastructure — Python research environment calling into a C++ computation engine.
 
-**Scope decision:** Rakuten category weights dropped — product fetch allocation doesn't have enough signal to justify a separate analytics layer. XHS content weights are the primary use case.
+**The core architectural pattern mirrors quant research infrastructure:**
 
----
+| Layer | Quant firm | This service |
+|---|---|---|
+| Orchestration | Python research environment | FastAPI (Python) |
+| Data wrangling | pandas / numpy | pandas / numpy |
+| Hot-path computation | C++ pricing/risk engine | C++ scoring core (pybind11) |
+| Execution | Trading system (C++/Java/Go) | XHS pipeline (Node) |
+| Output | Strategy signals / trade orders | Content weights + updated prompts |
 
-## 2. Why a Separate Service + Why Python
-
-The XHS pipeline currently runs 1-2 posts/day. At that scale, Node could handle the math in 20 lines. But:
-
-- The business may scale to hourly posts (boss's direction) — at 700+ posts/month, pandas aggregation, normalization, and weighted scoring is the right tool
-- The data source is a cumulative Excel export from XHS Creator Studio — `pd.read_excel` + DataFrame manipulation is exactly what pandas is built for
-- Clean separation: Node executes the pipeline, Python analyzes performance and outputs strategy
-- The analytics layer scales with post volume without changing the pipeline
-
-**Data ingestion:** Monthly manual process — download Excel export from XHS Creator Studio (笔记数据 tab), drop into shared volume at `xhs/performance_export.xlsx`. The service reads this file on each `/analyze/xhs` call.
+Python owns data ingestion, API surface, and orchestration. C++ owns the numerical computation. Node executes the output. Each layer does what it's best at — no layer reaches into another's concerns.
 
 ---
 
-## 3. Why Python Over TypeScript Here
+## 2. Why a Separate Service
 
-TypeScript could technically do this, but:
+The XHS pipeline currently runs 1–2 posts/day. Node could handle the math inline. The service is built separately because:
 
-| Task | JS/TS | Python |
+- **Scale trajectory:** Boss direction is hourly posts. At 1 post/hour → **8,760 posts/year**. After two years: 17,500+ archive rows. Rolling aggregations, per-type scoring, cosine similarity across that volume is not inline code — it's a data pipeline.
+- **Clean separation:** Node executes. Python analyzes. Mixing them couples pipeline logic to analysis logic — hard to change either independently.
+- **Data tooling:** The source is a cumulative Excel export from XHS Creator Studio. `pd.read_excel` + DataFrame manipulation is exactly what pandas is built for. Doing this in Node is verbose and non-idiomatic.
+- **Industry alignment:** The full pattern is three layers — Python for orchestration and data wrangling, C++ for hot-path computation, Node for execution. This is exactly how quant research infrastructure is structured. Python handles the research environment, C++ owns the pricing/risk math, a separate execution system acts on the output. Building to that pattern now makes the architecture legible to any fintech/quant interviewer — and the C++ swap is a drop-in, not a rewrite, because the scoring interface is isolated from day one.
+
+**Why not TypeScript:**
+
+| Task | TypeScript | Python + C++ |
 |---|---|---|
 | Rolling averages, weighted scoring | Verbose, no native DataFrame | pandas — 2 lines |
 | Statistical significance | No standard library | scipy/numpy built-in |
-| Data manipulation at scale | Doable but not idiomatic | Industry standard |
-
-More importantly: Python for data analysis is the fintech industry standard. This is how quant research infrastructure is actually structured — Python analyzes, other systems act on the output.
+| Large-scale data manipulation | Doable but not idiomatic | Industry standard |
+| Hot-path numerical computation | No path to native C++ integration | pybind11 bridge — C++ .so called directly from Python |
 
 ---
 
-## 4. Architecture
+## 3. Architecture
 
 Two phases. Phase 1 ships with the core pipelines. Phase 2 activates once enough performance-enriched archive rows exist.
 
@@ -55,24 +58,28 @@ Two phases. Phase 1 ships with the core pipelines. Phase 2 activates once enough
 
 ```
 XHS Creator Studio → manual Excel export → shared_volume/xhs/performance_export.xlsx
-                                                          ↓
+                                                      ↓
 XHS Scheduler (Node) ──→ POST /analyze/xhs ──→ FastAPI (Python)
-                                                          ↓
-                                                   pd.read_excel
-                                                   match rows to xhs_post_archive by title/timestamp
-                                                   write views/saves/CTR onto archive rows (backfill)
-                                                   pandas scoring per post type
-                                                          ↓
-                                              JSON response (content_weights + top posts per type)
-                                                          ↓
-                              ┌───────────────────────────┴────────────────────────────┐
-                              ↓                                                         ↓
-                    Scheduler writes                                        POST /tune/xhs (Claude)
-                    xhs/config.json                                                     ↓
-                    (rotation weights)                              top posts + current prompt → Claude
-                                                                                        ↓
-                                                                         archive current prompt
-                                                                         write updated prompt to prompts.json
+                                                      ↓
+                                               pd.read_excel → DataFrame
+                                               match rows to xhs_post_archive by title/timestamp
+                                               write views/saves/CTR onto archive rows (backfill)
+                                                      ↓
+                                          ┌── C++ scoring core (pybind11) ──┐
+                                          │  compute_scores()               │
+                                          │  normalize_weights()            │
+                                          └─────────────────────────────────┘
+                                                      ↓
+                                          JSON response (content_weights + top posts per type)
+                                                      ↓
+                          ┌───────────────────────────┴────────────────────────────┐
+                          ↓                                                         ↓
+                Scheduler writes                                        POST /tune/xhs (Claude)
+                xhs/config.json                                                     ↓
+                (rotation weights)                              top posts + current prompt → Claude
+                                                                                    ↓
+                                                                     archive current prompt
+                                                                     write updated prompt to prompts.json
 ```
 
 ### Phase 2 — RAG Pipeline (activates after performance backfill)
@@ -96,12 +103,86 @@ At generation time (XHS generator — Node):
     Claude writes toward proven content, not just instructions
 
 Before generation (semantic dedup):
-    Same vector query against last 30 days
-    If cosine similarity > 0.85 → steer to different angle
+    C++ cosine_similarity() against last 30 days of archive
+    If similarity > 0.85 → steer to different angle
     Prevents repeated topic angles (post_history.json only deduplicates race names)
 ```
 
-The Python service is its own Docker container. The XHS scheduler calls it once per month (or on demand) after a new export is dropped into the shared volume. `/embed/xhs` is called once after each `/analyze/xhs` run to keep embeddings current.
+The analytics service runs in its own Docker container. XHS scheduler calls it once per month (or on demand) after a new export drops. `/embed/xhs` runs automatically after each `/analyze/xhs` to keep embeddings current.
+
+---
+
+## 4. C++ Scoring Core
+
+### The pattern
+
+In quant firms, Python handles research, data wrangling, and strategy logic. The actual numerical computation — pricing models, risk calculations, signal scoring — runs in C++. Python calls into it via a bridge (pybind11, Cython, or similar). This gives Python's ergonomics for the work Python is good at, and C++'s performance for tight numerical loops.
+
+This service follows the same separation:
+
+```
+FastAPI (Python)
+    → pd.read_excel → DataFrame          ← Python: I/O, wrangling
+    → df.to_numpy()
+        → xhs_analytics_core (C++ .so)   ← C++: hot-path math
+            → compute_scores()           ← weighted sum + undersampling correction
+            → normalize_weights()        ← softmax normalization
+            → cosine_similarity()        ← semantic dedup (Phase 2)
+    ← numpy array
+    → DB writes, JSON response           ← Python: orchestration, output
+```
+
+Python side stays clean — the C++ module is just a function call:
+
+```python
+import xhs_analytics_core  # compiled pybind11 .so
+
+scores = xhs_analytics_core.compute_scores(df[metrics].to_numpy(), weights)
+normalized = xhs_analytics_core.normalize_weights(scores, post_counts)
+```
+
+C++ owns the computation — no GIL, no interpreter overhead:
+
+```cpp
+// xhs_analytics_core.cpp
+std::vector<double> compute_scores(
+    const py::array_t<double>& metric_matrix,  // [n_posts x 3] — views, saves, CTR
+    const py::array_t<double>& weights         // [0.4, 0.35, 0.25]
+) {
+    auto buf = metric_matrix.request();
+    double* data = static_cast<double*>(buf.ptr);
+    std::vector<double> scores(buf.shape[0]);
+
+    for (ssize_t i = 0; i < buf.shape[0]; i++) {
+        scores[i] = weights.at(0) * data[i*3 + 0]   // views
+                  + weights.at(1) * data[i*3 + 1]   // saves
+                  + weights.at(2) * data[i*3 + 2];  // CTR
+    }
+    return scores;
+}
+```
+
+### Why this matters at scale
+
+At current cadence (1–2 posts/day), pandas scoring completes in milliseconds. C++ is a no-op performance gain today.
+
+At 1 post/hour — **8,760 posts after year one, 17,500 after year two** — every `/analyze/xhs` call means:
+
+- Composite scoring across 8,760+ rows grouped by 5 post types
+- Rolling window aggregations for trend detection
+- Undersampling correction computed per-type
+- Phase 2: cosine similarity against the full archive for semantic dedup
+
+At that volume, GIL contention, DataFrame overhead, and Python's interpreted loop cost are real. The scoring math — tight numerical loops over large double arrays — is exactly the workload C++ is built for.
+
+### Implementation plan
+
+The scoring logic is deliberately isolated in `analytics/scoring.py` from day one — not entangled in endpoint logic. This makes the C++ swap a drop-in: `scoring.py` calls `xhs_analytics_core` instead of numpy math. No endpoint changes, no pipeline changes.
+
+| Phase | What | Trigger |
+|---|---|---|
+| Now | Python scoring in `analytics/scoring.py` — pandas/numpy, isolated interface | Ship with core pipelines |
+| Later | C++ drop-in — `scoring.py` calls compiled `.so`, interface unchanged | Archive exceeds ~5,000 posts or calibration latency becomes noticeable |
 
 ---
 
@@ -111,16 +192,19 @@ The Python service is its own Docker container. The XHS scheduler calls it once 
 
 The calibration endpoint. Run monthly after dropping a new Excel export.
 
-**Called by:** XHS automation scheduler (monthly, after Excel export is dropped into shared volume)
+**Called by:** XHS scheduler (monthly, after Excel export is dropped into shared volume)
 
-**Input:** No JSON body — reads `shared_volume/xhs/performance_export.xlsx` directly. The Excel file is the cumulative export from XHS Creator Studio (笔记数据 tab), containing one row per post with columns: 笔记标题, 首次发布时间, 曝光, 观看量, 封面点击率, 点赞, 评论, 收藏, 涨粉, 分享, 人均观看时长.
+**Input:** No JSON body — reads `shared_volume/xhs/performance_export.xlsx` directly. The Excel file is the cumulative export from XHS Creator Studio (笔记数据 tab), one row per post with columns: 笔记标题, 首次发布时间, 曝光, 观看量, 封面点击率, 点赞, 评论, 收藏, 涨粉, 分享, 人均观看时长.
 
-Post type is inferred by matching 笔记标题 against `xhs/post_archive/` — the archive already has post type tagged per entry.
+Post type inferred by matching 笔记标题 against `xhs/post_archive/` — archive already has post type tagged per entry.
 
 **What it does:**
-- Computes a composite performance score per category (weighted combination of views, saves, CTR)
-- Applies an undersampling correction — categories with few posts but strong metrics get a boost to encourage more testing
-- Normalizes into content generation weights
+1. Ingests Excel → DataFrame
+2. Backfills views/saves/CTR onto matching `xhs_post_archive` rows
+3. Passes metric matrix to C++ scoring core → composite score per post
+4. Applies undersampling correction per type
+5. Normalizes scores into content generation weights
+6. Returns weights + top 3 posts per type
 
 **Output:**
 ```json
@@ -132,35 +216,21 @@ Post type is inferred by matching 笔记标题 against `xhs/post_archive/` — t
     "health_recovery": 0.10,
     "comparison": 0.06
   },
+  "top_posts": { ... },
   "flags": ["nutrition undersampled — high CTR signal, low post count"],
   "computed_at": "2026-04-02T10:00:00Z"
 }
 ```
 
-**Output also includes:** `top_posts` per post type (top 3 by composite score) — title + full content from post archive. This is passed directly to `/tune/xhs`.
+**Node action:** Scheduler writes `content_weights` to `xhs/config.json`. Next cron cycle picks up updated weights automatically — scheduler already watches config.json for changes.
 
-**Node pipeline action:** Scheduler writes `content_weights` to `xhs/config.json`, overwriting the existing post type weights. Next cron cycle picks up the updated config automatically (scheduler already watches config.json for changes).
-
-**Performance backfill:** As a side effect of reading the Excel export, `/analyze/xhs` also writes views/saves/CTR back onto the matching `xhs_post_archive` rows. This is the data that Phase 2 RAG retrieval sorts on — without it, RAG can only retrieve semantically similar posts, not the ones that actually performed well.
-
----
-
-### `POST /embed/xhs` *(Phase 2)*
-
-Generates and stores embeddings for all `xhs_post_archive` rows that don't yet have one. Called automatically after `/analyze/xhs` completes as part of the monthly calibration flow.
-
-**What it does:**
-- Queries `xhs_post_archive` for rows where `embedding IS NULL`
-- For each row: calls `text-embedding-3-small` (OpenAI) with `title + " " + hook` as input
-- Stores the resulting `vector(1536)` in the `embedding` column (pgvector)
-
-**Result:** The archive becomes a searchable vector store. The XHS generator (Node) queries it directly at generation time — no round-trip to the analytics service needed at generation time, just a Postgres query.
+**Backfill note:** The backfill is a side effect of `/analyze/xhs`, not a separate step. Without it, Phase 2 RAG can only retrieve semantically similar posts, not the ones that actually performed well.
 
 ---
 
 ### `POST /tune/xhs`
 
-The prompt tuning endpoint. Called immediately after `/analyze/xhs` as part of the same monthly calibration flow.
+Prompt tuning endpoint. Called immediately after `/analyze/xhs` as part of the same monthly calibration flow.
 
 **Input:**
 ```json
@@ -176,33 +246,55 @@ The prompt tuning endpoint. Called immediately after `/analyze/xhs` as part of t
 ```
 
 **What it does:**
-- Sends top performing posts + current prompt to Claude
-- Claude returns an updated prompt with suggested additions/changes based on what patterns the top posts share
-- Archives the current prompt to `xhs/prompt_archive/YYYY-MM-DD/<post_type>.txt` before overwriting
+- Sends top posts + current prompt to Claude
+- Claude returns updated prompt based on patterns the top posts share
+- Archives current prompt to `xhs/prompt_archive/YYYY-MM-DD/<post_type>.txt`
 - Writes updated prompt to `xhs/prompts.json`
 
 **Rollback logic:**
-- Each monthly calibration stores a baseline score per post type in `xhs/prompt_archive/YYYY-MM-DD/baseline_scores.json`
-- On next calibration, if composite score for a post type is lower than the baseline from the previous month → auto-rollback to archived prompt, flag in dashboard
-- If higher → keep new prompt, archive becomes the new baseline
+- Each calibration stores baseline score per post type in `xhs/prompt_archive/YYYY-MM-DD/baseline_scores.json`
+- Next calibration: if composite score for a type is lower than last month's baseline → auto-rollback to archived prompt, flag in dashboard
+- If higher → new prompt becomes the baseline
 
-**Resume line:** "Self-adjusting prompts with automatic rollback based on month-over-month performance — no manual tuning required."
+Self-adjusting prompts with automatic rollback based on month-over-month performance — no manual tuning required.
+
+---
+
+### `POST /embed/xhs` *(Phase 2)*
+
+Generates and stores embeddings for all `xhs_post_archive` rows that don't yet have one. Called automatically after `/analyze/xhs` as part of the monthly calibration flow.
+
+**What it does:**
+- Queries `xhs_post_archive` for rows where `embedding IS NULL`
+- For each row: calls `text-embedding-3-small` with `title + " " + hook`
+- Stores resulting `vector(1536)` in the `embedding` column (pgvector)
+
+**Result:** Archive becomes a searchable vector store. XHS generator (Node) queries it directly at generation time — no round-trip to analytics service needed, just a Postgres query.
 
 ---
 
 ## 6. Scoring Logic
 
-**XHS — composite performance score:**
-```python
-# Weighted combination of normalized metrics
-score = (0.4 * norm_views) + (0.35 * norm_saves) + (0.25 * norm_ctr)
+**Composite performance score:**
 
-# Undersampling correction: boost categories with < 15 posts but score > median
+```python
+# analytics/scoring.py — isolated, swappable interface
+def compute_scores(metric_matrix: np.ndarray, weights: list[float]) -> np.ndarray:
+    # Phase 1: pure Python/numpy
+    # Phase 2: xhs_analytics_core.compute_scores(metric_matrix, weights)
+    return (weights[0] * metric_matrix[:, 0]   # views
+          + weights[1] * metric_matrix[:, 1]   # saves
+          + weights[2] * metric_matrix[:, 2])  # CTR
+
+# Undersampling correction — boost high-signal low-count categories
+# Encourages more posts in underrepresented types with strong metrics
 if post_count < 15 and score > median_score:
     score *= 1.3
 ```
 
-Weights (0.4 / 0.35 / 0.25) are configurable — stored in a config file, not hardcoded.
+Metric weights (0.4 / 0.35 / 0.25) are configurable — stored in config, not hardcoded.
+
+The function signature in `scoring.py` does not change when C++ drops in. The only change is the implementation line.
 
 ---
 
@@ -210,12 +302,13 @@ Weights (0.4 / 0.35 / 0.25) are configurable — stored in a config file, not ha
 
 | Layer | Choice | Why |
 |---|---|---|
-| Framework | FastAPI | Standard in quant/fintech Python backends; async-native |
-| Data analysis | pandas + numpy | Industry standard; DataFrames make scoring logic clean and auditable |
-| Embeddings | OpenAI `text-embedding-3-small` | Cheapest reliable embedding model; 1536-dim vectors; same API key as any OpenAI setup |
-| Vector store | pgvector (Postgres extension) | No new infrastructure — runs on the existing PostgreSQL instance; right tool for this data volume vs. Pinecone/Weaviate |
-| Containerization | Docker | Isolated Python runtime; portable; consistent with rest of stack |
-| Config | JSON files | Node pipelines read JSON natively; no extra parsing layer needed |
+| Framework | FastAPI | Standard in quant/fintech Python backends; async-native; Pydantic validation built-in |
+| Data wrangling | pandas + numpy | Industry standard; DataFrames make ingestion and aggregation clean and auditable |
+| Scoring core | C++ via pybind11 | Hot-path math — no GIL, no interpreter overhead; same pattern as quant research infra |
+| Embeddings | OpenAI `text-embedding-3-small` | Cheapest reliable embedding model; 1536-dim vectors |
+| Vector store | pgvector (Postgres extension) | No new infrastructure — runs on existing Postgres instance; right tool at this data volume |
+| Containerization | Docker | Isolated Python + compiled C++ runtime; portable; consistent with rest of stack |
+| Config | JSON files | Node pipelines read JSON natively; no extra parsing layer |
 
 ---
 
@@ -226,7 +319,7 @@ Runs in its own container via docker-compose:
 ```yaml
 services:
   xhs-automation:       # Node
-  analytics-service:    # Python/FastAPI — port 8000
+  analytics-service:    # Python/FastAPI + C++ .so — port 8000
 ```
 
 XHS scheduler calls `http://analytics-service:8000` internally. Not exposed publicly.
@@ -235,8 +328,9 @@ XHS scheduler calls `http://analytics-service:8000` internally. Not exposed publ
 1. Download Excel export from XHS Creator Studio → 笔记数据 → 导出数据
 2. Drop file into shared volume at `xhs/performance_export.xlsx`
 3. Trigger via dashboard: `POST /api/analytics/calibrate`
-   - Calls `/analyze/xhs` → writes updated weights to `xhs/config.json`
+   - Calls `/analyze/xhs` → backfills archive → scores via C++ core → writes updated weights to `xhs/config.json`
    - Calls `/tune/xhs` per post type → archives current prompts → writes updated prompts to `prompts.json`
+   - Calls `/embed/xhs` → generates embeddings for new archive rows (Phase 2)
    - Dashboard shows diff of what changed + any rollbacks triggered
 
 ---
@@ -245,19 +339,24 @@ XHS scheduler calls `http://analytics-service:8000` internally. Not exposed publ
 
 **"How did you use Python in these projects?"**
 
-> I built a Python analytics service that the XHS automation pipeline calls monthly to calibrate its content strategy. It reads our cumulative performance export from XHS Creator Studio — views, saves, CTR per post — joins it against our post archive to tag each row by post type, then computes a composite score and normalizes it into content generation weights. The scheduler reads those weights to determine the post type rotation going forward. It also calls a prompt tuning endpoint that sends our top-performing posts per type to Claude along with the current prompt — Claude returns an updated prompt, we archive the old one, and if next month's performance is worse we auto-rollback. The whole thing runs without manual intervention. FastAPI exposes the endpoints, pandas handles Excel ingestion and aggregation. Python for analysis, Node for execution — same separation you'd see in quant research infrastructure.
+> I built a Python analytics service that the XHS automation pipeline calls monthly to calibrate its content strategy. It reads our cumulative performance export from XHS Creator Studio — views, saves, CTR per post — joins it against our post archive to tag each row by post type, then computes a composite score and normalizes it into content generation weights. The scheduler reads those weights to determine post type rotation going forward. It also calls a prompt tuning endpoint that sends top-performing posts per type to Claude along with the current prompt — Claude returns an updated prompt, we archive the old one, and if next month's performance is worse we auto-rollback. FastAPI exposes the endpoints, pandas handles Excel ingestion, C++ handles the scoring math. Python for analysis and orchestration, Node for execution — same separation you'd see in quant research infrastructure.
+
+**"Where does C++ fit in?"**
+
+> The scoring computation — weighted sums across post metrics, normalization, cosine similarity for semantic dedup — is isolated behind a clean interface in `analytics/scoring.py`. Phase 1 ships with numpy math. The interface is defined so C++ can drop in via pybind11 without touching any endpoint or pipeline code. At current scale it doesn't matter, but at 1 post/hour the archive hits 8,000+ rows after year one, and tight numerical loops over that volume is exactly where C++ wins over an interpreted loop. Same pattern quant firms use: Python orchestrates, C++ owns the hot path.
 
 **"Tell me about your RAG experience."**
 
-> The analytics service also drives a RAG pipeline. When it ingests the monthly Excel export it backfills performance data — views, saves, CTR — onto the post archive rows. Then it calls a separate endpoint that generates embeddings for every archive post using OpenAI's text-embedding-3-small and stores them in a pgvector column on the same Postgres instance. At generation time, the XHS pipeline embeds the candidate post topic, queries for the 5 most semantically similar past posts filtered by type and sorted by views, and injects them as few-shot examples into the Claude prompt. There's also a semantic dedup check before generation — if the proposed angle is too close to something published in the last 30 days, it steers away. I chose pgvector over a dedicated vector DB because the data volume didn't justify the infrastructure overhead — it's just a Postgres extension on the instance we already had.
+> The analytics service drives a RAG pipeline. When it ingests the monthly Excel export it backfills performance data — views, saves, CTR — onto the post archive rows. Then a separate endpoint generates embeddings for every archive post using OpenAI's text-embedding-3-small and stores them in a pgvector column on the same Postgres instance. At generation time, the XHS pipeline embeds the candidate topic, queries for the 5 most semantically similar past posts filtered by type and sorted by views, and injects them as few-shot examples into the Claude prompt. There's also a semantic dedup check before generation — if the proposed angle is too close to something published in the last 30 days it steers away. I chose pgvector over a dedicated vector DB because the data volume didn't justify the infrastructure overhead — it's just a Postgres extension on the instance we already had.
 
-**One-liner for resume:** Self-adjusting content pipeline — monthly performance export drives automatic rotation weight updates, prompt tuning with rollback, and performance-weighted RAG few-shot injection.
+**Resume one-liner:** Self-adjusting content pipeline — monthly performance export drives automatic rotation weight recalibration, prompt tuning with auto-rollback, and performance-weighted RAG few-shot injection. Scoring core designed for C++ drop-in at scale.
 
 ---
 
 ## 10. Implementation Notes
 
-- Build this after the core Rakuten and XHS pipelines are working — it's an enhancement layer, not a dependency
-- Start with hardcoded weights in the Node pipelines; swap in the analytics service call once it's built
-- The scoring formulas are simple enough to implement and explain — complexity is in the data pipeline design, not the math
-- Pydantic models for request/response validation (consistent with Investment Simulator FastAPI patterns)
+- Build after core Rakuten and XHS pipelines are working — enhancement layer, not a dependency
+- Start with hardcoded weights in Node pipelines; swap in analytics service call once built
+- Scoring logic goes in `analytics/scoring.py` from day one — isolated, not entangled in endpoint handlers. This is the C++ swap point.
+- Pydantic models for request/response validation
+- C++ module compiled into Docker image at build time — no runtime compilation
