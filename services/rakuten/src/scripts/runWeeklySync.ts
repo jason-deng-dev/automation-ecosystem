@@ -17,8 +17,6 @@ import {
 	getConfig,
 } from "../db/queries";
 
-const categories = getCategoryIds();
-
 export default async function runWeeklySync() {
 	const log = {
 		operation: "weekly_sync",
@@ -29,7 +27,7 @@ export default async function runWeeklySync() {
 		errors: [] as string[],
 	};
 
-	const { productsPerCategory } = await getConfig();
+	const [categories, { productsPerCategory }] = await Promise.all([getCategoryIds(), getConfig()]);
 	console.log("Starting weekly sync...");
 
 	// Step 1: Bump missed_scrapes for all products — upsert will reset to 0 for any product seen this run
