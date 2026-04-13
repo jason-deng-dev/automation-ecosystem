@@ -58,19 +58,18 @@
 ---
 
 - [ ] Rakuten section (detail page)
+  - Note: all data reads from PostgreSQL directly (shared volume JSON files removed — see rakuten §11.16)
+  - Note: `POST /api/rakuten/trigger` and `POST /api/rakuten/retry` removed — trigger-category is redundant (use config + sync), retry self-heals via weekly sync
   - [ ] Catalog stats: total cached, pushed to WooCommerce, per-category breakdown
-    - [ ] `GET /api/rakuten/stats` — read `rakuten/product_stats.json`
+    - [ ] `GET /api/rakuten/stats` — query `product_stats` table in PostgreSQL
   - [ ] Import log table with failed imports panel
-    - [ ] `GET /api/rakuten/import-log` — read `rakuten/import_log.json`
-  - [ ] Pricing config editor — inline editable table, save writes config.json
-    - [ ] `GET /api/rakuten/config` — read `rakuten/config.json`
-    - [ ] `POST /api/rakuten/config` — write `rakuten/config.json`
-  - [ ] Category product management
-    - [ ] Per-category rows showing current product count and WooCommerce live count
-    - [ ] "Add X" input + button per category — `POST /api/rakuten/trigger` with `{ category, count }` — fetches X more top-ranked products from Rakuten and pushes to WooCommerce
-  - [ ] Home card triggers
-    - [ ] Fetch products: `POST /api/rakuten/trigger` — category + count via Rakuten :3002
-    - [ ] Retry failed imports: `POST /api/rakuten/retry` — via Rakuten :3002
+    - [ ] `GET /api/rakuten/import-log` — query `import_logs` table in PostgreSQL
+  - [ ] Pricing config editor — inline editable fields, save calls rakuten service
+    - [ ] `GET /api/rakuten/config` — query `config` table in PostgreSQL
+    - [ ] `POST /api/rakuten/config` — call rakuten `POST /api/config` (updates DB + reloads pricing + re-pushes prices)
+  - [ ] Manual sync trigger
+    - [ ] `POST /api/rakuten/sync` — call rakuten `POST /api/sync` (triggers `runWeeklySync()`)
+  - [ ] Run log table — query `run_logs` table in PostgreSQL
 
 ---
 

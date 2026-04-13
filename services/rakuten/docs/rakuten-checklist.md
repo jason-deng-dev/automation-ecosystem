@@ -201,24 +201,28 @@
 - [x] Product request flow bug fixes & improvements (found during live testing)
   - [x] Fix `upsertProduct` subquery — `SELECT id FROM subcategories WHERE $12 = ANY(genre_ids)` returns multiple rows when a genre ID matches multiple subcategories; add `LIMIT 1`
   - [x] Fix empty `productIds` when products already exist in DB — fetch all product URLs from Rakuten result, split by `wc_product_id` presence, return existing + newly pushed IDs combined
-  - [x] Fix WooCommerce image 404 — catch `woocommerce_product_image_upload_error` in `pushProduct`, retry with only first image
+  <!-- - [x] Fix WooCommerce image 404 — catch `woocommerce_product_image_upload_error` in `pushProduct`, retry with only first image -->
   - [x] Fix keyword translation — skip DeepL if keyword has no Chinese characters (brand names like "Nike", "ASICS" pass through as-is); hardcode source lang to `"zh"` to prevent misdetection
   - [x] Add extensive pipeline logging — `[api]`, `[request]`, `[push]`, `[translateKeyword]` tags across `app.ts`, `controller.ts`, `woocommerceAPI.ts`, `rakutenAPI.ts`
   - [x] DB keyword pre-search — before Rakuten fetch, query DB for products with `itemName ILIKE '%keyword%'`; include matching `wc_product_id`s in return alongside newly pushed ones
   - [x] Pipeline run logging — write keyword, translated keyword, genre validation result, Claude result, products pushed, and errors to `run_logs` for every `itemRequestByKeyword` operation (same pattern as `runWeeklySync`)
+  - [x] Update keyword search default sort to `-reviewCount` — most reviewed first; best proxy for purchase volume since Item Search API has no purchase count sort and Ranking API doesn't support keyword search
 
-- [ ] Rate limiting → §11.14
-  - [ ] Identify all public-facing endpoints that need protection (Rakuten quota, DeepL quota, WooCommerce writes)
-  - [ ] Install `express-rate-limit` (+ Redis store for production-grade persistence)
-  - [ ] Apply per-IP limits on public endpoints
-  - [ ] Hide VPS IP behind WordPress PHP proxy — IP never exposed to client
+- [x] Rate limiting → §11.14
+  - Only public endpoint: `POST /api/request-product` (called by Onamae WP proxy); `/api/config` is internal dashboard only
+  - VPS IP already hidden behind WP PHP proxy (done in deploy section)
+  - [x] Install `express-rate-limit`, `rate-limit-redis`, `redis` (node-redis v4)
+  - [x] Add `REDIS_URL` to `.env.example`
+  - [x] Add `REDIS_URL=redis://localhost:6379` to `~/rakuten/.env` on VPS — one-time manual step via SSH
+  - [x] Install Redis on VPS — one-time manual step: `sudo apt install redis-server && sudo systemctl enable redis`
+  - [x] Create `src/middleware/rateLimiter.ts` — Redis-backed limiter, 100 req / 15 min (all users share one IP via WP proxy — per-customer limiting deferred to v2)
+  - [x] Apply rate limiter middleware to `POST /api/request-product` in `app.ts`
 
-- [ ] Dashboard integration (Express :3002 — internal only) → §2 Architecture, §3.2
-  - [ ] POST /api/sync — manually trigger `runWeeklySync()` on demand (same logic as cron, callable from dashboard)
-  - [ ] POST /api/trigger-category — `{ category: string, count: number }` — fetch top X ranked products for the given category, upsert DB, push new ones to WooCommerce; called by dashboard "Add X" button → §3.2 controller.ts
-  - [ ] POST /retry — retry failed WooCommerce imports
-  - [ ] POST /api/config — update config row in DB + reload pricing + re-push prices
-  - [ ] Dashboard reads pipeline state, run logs, product stats from DB directly
+- [x] Dashboard integration (rakuten-side endpoints) → §2 Architecture, §3.2
+  - [x] POST /api/sync — manually trigger `runWeeklySync()` on demand (same logic as cron, callable from dashboard)
+  - [x] POST /api/config — update config row in DB + reload pricing + re-push prices (already implemented)
+  - Note: `POST /api/trigger-category` removed — redundant; update `productsPerCategory` in config + trigger `/api/sync` achieves the same result
+  - Note: dashboard reads pipeline state, run logs, product stats from DB directly — tracked in dashboard checklist
 
 ---
 
