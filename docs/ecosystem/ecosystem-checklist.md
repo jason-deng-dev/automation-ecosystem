@@ -27,6 +27,7 @@
 - [x] Manual trigger via run-testRun.js
 - [x] Shared volume migration
 - [x] Dockerfile written
+- [ ] PostgreSQL migration — xhs_run_logs, xhs_post_history, xhs_post_archive (full analytics record), xhs_schedule, pipeline_state; replace all file ops with DB
 - [ ] Bot detection mitigations (publisher.js)
 - [ ] Dashboard re-auth flow (headless QR scan via SSE)
 - [ ] docker-compose integration
@@ -43,9 +44,10 @@
 - [x] Abort + preserve races.json if < 30 races returned
 - [x] Weekly cron (Sunday 2am JST)
 - [x] Manual trigger via docker exec
+- [ ] PostgreSQL migration — races table, scraper_run_logs, pipeline_state; replace all file writes with DB ops
 - [ ] Dockerfile
 - [ ] docker-compose integration
-- [ ] Verify races.json written to shared volume on run
+- [ ] Verify races written to PostgreSQL on run
 
 ---
 
@@ -56,6 +58,7 @@
 - [x] React SPA (listing, detail, filter, search, drawer)
 - [x] i18n — EN/ZH toggle
 - [ ] Vite bundle + WordPress plugin PHP/shortcode
+- [ ] PostgreSQL migration — server.js reads from races table instead of races.json
 - [ ] Dockerfile
 - [ ] docker-compose integration
 

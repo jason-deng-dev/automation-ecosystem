@@ -10,6 +10,48 @@
 
 ---
 
+## 0. C++ Prerequisites for This Project
+
+The C++ scoring core is isolated in one file (`analytics/scoring_core.cpp`). You don't need deep C++ knowledge — you need enough to write tight numerical loops and expose them to Python.
+
+### What to learn (in order)
+
+**1. C++ basics — syntax you'll actually use**
+- Variables, types (`int`, `double`, `std::vector<double>`)
+- For loops, functions, `return`
+- `static_cast<double>` — type casting
+- Pointers and raw memory access (`double* data = static_cast<double*>(buf.ptr)`) — this is the pybind11 pattern for reading numpy arrays
+
+**2. pybind11 — the Python/C++ bridge**
+- What it does: compiles C++ into a `.so` shared library that Python can `import` like a normal module
+- `py::array_t<double>` — how pybind11 represents a numpy array in C++
+- `buf.request()` → `buf.ptr`, `buf.shape[0]` — how to read the array's data pointer and dimensions
+- `PYBIND11_MODULE(xhs_analytics_core, m)` — how to expose your C++ functions to Python
+- Resource: pybind11 docs → "Accepting buffer objects" section is exactly what this project uses
+
+**3. CMake basics — the build system**
+- `CMakeLists.txt` — tells CMake how to compile your `.cpp` into a `.so`
+- `find_package(pybind11)`, `pybind11_add_module()` — the two lines that wire pybind11 into your build
+- `cmake .. && make` — how to actually compile
+- You don't need to understand CMake deeply — the pybind11 docs have a copy-paste starter `CMakeLists.txt`
+
+**4. Docker + compiled C++ — why it matters**
+- The `.so` file is compiled for a specific OS/architecture. It can't be built on Mac and run on Linux (your Lightsail VPS).
+- Solution: compile inside the Docker image at build time (`RUN cmake .. && make` in Dockerfile)
+- This is the main gotcha — understand it before you hit it
+
+### What you don't need
+- Classes, inheritance, templates, STL beyond `std::vector`
+- Memory management / RAII (pybind11 handles lifetime)
+- Anything beyond: write a function that takes a numpy array, loops over it, returns a vector
+
+### Recommended path
+1. Read pybind11 "First steps" + "Buffer protocol" docs (~1 hour)
+2. Write `hello_world.cpp` → expose one function → call it from Python → confirm it works
+3. Then write the actual `compute_scores()` — it's ~15 lines of C++
+
+---
+
 ## 1. What This Is
 
 A standalone Python/C++ analytics microservice (FastAPI) that the XHS content automation pipeline calls monthly to calibrate its content strategy. Instead of a hardcoded post type rotation, the scheduler asks this service: "given our performance data, what should we post more of?" The service analyzes the export, responds with normalized weights, and the scheduler updates its config automatically.
