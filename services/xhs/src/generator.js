@@ -286,4 +286,4 @@ function buildContext(type, prompts, races, raceName) {
 	return { contextToUse, comments };
 }
 
-export { generatePost, getContextPrompts, chooseRace, getHashtags, buildContext };
+export { generatePost, getContextPrompts, chooseRace, getHashtags, buildContext, cleanName };

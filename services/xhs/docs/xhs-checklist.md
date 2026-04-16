@@ -71,6 +71,7 @@
   - [x] context-builder.test.js — test each post type builds correct context
   - [x] generator.test.js — mock Anthropic client, verify API called correctly
   - [x] scheduler.test.js — skipped: getPostType() is a plain lookup table, not worth 7 test cases; cron wiring already covered by individual unit tests
+  - [x] utils.test.js — cleanName() edge cases (dedup function; had real prod bug)
 
 - [x] Test generation across all post types
 
