@@ -17,7 +17,7 @@ For Race Hub design (Express API + React SPA), see `services/race-hub/docs/race-
        │
        │ writes
        ▼
-PostgreSQL: races table, scraper_run_logs, pipeline_state
+PostgreSQL (ecosystemdb): races, scraper_run_logs, pipeline_state
        │
        │ reads
        ▼
@@ -69,57 +69,44 @@ RunJapan (runjapan.jp) — the most complete Japanese marathon listing source.
 
 **Session handling:** The listing page is paginated. Page 2+ requires a cookie set by the initial POST response. Uses `tough-cookie` + `axios-cookiejar-support` to maintain the session automatically across requests.
 
-**Output:** Writes `scraper/races.json` only if ≥ 30 races are returned — preserves last good output if run fails or returns partial data.
+**Output:** Upserts all races to `ecosystemdb.races` via `ON CONFLICT (url) DO UPDATE`. Aborts upsert (but still logs) if fewer than 30 races are returned — preserves existing DB rows.
 
 ---
 
-## 5. Output Files
+## 5. Database Output
 
-Both files written to the shared Docker volume:
+All output goes to `ecosystemdb` (PostgreSQL). No JSON files written.
 
-**`scraper/races.json`**
-- Array of race objects (see §3 for schema)
-- Includes `last_updated` ISO timestamp at top level
-- Contains both English and Chinese fields per race — all translatable fields have a corresponding `_zh` variant (`name_zh`, `date_zh`, `location_zh`, `entryStart_zh`, `entryEnd_zh`, `description_zh`, `info_zh`, `notice_zh`)
-- Read by Race Hub container and XHS container
+**`races` table**
+- One row per race, keyed by `url` (UNIQUE)
+- Contains all English and Chinese fields per race
+- Shared with XHS (reads race context for content generation) and Race Hub (serves to WordPress)
+- Upserted via `ON CONFLICT (url) DO UPDATE` — incremental, safe to re-run
 
-**`scraper/pipeline_state.json`**
+**`pipeline_state` table**
 
 Written at run start and end so the Dashboard can poll current scraper state.
 
-```json
-{ "state": "idle | running | failed" }
-```
+| Column | Value |
+|---|---|
+| `service` | `'scraper'` |
+| `state` | `'idle'` \| `'running'` \| `'failed'` |
+| `updated_at` | timestamp |
 
-Written as `"running"` before the scrape starts, then updated to `"idle"` or `"failed"` when the run completes. Read by Dashboard via `GET /api/pipeline-state`.
+Set to `'running'` before scrape starts, updated to `'idle'` or `'failed'` on completion. Shared with XHS service (each service has its own row).
 
----
+**`scraper_run_logs` table**
 
-**`scraper/run_log.json`**
+One row per scraper run.
 
-Object keyed by ISO timestamp. Each entry represents one scraper run.
-
-```json
-{
-  "2026-03-25T02:00:00.000Z": {
-    "outcome": "success | failed",
-    "races_scraped": 87,
-    "failure_count": 2,
-    "failed_urls": ["https://runjapan.jp/race/E123456"],
-    "error_msg": null
-  }
-}
-```
-
-| Field | Type | Notes |
+| Column | Type | Notes |
 |---|---|---|
-| `outcome` | string | `"success"` or `"failed"` |
-| `races_scraped` | number | Number of races successfully written to races.json |
-| `failure_count` | number | Number of detail pages that failed to scrape |
-| `failed_urls` | string[] | URLs of races that failed — empty array on clean run |
-| `error_msg` | string \| null | Top-level error message if run aborted, `null` otherwise |
-
-Read by Dashboard to show scraper health and last run time.
+| `outcome` | string | `'success'` or `'failed'` |
+| `races_scraped` | number | New races scraped this run (not total in DB) |
+| `failure_count` | number | Detail pages that failed to scrape |
+| `failed_urls` | TEXT[] | URLs of races that failed — empty on clean run |
+| `error_msg` | string \| null | Top-level error if run aborted, null otherwise |
+| `logged_at` | TIMESTAMPTZ | Auto-set on insert |
 
 ---
 
@@ -134,7 +121,8 @@ Read by Dashboard to show scraper health and last run time.
 |Session handling|tough-cookie + axios-cookiejar-support|Manual cookie extraction|Jar captures cookies automatically — replicates browser session behaviour with no manual work|
 |Error handling|Log and continue per race|Abort on first failure|One bad detail page should not abort the full run — partial data is better than no data|
 |Retries|axios-retry: 3 retries, exponential backoff, network errors + 5xx only|Manual retry loop|axios has no built-in retry; axios-retry is a one-liner; only retries transient failures|
-|Output protection|Only overwrite races.json on successful run (≥ 30 races)|Always overwrite|Preserves last good data if scraper crashes or RunJapan returns partial results|
+|Output protection|Abort upsert if < 30 races returned; existing DB rows preserved|Always overwrite|Preserves last good data if scraper crashes or RunJapan returns partial results|
+|Storage|PostgreSQL (ecosystemdb)|Shared volume JSON files|Shared volume created tight coupling between containers; DB decouples writer (scraper) from readers (Race Hub, XHS)|
 |Language|Node.js / JavaScript|Python|Consistent with rest of stack|
 
 ---
@@ -145,41 +133,35 @@ Read by Dashboard to show scraper health and last run time.
 
 |Component|Status|Notes|
 |---|---|---|
-|Core scraping logic|✅ Done|`scraper.js` ported to `services/scraper/`|
-|Scraper container (standalone)|🔧 In progress|scraper.js ported; Dockerfile + package.json + cron wiring still needed|
-|races.json|🔧 Partial|Will be written to shared_volume/scraper/ — stale copy in xhs/data/ kept only for local XHS testing|
-|run_log.json|❌ Not started|New — add structured logging to scraper|
-|Deploy|❌ Not started|—|
+|Core scraping logic|✅ Done|`scraper.js` in `src/`|
+|Cron scheduling|✅ Done|`scheduler.js` — Sunday 2am JST|
+|PostgreSQL migration|✅ Done|All file I/O replaced with DB queries; `src/db/` layer added|
+|Dockerfile|✅ Done|`node:22-alpine`, `CMD node scripts/run-scheduler.js`|
+|CI/CD|✅ Done|`cicd-scraper.yml` — vitest on push, deploy to Lightsail on main|
+|Deploy|✅ Done|Container running on Lightsail, 69 races in `ecosystemdb.races`|
 
 ### 7.2 Phase 1 — Standalone Scraper Container
 
-1. ~~Port `scraper.js` from `services/xhs/src/scraper.js`~~ ✅ Done
-2. Add structured `run_log.json` output (timestamp, races scraped, failure count, failed URLs, outcome)
-3. Validate output — abort + preserve previous `races.json` if < 30 races returned
-4. Wire weekly cron (Sunday 2am JST)
-5. Dockerfile + docker-compose integration
-
-**Exit criteria:** `races.json` contains 30+ races with complete data. Cron runs cleanly weekly. `run_log.json` written on each run.
+1. ~~Port `scraper.js` from `services/xhs/src/scraper.js`~~ ✅
+2. ~~Add structured run log output~~ ✅ — `scraper_run_logs` table
+3. ~~Validate output — abort if < 30 races returned~~ ✅
+4. ~~Wire weekly cron (Sunday 2am JST)~~ ✅
+5. ~~Dockerfile + deploy~~ ✅
 
 ### 7.3 Phase 2 — Incremental Scraping
 
-1. On startup, load existing `races.json` and build `Map<url, race>` for O(1) lookup
+1. ~~On startup, load existing races from DB and build `Map<url, race>` for O(1) lookup~~ ✅
 2. Scrape RunJapan listing pages to get current set of race URLs
 3. For each URL: if already in map, reuse existing race object — skip detail page re-scrape
 4. For new URLs: scrape detail page, add to output set
-5. Drop races no longer appearing in RunJapan listing
+5. Drop races no longer appearing in RunJapan listing (stale races filtered by `cleanRaces`)
 6. Merge and proceed to translation pass
-
-See §8.4 for the problem statement and full rationale.
-
----
 
 ### 7.4 Phase 3 — Chinese Translation
 
-
 After the full scrape is complete, run a translation pass using DeepL API (EN → ZH-HANS).
 
-**Timing:** Translate after `races.json` is fully populated — not per-race during scraping. Races may be deduplicated or dropped during the scrape pass; translating only the final set avoids wasting DeepL quota on discarded records.
+**Timing:** Translate after all new races are scraped — not per-race during scraping. Races may be deduplicated or dropped during the scrape pass; translating only the final set avoids wasting DeepL quota on discarded records.
 
 **Fields translated per race:**
 
@@ -194,16 +176,12 @@ After the full scrape is complete, run a translation pass using DeepL API (EN �
 | `info` (all keys + values) | `info_zh` | Translate keys and values recursively — preserve nested structure |
 | `notice[]` | `notice_zh[]` | Translate each item individually |
 
-**Incremental translation:**
-- Only translate races where any `_zh` field is missing or the corresponding source field has changed since the last run
-- Compare by hashing source fields — avoid re-translating unchanged content to conserve DeepL quota
-
 **Failure handling:**
-- If DeepL is unavailable or quota exceeded: write `races.json` with all `_zh` fields set to `null` for affected races — UI falls back to English fields gracefully
+- If DeepL is unavailable or quota exceeded: upsert races with `_zh` fields set to `null` — UI falls back to English fields gracefully
 
 **Technical decisions:**
 - DeepL API key stored in scraper `.env`
-- Translation runs as a post-scrape pass in the same process, before `races.json` is written
+- Translation runs as a post-scrape pass in the same process, before DB upsert
 
 ---
 
@@ -213,7 +191,7 @@ After the full scrape is complete, run a translation pass using DeepL API (EN �
 
 **Challenge:** All race data must be scraped from HTML. RunJapan's markup may change without notice.
 
-**Solution:** Selectors isolated in config; validation aborts without overwriting `races.json` if < 30 races returned. Core scraping logic proven in production.
+**Solution:** Selectors isolated in config; validation aborts upsert (preserving existing DB rows) if < 30 races returned. Core scraping logic proven in production.
 
 ### 8.2 Scraper Pagination: Session-Dependent Navigation
 
@@ -235,13 +213,13 @@ After the full scrape is complete, run a translation pass using DeepL API (EN �
 
 ### 8.4 Full Re-Scrape Every Run Wastes DeepL Quota
 
-**Challenge:** The scraper originally rebuilt `races[]` from scratch on every weekly run. With translation added, this would re-translate all ~60 races every run even when nothing changed — burning DeepL quota on identical content and adding unnecessary latency.
+**Challenge:** The scraper originally rebuilt the race set from scratch on every weekly run. With translation added, this would re-translate all ~60 races every run even when nothing changed — burning DeepL quota on identical content and adding unnecessary latency.
 
-**Solution:** Incremental scraping. On startup, load existing `races.json` and build a `Map<url, race>` in memory. During the listing scrape, check each race URL against the map — if already present, reuse the existing object (including all `_zh` fields) and skip re-scraping the detail page. Only new URLs trigger a detail-page fetch. Translation pass then only runs on races missing `_zh` fields.
+**Solution:** Incremental scraping. On startup, load existing races from DB (`SELECT * FROM races`) and build a `Map<url, race>` in memory. During the listing scrape, check each race URL against the map — if already present, reuse the existing object (including all `_zh` fields) and skip re-scraping the detail page. Only new URLs trigger a detail-page fetch. Translation pass then only runs on races missing `_zh` fields.
 
 **Why URL as key, not name:** Each RunJapan URL contains a unique `raceId` (e.g. `raceId=E335908`). Names can repeat across years. URL is guaranteed unique for the lifetime of a listing.
 
-**Why keep races.json as an array:** Race Hub and the SPA both consume races as an array. The `Map` is in-memory only — `races.json` stays as `[]` with no changes needed to any consumer.
+**Why Map in memory, not re-query per race:** The Map is built once at startup from the full DB read. O(1) lookup per race URL during the scrape loop — no per-race DB queries needed.
 
 ### 8.5 Concurrent DeepL Requests Trigger Rate Limiting
 
@@ -272,9 +250,12 @@ The scraper is tested against live output — we can't guarantee which races app
 
 **Retry behaviour:** `axios-retry` wraps the axios instance with 3 retries and exponential backoff (1s → 2s → 4s). Only retries transient failures (network errors, 5xx). 404s and 400s are not retried.
 
-**Full scrape failure:** `races.json` is only overwritten on a successful run (≥ 30 races returned). If the scraper crashes or returns fewer than the threshold, the previous `races.json` is preserved.
+**Full scrape failure:** Upsert is skipped if fewer than 30 races are returned. Existing rows in `ecosystemdb.races` are preserved. Outcome logged to `scraper_run_logs` with `outcome: 'failed'`.
 
-**Manual recovery:** Re-run the scraper container manually, or trigger via `POST /api/sync` on the Race Hub.
+**Manual recovery:** SSH to Lightsail and run:
+```bash
+docker exec scraper node scripts/run-scraper.js
+```
 
 ---
 
@@ -282,23 +263,33 @@ The scraper is tested against live output — we can't guarantee which races app
 
 ```
 services/scraper/
-    ├── scraper.js                  # RunJapan scraper (ported from services/xhs/src/scraper.js)
-    ├── run-scraper.js              # Entry point — runs scraper manually
+    ├── src/
+    │   ├── scraper.js              # RunJapan scraper (two-pass, session cookie handling)
+    │   ├── scheduler.js            # node-cron — Sunday 2am JST
+    │   └── db/
+    │       ├── pool.js             # pg Pool — DATABASE_URL from .env
+    │       ├── queries.js          # getExistingRaces, upsertRace, insertRunLog, upsertPipelineState
+    │       └── schema.sql          # races, pipeline_state, scraper_run_logs (all IF NOT EXISTS)
+    ├── scripts/
+    │   ├── run-scheduler.js        # Container entry point — starts cron daemon
+    │   └── run-scraper.js          # Manual trigger — runs one scrape immediately
     ├── tests/
     │   ├── fixtures/
-    │   │   └── sample-races.json  # Controlled race data for shape/completeness tests
-    │   └── scraper.test.js        # Validates output shape, required fields, min race count
+    │   │   └── sample-races.json   # Controlled race data for shape/completeness tests
+    │   └── scraper.test.js         # Validates output shape, required fields, min race count
     ├── docs/
     │   ├── scraper-design-doc.md
     │   └── scraper-checklist.md
-    ├── Dockerfile                  # (to be created)
-    └── package.json                # (to be created)
+    ├── Dockerfile                  # node:22-alpine, CMD node scripts/run-scheduler.js
+    ├── .dockerignore
+    ├── .env.example
+    └── package.json
 ```
 
 **PostgreSQL — tables this service interacts with:**
 
 | Table | Direction | Contains |
 |---|---|---|
-| `races` | Scraper writes | All upcoming race data from RunJapan — replaces `races.json` |
+| `races` | Scraper writes | All upcoming race data from RunJapan |
 | `scraper_run_logs` | Scraper writes | Per-run: timestamp, races scraped, failure count, failed URLs, outcome |
 | `pipeline_state` | Scraper writes | `{ service: "scraper", state: "idle \| running \| failed" }` |
