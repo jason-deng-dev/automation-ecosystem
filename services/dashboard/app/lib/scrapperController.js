@@ -1,95 +1,72 @@
-import fs from "fs";
-import path from "path";
-import { execSync } from "child_process";
+import { ecosystemPool } from './db/pool.js';
 
-const dataDir = process.env.DATA_DIR;
-const isDev = process.env.NODE_ENV === "development";
+export async function getScraperMetrics() {
+	const [
+		lastRunRes,
+		pipelineStateRes,
+		successRateRes,
+		totalRacesRes,
+		dataFreshnessRes,
+	] = await Promise.all([
+		ecosystemPool.query(
+			`SELECT logged_at, outcome, races_scraped, failure_count, failed_urls, error_msg
+			 FROM scraper_run_logs ORDER BY logged_at DESC LIMIT 1`
+		),
+		ecosystemPool.query(`SELECT state FROM pipeline_state WHERE service = 'scraper'`),
+		ecosystemPool.query(
+			`SELECT outcome FROM scraper_run_logs WHERE logged_at > NOW() - INTERVAL '30 days'`
+		),
+		ecosystemPool.query(`SELECT COUNT(*) AS count FROM races`),
+		ecosystemPool.query(`SELECT MAX(scraped_at) AS last_scraped FROM races`),
+	]);
 
-// current pipeline state
-export function getPipelineState() {
-	const pipelineState = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/pipeline_state.json"), "utf-8"));
-	return pipelineState.state;
+	const row = lastRunRes.rows[0] ?? null;
+	const lastRun = row ? {
+		timestamp: row.logged_at,
+		outcome: row.outcome,
+		races_scraped: row.races_scraped,
+		failure_count: row.failure_count,
+		failed_urls: row.failed_urls ?? [],
+		error_msg: row.error_msg,
+	} : null;
+
+	const pipelineState = pipelineStateRes.rows[0]?.state ?? 'idle';
+
+	const successRateRows = successRateRes.rows;
+	const total = successRateRows.length;
+	const success = successRateRows.filter(r => r.outcome === 'success').length;
+	const successRate = total === 0 ? null : { success, total };
+
+	const totalRaces = Number(totalRacesRes.rows[0]?.count ?? 0);
+
+	const lastScrapedAt = dataFreshnessRes.rows[0]?.last_scraped;
+	const dataFreshness = lastScrapedAt ? formatAge(new Date(lastScrapedAt)) : '—';
+
+	const racesScraped = lastRun
+		? { count: lastRun.races_scraped, belowThreshold: lastRun.races_scraped < 30 }
+		: { count: 0, belowThreshold: true };
+
+	return { lastRun, pipelineState, successRate, totalRaces, dataFreshness, racesScraped, nextScrape: getNextScrape() };
 }
 
-// last run timestamp
-export function getLastTimestamp() {
-	const runLog = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/run_log.json"), "utf-8"));
-	const [lastTimestamp] = Object.entries(runLog).at(-1);
-	return lastTimestamp;
-}
-
-// last run full object
-export function getLastRun() {
-	const runLog = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/run_log.json"), "utf-8"));
-	const [, lastRun] = Object.entries(runLog).at(-1);
-	return lastRun;
-}
-
-// last run status
-export function getLastRunStatus() {
-	const runLog = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/run_log.json"), "utf-8"));
-	const [, lastRun] = Object.entries(runLog).at(-1);
-	return lastRun.outcome;
-}
-
-// success rate over last 30 days
-export function getSuccessRate() {
-	const runLog = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/run_log.json"), "utf-8"));
-	const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-	const filtered = Object.entries(runLog).filter(([key]) => new Date(key) > thirtyDaysAgo);
-	const total = filtered.length;
-	const success = filtered.reduce((acc, [, run]) => run.outcome === "success" ? acc + 1 : acc, 0);
-	return total === 0 ? null : { success, total };
-}
-
-// total races in races.json
-export function getTotalRaces() {
-	const { races } = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/races.json"), "utf-8"));
-	return races.length;
-}
-
-// time until next scheduled scrape (Sunday 02:00 CST = UTC+8)
-export function getNextScrape() {
-	const now = new Date();
-	const nowCst = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-	const daysUntilSunday = (7 - nowCst.getUTCDay()) % 7 || 7;
-	const next = new Date(nowCst);
-	next.setUTCDate(nowCst.getUTCDate() + daysUntilSunday);
-	next.setUTCHours(2, 0, 0, 0);
-	const ms = next - nowCst;
-	const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-	const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-	const mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-	return days > 0 ? `${days}d ${hours}h ${mins}m` : hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-}
-
-// data freshness — age of races.json
-export function getDataFreshness() {
-	const stat = fs.statSync(path.join(dataDir, "scraper/races.json"));
-	const ageMs = Date.now() - stat.mtimeMs;
+function formatAge(date) {
+	const ageMs = Date.now() - date.getTime();
 	const days = Math.floor(ageMs / (1000 * 60 * 60 * 24));
 	const hours = Math.floor((ageMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 	return days > 0 ? `${days}d ${hours}h ago` : `${hours}h ago`;
 }
 
-// races scraped on last run
-export function getRacesScraped() {
-	const runLog = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/run_log.json"), "utf-8"));
-	const [, lastRun] = Object.entries(runLog).at(-1);
-	return { count: lastRun.races_scraped, belowThreshold: lastRun.races_scraped < 30 };
-}
-
-// failed urls from last run
-export function getFailedUrls() {
-	const runLog = JSON.parse(fs.readFileSync(path.join(dataDir, "scraper/run_log.json"), "utf-8"));
-	const [, lastRun] = Object.entries(runLog).at(-1);
-	return lastRun.failed_urls || [];
-}
-
-// manual trigger
-export function runScraper() {
-	const cmd = isDev
-		? `node ../../services/scraper/scraper.js`
-		: `docker exec scraper node scraper.js`;
-	execSync(cmd);
+function getNextScrape() {
+	const now = new Date();
+	// Scraper cron fires Sunday 02:00 JST (UTC+9)
+	const nowJst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+	const daysUntilSunday = (7 - nowJst.getUTCDay()) % 7 || 7;
+	const next = new Date(nowJst);
+	next.setUTCDate(nowJst.getUTCDate() + daysUntilSunday);
+	next.setUTCHours(2, 0, 0, 0);
+	const ms = next - nowJst;
+	const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+	const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+	const mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+	return days > 0 ? `${days}d ${hours}h ${mins}m` : hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 }
