@@ -38,7 +38,9 @@ export default function RaceCard({ race, index, onClick }) {
           <img
             src={race.images[0]}
             alt={f('name')}
-            className="absolute inset-0 w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
           />
           <div className="absolute top-3 left-3">
             <Badge status={status} label={badgeLabel} />

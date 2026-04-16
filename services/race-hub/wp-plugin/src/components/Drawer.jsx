@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useContext } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, useContext } from 'react'
 import { LangContext } from '../App'
 import enText from '../locales/en'
 import zhText from '../locales/zh'
@@ -58,6 +58,16 @@ export default function Drawer({ race, onClose }) {
     if (galleryRef.current) galleryRef.current.scrollLeft = 0
   }, [race])
 
+  // Lock scroll when drawer open — CSS class only, no position changes, no scroll jump
+  useEffect(() => {
+    if (isOpen) {
+      document.documentElement.classList.add('race-hub-noscroll')
+    } else {
+      document.documentElement.classList.remove('race-hub-noscroll')
+    }
+    return () => document.documentElement.classList.remove('race-hub-noscroll')
+  }, [isOpen])
+
   function handleGalleryScroll() {
     const el = galleryRef.current
     if (!el) return
@@ -99,26 +109,16 @@ export default function Drawer({ race, onClose }) {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Swipe handle tab — mobile only, sticks out left edge */}
-        <div className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full bg-surface border border-r-0 border-border px-1.5 py-4 flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-muted text-[16px]">chevron_left</span>
-          <span
-            className="text-muted font-body uppercase"
-            style={{ fontSize: '8px', letterSpacing: '0.1em', writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-          >
-            {text.swipe_to_close ?? 'swipe'}
-          </span>
-        </div>
-
-        {race && (
+{race && (
           <>
             {/* Close button */}
-            <button
+            <div
+              role="button" tabIndex={0}
               onClick={onClose}
-              className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center bg-border hover:bg-[#c6c6c6] transition-colors"
+              className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center bg-border hover:bg-[#c6c6c6] transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-ink text-[18px]">close</span>
-            </button>
+            </div>
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -173,7 +173,7 @@ export default function Drawer({ race, onClose }) {
                       >
                         {race.images.filter(Boolean).map((img, i) => (
                           <div key={i} className="relative flex-none w-full h-full snap-start">
-                            <img src={img} alt={race.name} className="absolute inset-0 w-full h-full object-cover" />
+                            <img src={img} alt={race.name} referrerPolicy="no-referrer" className="absolute inset-0 w-full h-full object-cover" />
                           </div>
                         ))}
                       </div>
@@ -188,8 +188,8 @@ export default function Drawer({ race, onClose }) {
 
                     <div className="hidden md:flex gap-0.5 h-36">
                       {race.images.filter(Boolean).map((img, i) => (
-                        <div key={i} className="relative flex-1 overflow-hidden">
-                          <img src={img} alt={race.name} className="absolute inset-0 w-full h-full object-cover" />
+                        <div key={i} className="flex-1 overflow-hidden">
+                          <img src={img} alt={race.name} referrerPolicy="no-referrer" className="w-full object-cover" style={{ height: '144px' }} />
                         </div>
                       ))}
                     </div>
@@ -204,13 +204,14 @@ export default function Drawer({ race, onClose }) {
                 {/* Full details — accordion */}
                 {race.info && (
                   <section className="border-t border-border">
-                    <button
+                    <div
+                      role="button" tabIndex={0}
                       onClick={() => setInfoExpanded(v => !v)}
-                      className="w-full flex items-center justify-between py-4 text-left"
+                      className="w-full flex items-center justify-between py-4 text-left cursor-pointer"
                     >
                       <span className="font-headline font-bold text-[13px] uppercase tracking-widest text-ink">{text.drawer_race_info}</span>
                       <span className={`material-symbols-outlined text-muted text-[20px] transition-transform duration-300 ${infoExpanded ? 'rotate-180' : ''}`}>expand_more</span>
-                    </button>
+                    </div>
                     <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${infoExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                       <div className="overflow-hidden">
                         <InfoRows info={Object.fromEntries(Object.entries(f('info')).filter(([k]) => !['Date','Location'].includes(k)))} />
@@ -222,13 +223,14 @@ export default function Drawer({ race, onClose }) {
                 {/* Notice — accordion */}
                 {f('notice')?.length > 0 && (
                   <section className="border-t border-border">
-                    <button
+                    <div
+                      role="button" tabIndex={0}
                       onClick={() => setNotesExpanded(v => !v)}
-                      className="w-full flex items-center justify-between py-4 text-left"
+                      className="w-full flex items-center justify-between py-4 text-left cursor-pointer"
                     >
                       <span className="font-headline font-bold text-[13px] uppercase tracking-widest text-ink">{text.drawer_notes}</span>
                       <span className={`material-symbols-outlined text-muted text-[20px] transition-transform duration-300 ${notesExpanded ? 'rotate-180' : ''}`}>expand_more</span>
-                    </button>
+                    </div>
                     <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${notesExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                       <div className="overflow-hidden">
                         <ul className="space-y-2 pb-4">
@@ -243,16 +245,17 @@ export default function Drawer({ race, onClose }) {
                     </div>
                   </section>
                 )}
+
               </div>
             </div>
 
-            {/* CTA — inline in scroll, not sticky, dark background */}
-            <div className="shrink-0 p-4 border-t border-border">
+            {/* CTA — sticky footer, side-by-side */}
+            <div className="shrink-0 border-t border-border p-3 flex gap-2">
               <a
                 href={race.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full bg-ink text-surface font-headline font-bold text-sm py-4 tracking-[0.25em] uppercase text-center hover:bg-neutral-700 transition-colors active:scale-[0.98]"
+                className="flex-1 bg-ink text-surface font-headline font-bold text-[12px] py-3 tracking-[0.2em] uppercase text-center hover:bg-[#333] transition-colors active:scale-[0.98]"
               >
                 {text.drawer_cta}
               </a>
@@ -261,7 +264,7 @@ export default function Drawer({ race, onClose }) {
                   href={race.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full mt-2 py-2.5 text-center font-body text-[12px] uppercase tracking-widest text-muted hover:text-ink transition-colors underline underline-offset-4"
+                  className="flex-1 bg-accent text-white font-headline font-bold text-[12px] py-3 tracking-[0.2em] uppercase text-center hover:bg-accent-dark transition-colors active:scale-[0.98]"
                 >
                   {text.drawer_official_site}
                 </a>

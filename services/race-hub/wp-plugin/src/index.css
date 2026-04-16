@@ -1,5 +1,46 @@
 @import "tailwindcss";
 
+/* Reset Flatsome overrides — in @layer base so Tailwind utilities win */
+@layer base {
+  .race-hub-root span {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .race-hub-root input,
+  .race-hub-root select,
+  .race-hub-root button,
+  .race-hub-root textarea {
+    border: none !important;
+    border-radius: 0;
+    padding: 0;
+    margin: 0 !important;
+    height: auto;
+    min-height: 0;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .race-hub-root a {
+    background: transparent;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: none;
+  }
+}
+
+/* Scroll lock — applied via JS classList */
+html.race-hub-noscroll {
+  overflow: hidden !important;
+}
+
 /* Break out of Flatsome's content column */
 .race-hub-root {
   width: 100vw;

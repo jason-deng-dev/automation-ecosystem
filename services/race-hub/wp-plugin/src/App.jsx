@@ -200,18 +200,20 @@ export default function App() {
 
 				<footer className="max-w-7xl mx-auto px-4 pb-8 md:px-6 flex justify-center">
 					<div className="flex border border-border">
-						<button
+						<div
+							role="button" tabIndex={0}
 							onClick={() => lang !== 'en' && toggleLang()}
-							className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest transition-colors ${lang === 'en' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
+							className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${lang === 'en' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
 						>
 							EN
-						</button>
-						<button
+						</div>
+						<div
+							role="button" tabIndex={0}
 							onClick={() => lang !== 'zh' && toggleLang()}
-							className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest border-l border-border transition-colors ${lang === 'zh' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
+							className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest border-l border-border transition-colors cursor-pointer ${lang === 'zh' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
 						>
 							中文
-						</button>
+						</div>
 					</div>
 				</footer>
 
