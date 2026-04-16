@@ -172,8 +172,9 @@
   - [x] Write Dockerfile (XHS container)
   - [x] Write .dockerignore
   - [x] Complete Dockerfile — install Playwright + Chromium browser dependencies
-  - [ ] Verify container starts and cron fires correctly with docker-compose up
-  - [ ] Transfer auth.json to Lightsail instance
+  - [x] Write `cicd-xhs.yml` — replaces ci-xhs.yml; test job gates deploy; auth.json bind-mounted from ~/xhs/auth.json on VPS
+  - [ ] Transfer `.env` to VPS (`~/xhs/.env`) — `scp services/xhs/.env lightsail:~/xhs/.env`
+  - [ ] Transfer auth.json to Lightsail instance — `scp services/xhs/auth.json lightsail:~/xhs/auth.json`
   - [ ] Verify XHS container runs correctly on Lightsail
 
 - [ ] Dashboard integration — manual trigger + preview mode

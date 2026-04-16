@@ -51,10 +51,10 @@
 - [x] Verify race-hub container starts and serves races from `ecosystemdb` on Lightsail
 
 ### xhs (depends on `ecosystemdb.races` populated by scraper — already migrated to DB)
-- [ ] Fix bot detection mitigations in publisher.js (see xhs-checklist.md)
+- [x] Fix bot detection mitigations in publisher.js (see xhs-checklist.md)
 - [ ] Set up dashboard re-auth flow (required for headless deploy)
 - [ ] Transfer `auth.json` to Lightsail instance
-- [ ] Write `cd-xhs.yml` (or combine into `cicd-xhs.yml`)
+- [x] Write `cicd-xhs.yml` — replaces ci-xhs.yml; CI runs `npm test`, CD builds → Docker Hub → SSH deploy; auth.json bind-mounted from ~/xhs/auth.json
 - [ ] Transfer `.env` to VPS (`~/xhs/.env`)
 - [ ] Verify xhs container runs and cron fires on Lightsail
 
