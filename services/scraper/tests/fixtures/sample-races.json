@@ -46,7 +46,21 @@
         "Wheelchairs are not permitted. If you have a disability and find it difficult to run alone, please arrange for an escort runner to accompany you. ※(Guide dogs are not permitted.)"
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称1",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "The 16th Shibuya-Omotesando Women's Run",
@@ -90,7 +104,21 @@
         "The participation information is expected to be sent by email in early March ."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称2",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "2026 Kikuchi Sakura Marathon",
@@ -138,7 +166,21 @@
         "The Race Guide will be posted on the event website and sent via email approximately two weeks before the tournament (early March)."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称3",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "Tokushima Marathon 2026 Challenge Run",
@@ -182,7 +224,21 @@
         "There will be no race guide email distributed by the organizer. Please check the event website and social media for updates as information will be posted there. If the organizer deems it necessary, emails may be sent."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称4",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "18th HASETSUNE 30K",
@@ -234,7 +290,15 @@
         "A portion of the participation fee will be used for environmental conservation activities in Okutama."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": null,
+      "date_zh": null,
+      "location_zh": null,
+      "entryStart_zh": null,
+      "entryEnd_zh": null,
+      "description_zh": null,
+      "info_zh": null,
+      "notice_zh": null
     },
     {
       "name": "18th Shimanto River Sakura Marathon",
@@ -287,7 +351,21 @@
         "- Most of the course runs alongside regular traffic. Please be careful and avoid running side by side, in large groups, or overtaking suddenly in a way that obstructs vehicles."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称6",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "FUKUI SAKURA MARATHON 2026",
@@ -335,7 +413,21 @@
         "To facilitate a secure and organized commencement, the event will employ a staggered start time system divided into two waves: Wave 1 will begin at 8:30 AM, and Wave 2 will begin at 8:40 AM."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称7",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "26th HITACHI SAKURA ROAD RACE",
@@ -385,7 +477,21 @@
         "-The Race Guide will be sent via email in late March."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称8",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "28th Ome Takamizu Palatinose Int'l Trail Run",
@@ -433,7 +539,21 @@
         "The advanced class aid station is located at the entrance to Omotesando after passing Takamizusan Jofukuji Temple. The intermediate class aid station is located at the end of Kurihira Forest Road. Please dispose of empty bottles at the designated location."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称9",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "The 4th Ayabe Suigen no Sato Trail Run",
@@ -486,7 +606,15 @@
         "●Participation information from the race secretariat will be sent via email approximately 2 weeks before the race. Upon application, we will ask for your email address where you would like to receive such information."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": null,
+      "date_zh": null,
+      "location_zh": null,
+      "entryStart_zh": null,
+      "entryEnd_zh": null,
+      "description_zh": null,
+      "info_zh": null,
+      "notice_zh": null
     },
     {
       "name": "FUJI HOKUROKU RELAY MARATHON",
@@ -544,7 +672,21 @@
         "- Event changes are not permitted after application. Inquiries regarding additions to the number of participants and changes to team names can be made by contacting the race secretariat during the application period only. Please note that refunds will not be given for team reductions."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称11",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "Tohoku Food Marathon 2026",
@@ -598,7 +740,21 @@
         "-No changes are possible once you complete your registration."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称12",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "36th CHALLENGE FUJI 5 LAKES ULTRAMARATHON",
@@ -651,7 +807,21 @@
         "Run Japan is unable to provide information or respond to inquiries regarding the refund guarantee program. For details, please contact the race office listed under Inquiry."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称13",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "2026 Aomori Sakura Marathon",
@@ -704,7 +874,21 @@
         "(Nogikawa Park)"
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称14",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "International Blind Marathon 2026",
@@ -754,7 +938,15 @@
         "-200JPY of the tournament entry fee will be used to help with Lake Kasumigaura Water Purification Fund and as a subsidy for guide dog training."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": null,
+      "date_zh": null,
+      "location_zh": null,
+      "entryStart_zh": null,
+      "entryEnd_zh": null,
+      "description_zh": null,
+      "info_zh": null,
+      "notice_zh": null
     },
     {
       "name": "Kasumigaura Marathon 2026【Regular Entry】",
@@ -811,7 +1003,21 @@
         "https://www.worldmarathonmajors.com/races"
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称16",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "Kasumigaura Marathon 2026 【Late entry】",
@@ -868,7 +1074,21 @@
         "https://www.worldmarathonmajors.com/races"
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称17",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "Mt.FUJI100 2026【Charity Entry】",
@@ -922,7 +1142,21 @@
         "- For FUJI100mi, a separate paid registration is required to use the baggage drop at the start venue.)."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称18",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "Mt.FUJI100 2026",
@@ -988,7 +1222,21 @@
         "※ Participants who are selected in the lottery will be billed for the entry fee plus a handling fee (6% of the entry fee)."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称19",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "Sado Toki Marathon 2026",
@@ -1039,7 +1287,15 @@
         "Children 5 years old or younger must be accompanied by a parent or guardian who is 18 years or older."
       ],
       "registrationOpen": true,
-      "registrationUrl": "https://runjapan.jp/entry/runtes/smp/commendationselect.do?raceId=E336228"
+      "registrationUrl": "https://runjapan.jp/entry/runtes/smp/commendationselect.do?raceId=E336228",
+      "name_zh": null,
+      "date_zh": null,
+      "location_zh": null,
+      "entryStart_zh": null,
+      "entryEnd_zh": null,
+      "description_zh": null,
+      "info_zh": null,
+      "notice_zh": null
     },
     {
       "name": "Mt.FUJI100 2026【SAKUYA】",
@@ -1093,7 +1349,21 @@
         "- No Performance Index score is required for SAKUYA."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称21",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "2026 UEDA VERTICAL RACE - The 12th Mt. Taro Mountain Climbing Race -",
@@ -1146,7 +1416,21 @@
         "Participants under age 12 running the 3.5km Vertical YUKIMURA (Sanada Yukimura Course) can be accompanied by a parent or guardian. You will be asked to indicate your preference during the registration process, and if you have an accompanying runner, you will be asked to enter their name and relationship to the parent or guardian."
       ],
       "registrationOpen": true,
-      "registrationUrl": "https://runjapan.jp/entry/runtes/smp/commendationselect.do?raceId=E336249"
+      "registrationUrl": "https://runjapan.jp/entry/runtes/smp/commendationselect.do?raceId=E336249",
+      "name_zh": "测试比赛名称22",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "The 5th FunTrails Round Minano 50K/30K",
@@ -1199,7 +1483,21 @@
         "※Shuttle service to the event venue available from 7:00 AM."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": "测试比赛名称23",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "THE13TH RUNNET EKIDEN OKINAWA",
@@ -1252,7 +1550,21 @@
         "-If participants are under 18 years old, guardian's consent is required."
       ],
       "registrationOpen": true,
-      "registrationUrl": "https://runjapan.jp/entry/runtes/smp/commendationselect.do?raceId=E336668"
+      "registrationUrl": "https://runjapan.jp/entry/runtes/smp/commendationselect.do?raceId=E336668",
+      "name_zh": "测试比赛名称24",
+      "date_zh": "2026年3月22日",
+      "location_zh": "日本东京都",
+      "entryStart_zh": "2025年9月30日 10:00",
+      "entryEnd_zh": "2025年12月31日 23:59",
+      "description_zh": "这是一场测试马拉松比赛的中文描述。",
+      "info_zh": {
+        "日期": "2026年3月22日",
+        "地点": "日本东京都"
+      },
+      "notice_zh": [
+        "报名截止日期前请完成注册。",
+        "每人限报一个项目。"
+      ]
     },
     {
       "name": "46th Kanuma Satsuki Marathon",
@@ -1309,7 +1621,15 @@
         "If you are a disabled person and require an escort runner, the participation fee for the escort runner will be waived (up to one person). Please note that the escort runner will not be timed."
       ],
       "registrationOpen": false,
-      "registrationUrl": null
+      "registrationUrl": null,
+      "name_zh": null,
+      "date_zh": null,
+      "location_zh": null,
+      "entryStart_zh": null,
+      "entryEnd_zh": null,
+      "description_zh": null,
+      "info_zh": null,
+      "notice_zh": null
     }
   ]
 }

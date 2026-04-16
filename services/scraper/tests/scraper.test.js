@@ -80,6 +80,71 @@ describe("scraper output", () => {
 		});
 	});
 
+	describe("info and notice shape", () => {
+		it("info is an object on every race", () => {
+			for (const race of races) {
+				expect(typeof race.info).toBe("object");
+				expect(Array.isArray(race.info)).toBe(false);
+				expect(race.info).not.toBeNull();
+			}
+		});
+
+		it("notice is an array on every race", () => {
+			for (const race of races) {
+				expect(race.notice).toBeInstanceOf(Array);
+			}
+		});
+	});
+
+	describe("_zh translation fields", () => {
+		const ZH_STRING_FIELDS = [
+			"name_zh", "date_zh", "location_zh",
+			"entryStart_zh", "entryEnd_zh", "description_zh",
+		];
+
+		it("every race has all _zh fields present (string or null)", () => {
+			for (const race of races) {
+				for (const field of ZH_STRING_FIELDS) {
+					expect(race, `race "${race.name}" missing field "${field}"`).toHaveProperty(field);
+					expect(
+						typeof race[field] === "string" || race[field] === null,
+						`race "${race.name}" field "${field}" is neither string nor null`
+					).toBe(true);
+				}
+			}
+		});
+
+		it("every race has info_zh (object or null)", () => {
+			for (const race of races) {
+				expect(race, `race "${race.name}" missing field "info_zh"`).toHaveProperty("info_zh");
+				expect(
+					(typeof race.info_zh === "object" && !Array.isArray(race.info_zh)) || race.info_zh === null,
+					`race "${race.name}" info_zh must be object or null`
+				).toBe(true);
+			}
+		});
+
+		it("every race has notice_zh (array or null)", () => {
+			for (const race of races) {
+				expect(race, `race "${race.name}" missing field "notice_zh"`).toHaveProperty("notice_zh");
+				expect(
+					Array.isArray(race.notice_zh) || race.notice_zh === null,
+					`race "${race.name}" notice_zh must be array or null`
+				).toBe(true);
+			}
+		});
+
+		it("non-null _zh strings are non-empty", () => {
+			for (const race of races) {
+				for (const field of ZH_STRING_FIELDS) {
+					if (race[field] !== null) {
+						expect(race[field].length, `race "${race.name}" field "${field}" is empty string`).toBeGreaterThan(0);
+					}
+				}
+			}
+		});
+	});
+
 	describe("field formats", () => {
 		it("registrationOpen is true, false, or null on every race", () => {
 			for (const race of races) {
