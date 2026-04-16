@@ -7,6 +7,38 @@
 
 ---
 
+## C++ Prerequisites — What to Learn Before Each Tier
+
+Currently on LearnCpp ch12. Chapters 13–17 cover the gap — structs, `std::vector`, fixed arrays.
+That's the foundation for passing and operating on double arrays in C++. Everything in tiers 4, 5,
+and 7 is just loops over vectors.
+
+| Tier | What you actually need | Source |
+|---|---|---|
+| 4, 5, 7 | `std::vector<double>`, loops, `<cmath>` | LearnCpp ch17 sufficient |
+| 6 | `std::async` + `std::future` | Docs only — 2hr read, not the full Williams book |
+| 8, 9 | Gaussian elimination, Cholesky | Eigen library — learn when you get there |
+
+**pybind11** is completely separate from LearnCpp — it's its own thing. Learn it when you start
+building. Key concepts: `py::array_t<double>`, buffer protocol, releasing the GIL. The docs are good.
+
+**Should you start the Williams concurrency book now?** No. The master plan correctly puts Williams
+in Phase 2. For `std::async` over 10k simulations you just need the `<future>` header — it's
+self-contained. Don't front-load the book for one function.
+
+**Actual build-order:**
+
+1. Finish LearnCpp through ch17 (5 chapters — close)
+2. Learn pybind11 basics alongside or right after
+3. Build tiers 4 → 5 → 7 first (pure array math, no concurrency, no Eigen)
+4. Add `std::async` for tier 6 using docs
+5. Pull in Eigen for tiers 8–9
+
+Eigen makes tier 9 (Markowitz/Cholesky) almost trivial — it's one function call once the matrix
+is set up. Don't let tiers 8–9 intimidate you into reading books prematurely.
+
+---
+
 ## ⚠ Core Platform Work — Must Ship First
 
 All improvements in this doc are enhancement layer. Do not start any of them until the
