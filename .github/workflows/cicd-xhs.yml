@@ -52,7 +52,7 @@ jobs:
             docker run -d \
               --name xhs \
               --env-file ~/xhs/.env \
-              --mount type=bind,source=~/xhs/auth.json,target=/app/auth.json \
+              --mount type=bind,source=/home/ubuntu/xhs/auth.json,target=/app/auth.json \
               --restart unless-stopped \
               --network host \
               ${{ secrets.DOCKERHUB_USERNAME }}/xhs:latest
