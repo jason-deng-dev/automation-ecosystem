@@ -2,11 +2,10 @@ import 'dotenv/config';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
-import { writeFile } from 'fs/promises';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
-import fs from 'fs';
 import * as deepl from 'deepl-node';
+import { getExistingRaces, upsertRace, insertRunLog, upsertPipelineState } from './db/queries.js';
 
 const jar = new CookieJar();
 const client = wrapper(axios.create({ jar }));
@@ -20,26 +19,15 @@ axiosRetry(client, {
 const timeout = parseInt(process.env.RUNJAPAN_TIMEOUT) || 10000;
 
 async function populateRaces(limit = null) {
-	const pipeline_state_filePath = `${process.env.DATA_DIR}/scraper/pipeline_state.json`;
-	const run_log_filePath = `${process.env.DATA_DIR}/scraper/run_log.json`;
-	const races_file_path = `${process.env.DATA_DIR}/scraper/races.json`;
-
 	let outcome = 'success';
 	let races_scraped = 0;
 	let failure_count = 0;
 	let failed_urls = [];
 	let error_msg = null;
 
-	fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: 'running' }));
+	await upsertPipelineState('running');
 
-	let existingRaces = [];
-	try {
-		const data = JSON.parse(fs.readFileSync(races_file_path, 'utf-8'));
-		existingRaces = data.races ?? [];
-	} catch {
-		console.log('No existing races.json found — starting fresh');
-	}
-	const existingRacesMap = new Map(existingRaces.map((race) => [race.url, race]));
+	const existingRacesMap = await getExistingRaces();
 
 	const races = [];
 
@@ -111,21 +99,20 @@ async function populateRaces(limit = null) {
 		}
 		// need to produce translated version of races
 		const translatedRaces = await translateRaces(races);
-		// add to existing races.json["races"]
-		const allRaces = [...existingRaces, ...translatedRaces];
+		// merge new races with existing set (existing races already in DB — only new ones translated)
+		const allRaces = [...existingRacesMap.values(), ...translatedRaces];
 
 		if (limit === null && allRaces.length < 30) {
 			outcome = 'failed';
-			error_msg = `Only ${allRaces.length} races scraped — below threshold of 30, preserving previous races.json`;
+			error_msg = `Only ${allRaces.length} races scraped — below threshold of 30, aborting upsert`;
 			console.error(error_msg);
 			return races;
 		}
 
-		// write races.json
-
 		const cleanedRaces = cleanRaces(allRaces);
-		const output = { last_updated: new Date().toISOString(), races: cleanedRaces };
-		await writeFile(races_file_path, JSON.stringify(output, null, 2));
+		for (const race of cleanedRaces) {
+			await upsertRace(race);
+		}
 		races_scraped = races.length;
 		console.log(`Race data refresh complete — ${races.length} races saved`);
 		return races;
@@ -134,18 +121,16 @@ async function populateRaces(limit = null) {
 		error_msg = err.message;
 		console.error(`Scraper failed: ${err.message}`);
 	} finally {
-		const timestamp = new Date().toISOString();
-		const log = { outcome, races_scraped, failure_count, failed_urls, error_msg };
+		await insertRunLog({
+			outcome,
+			racesScraped: races_scraped,
+			failureCount: failure_count,
+			failedUrls: failed_urls,
+			errorMsg: error_msg,
+		});
+		console.log(`Run log saved — outcome: ${outcome}`);
 
-		if (!fs.existsSync(run_log_filePath)) {
-			fs.writeFileSync(run_log_filePath, JSON.stringify({}));
-		}
-		const run_log = JSON.parse(fs.readFileSync(run_log_filePath, 'utf-8'));
-		run_log[timestamp] = log;
-		fs.writeFileSync(run_log_filePath, JSON.stringify(run_log, null, 2));
-		console.log(`Run log saved as ${timestamp}`);
-
-		fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: outcome === 'success' ? 'idle' : 'failed' }));
+		await upsertPipelineState(outcome === 'success' ? 'idle' : 'failed');
 	}
 }
 
