@@ -9,6 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "devPostGen": "node --watch src/generator.js",
+    "seed": "node scripts/run-seed.js",
     "start": "node scripts/run-scheduler.js"
   },
   "repository": {

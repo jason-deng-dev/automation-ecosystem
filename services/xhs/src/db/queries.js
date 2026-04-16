@@ -1,10 +1,23 @@
 import pool from './pool.js';
 
 // ── races ─────────────────────────────────────────────────────────────────────
-
+// Returns { races: [...] } — same shape as the old races.json file
+// so generator.js needs no further changes.
 export const getRaces = async () => {
-	const res = await pool.query(`SELECT data FROM races ORDER BY scraped_at DESC LIMIT 1`);
-	return res.rows[0]?.data ?? { races: [] };
+	const res = await pool.query(`
+		SELECT
+			name, url, date, location,
+			entry_start AS "entryStart", entry_end AS "entryEnd",
+			website, description, registration_open AS "registrationOpen",
+			registration_url AS "registrationUrl",
+			images, info, notice,
+			name_zh, date_zh, location_zh,
+			entry_start_zh AS "entryStart_zh", entry_end_zh AS "entryEnd_zh",
+			description_zh, info_zh, notice_zh
+		FROM races
+		ORDER BY scraped_at DESC
+	`);
+	return { races: res.rows };
 };
 
 // ── xhs_post_history ──────────────────────────────────────────────────────────

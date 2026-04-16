@@ -1,3 +1,31 @@
+-- Shared: races — written by scraper, read by XHS + Race Hub
+-- IF NOT EXISTS so scraper seed and XHS seed can both run safely against ecosystemdb
+CREATE TABLE IF NOT EXISTS races (
+	id                 SERIAL PRIMARY KEY,
+	url                TEXT UNIQUE NOT NULL,
+	name               TEXT,
+	date               TEXT,
+	location           TEXT,
+	entry_start        TEXT,
+	entry_end          TEXT,
+	website            TEXT,
+	description        TEXT,
+	registration_open  BOOLEAN,
+	registration_url   TEXT,
+	images             JSONB,
+	info               JSONB,
+	notice             JSONB,
+	name_zh            TEXT,
+	date_zh            TEXT,
+	location_zh        TEXT,
+	entry_start_zh     TEXT,
+	entry_end_zh       TEXT,
+	description_zh     TEXT,
+	info_zh            JSONB,
+	notice_zh          JSONB,
+	scraped_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- XHS schedule: replaces xhs/config.json
 -- day: 0=Sun, 1=Mon ... 6=Sat (matches node-cron day-of-week)
 CREATE TABLE IF NOT EXISTS xhs_schedule (
