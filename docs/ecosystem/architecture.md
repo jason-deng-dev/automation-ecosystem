@@ -46,17 +46,26 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 │          │             serves to WordPress        │                    │                │
 │          │                   │                    │                    │                │
 │          ▼                   ▼                    ▼                    ▼                │
-│    ┌──────────────────────────────────────────────────────────────────────┐             │
-│    │                        PostgreSQL (shared)                           │             │
-│    │                                                                      │             │
-│    │  races ←               xhs_schedule →        rakuten_config →       │             │
-│    │  scraper_run_logs ←    xhs_run_logs ←         run_logs ←            │             │
-│    │  pipeline_state ←      xhs_post_history ←     product_stats ←       │             │
-│    │                        xhs_post_archive ←     import_logs ←         │             │
-│    │                        pipeline_state ←        subcategories         │             │
-│    │                                                                      │             │
-│    │   ← pipeline writes          → dashboard writes                     │             │
-│    └───────────────────────────────────┬──────────────────────────────────┘             │
+│    ┌────────────────────────────────────────┐  ┌───────────────────────────────────┐   │
+│    │          PostgreSQL: ecosystemdb        │  │    PostgreSQL: rakutendb           │   │
+│    │                                        │  │                                   │   │
+│    │  races ←                               │  │  config →                         │   │
+│    │  scraper_run_logs ←                    │  │  run_logs ←                       │   │
+│    │  pipeline_state ←                      │  │  product_stats ←                  │   │
+│    │  xhs_schedule →                        │  │  import_logs ←                    │   │
+│    │  xhs_run_logs ←                        │  │  subcategories                    │   │
+│    │  xhs_post_history ←                    │  │  products ←                       │   │
+│    │  xhs_post_archive ←                    │  │                                   │   │
+│    │  pipeline_state ←                      │  │   ← pipeline writes               │   │
+│    │                                        │  │   → dashboard writes              │   │
+│    │   ← pipeline writes                    │  └────────────────┬──────────────────┘   │
+│    │   → dashboard writes                   │                   │                      │
+│    └────────────────────┬───────────────────┘                   │                      │
+│                         │ reads all                             │ reads all             │
+│                         └─────────────────┬─────────────────────┘                      │
+│                                           ▼                                            │
+│                      ┌───────────────────────────────────┐                             │
+│                      │        Dashboard container         │                             │
 │                                        │ reads all                                      │
 │                                        ▼                                                │
 │                      ┌───────────────────────────────────┐                             │
@@ -91,22 +100,34 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 
 ---
 
-## 5. PostgreSQL — Shared Data Layer
+## 5. PostgreSQL — Data Layer
 
-PostgreSQL is the communication bus between all containers. Pipelines write state, logs, and output data to it. The dashboard reads directly from it. Config is updated via dashboard API endpoints that write to DB — no file watching required.
+PostgreSQL is the communication bus between containers. Pipelines write state, logs, and output data to it. The dashboard reads directly from it. Config is updated via dashboard API endpoints that write to DB — no file watching required.
 
-**Shared instance:** All services connect to the same PostgreSQL instance. Each service owns its own tables.
+**Two databases on one PostgreSQL instance:**
+
+- **`ecosystemdb`** — shared by Scraper, Race Hub, and XHS. These three services are tightly coupled around race data: Scraper writes it, Race Hub and XHS read it. One DB keeps cross-service reads simple.
+- **`rakutendb`** — Rakuten only. Product pipeline is independent of the race data stack — separate DB gives clean isolation.
+
+The Dashboard connects to both databases.
+
+### ecosystemdb — Scraper + Race Hub + XHS
 
 | Table | Written by | Read by | Contains |
 |---|---|---|---|
-| `races` | Scraper | Race Hub, XHS | All upcoming race data from RunJapan |
+| `races` | Scraper | Race Hub, XHS | All upcoming race data from RunJapan — full EN + ZH fields |
 | `scraper_run_logs` | Scraper | Dashboard | Per-run: timestamp, races scraped, failure count, failed URLs, outcome |
-| `pipeline_state` | Scraper, XHS, Rakuten | Dashboard | Current state per service — `{ service, state: "idle\|running\|failed" }` |
-| `xhs_schedule` | Dashboard | XHS | Per-day post schedule — XHS re-registers cron jobs when table changes |
-| `xhs_run_logs` | XHS | Dashboard | Per-run: timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output |
+| `pipeline_state` | Scraper, XHS | Dashboard | Current state per service — `{ service, state: "idle\|running\|failed" }` |
+| `xhs_schedule` | Dashboard | XHS | Per-day post schedule — XHS loads on startup, dashboard triggers reload |
+| `xhs_run_logs` | XHS | Dashboard | Per-run: timestamp, post_type, outcome, error_stage, error_msg, tokens |
 | `xhs_post_history` | XHS | XHS | Races already posted — dedup tracker, reset monthly |
-| `xhs_post_archive` | XHS | Dashboard | Published post content keyed by timestamp |
-| `config` | Rakuten (via dashboard command) | Rakuten | YenToYuan, markupPercent, productsPerCategory, searchFillThreshold |
+| `xhs_post_archive` | XHS | Dashboard | Full published post record per run — analytics source of truth |
+
+### rakutendb — Rakuten only
+
+| Table | Written by | Read by | Contains |
+|---|---|---|---|
+| `config` | Dashboard | Rakuten | YenToYuan, markupPercent, productsPerCategory, searchFillThreshold |
 | `run_logs` | Rakuten | Dashboard | Per-run: operation, products pushed, price updates, removals, errors |
 | `product_stats` | Rakuten | Dashboard | Total cached, total pushed, per-category breakdown |
 | `import_logs` | Rakuten | Dashboard | Per-product WooCommerce push attempts and outcomes |

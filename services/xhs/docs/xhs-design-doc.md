@@ -995,18 +995,20 @@ services/xhs/
     └── package.json
 ```
 
-**Local testing note:** Clone the repo, `cd services/xhs`, `npm install`, copy `.env.example` to `.env`, fill in `ANTHROPIC_API_KEY` and `DATABASE_URL`. Run `node scripts/test-gen.js` to test post generation. Race data is read from the `races` table in PostgreSQL — ensure the scraper has run at least once, or seed the table manually.
+**Local testing note:** Clone the repo, `cd services/xhs`, `npm install`, copy `.env.example` to `.env`, fill in `ANTHROPIC_API_KEY` and `DATABASE_URL` (points to `ecosystemdb`). Run `npm run seed` to create tables and seed the schedule. Run `node scripts/test-gen.js` to test post generation. Race data is read from the `races` table — ensure the scraper has run at least once, or insert rows manually.
+
+**Database: `ecosystemdb`** — shared with Scraper and Race Hub. Scraper writes `races`; XHS reads it. All other XHS tables are owned by XHS.
 
 **PostgreSQL — tables this service interacts with:**
 
 | Table | Direction | Contains |
 |---|---|---|
 | `races` | XHS reads | Race data from scraper — used by generator to pick race context |
-| `xhs_schedule` | Dashboard writes → XHS reads | Per-day post schedule — loaded once on startup; dashboard/analytics service triggers `setupAllDailyCrons()` to reload (no polling) |
+| `xhs_schedule` | Dashboard writes → XHS reads | Per-day post schedule — loaded once on startup; dashboard triggers `setupAllDailyCrons()` to reload |
 | `pipeline_state` | XHS writes | `{ service: "xhs", state: "idle \| running \| failed" }` |
 | `xhs_run_logs` | XHS writes | Per-run: type, outcome, error stage/msg, token counts |
 | `xhs_post_history` | XHS reads + writes | Race names already posted — dedup tracker, reset monthly |
-| `xhs_post_archive` | XHS writes | One row per published post — keyed by ISO timestamp |
+| `xhs_post_archive` | XHS writes | One row per published post — analytics source of truth |
 
 **Exception:** `auth.json` stays as a file on the container filesystem — XHS session cookies are a runtime artifact, not configuration data. Never transmitted to clients.
 

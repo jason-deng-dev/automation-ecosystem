@@ -24,18 +24,19 @@
   - [x] Graceful fallback — write null for _zh fields if DeepL unavailable, UI falls back to English
   - [x] Verify all _zh fields present in output races.json
 - [ ] PostgreSQL migration (shared volume → DB)
+  - Database: `ecosystemdb` — shared with XHS and Race Hub (all three services are coupled around race data)
   - [ ] Add `pg` to package.json dependencies
-  - [ ] Create `src/db/pool.js` — pg Pool with DATABASE_URL
+  - [ ] Create `src/db/pool.js` — pg Pool with DATABASE_URL (points to ecosystemdb)
   - [ ] Create `src/db/queries.js` — getRaces, upsertRace, insertRunLog, upsertPipelineState
-  - [ ] Create `src/db/schema.sql` — races, scraper_run_logs, pipeline_state tables
-  - [ ] Add `races` table to shared PostgreSQL schema — all race fields as TEXT, info/info_zh/images/notice/notice_zh as JSONB, registration_open as BOOLEAN, scraped_at TIMESTAMPTZ
+  - [ ] Create `src/db/schema.sql` — races, scraper_run_logs, pipeline_state tables (all IF NOT EXISTS — XHS seed may run first)
+  - [ ] Add `races` table — url TEXT UNIQUE, all race fields as TEXT, info/info_zh/images/notice/notice_zh as JSONB, registration_open as BOOLEAN, scraped_at TIMESTAMPTZ
   - [ ] Add `scraper_run_logs` table — timestamp, races_scraped, failure_count, failed_urls TEXT[], outcome, error_msg
-  - [ ] Add `pipeline_state` table — service TEXT PRIMARY KEY, state, updated_at (shared with XHS + Rakuten)
+  - [ ] Add `pipeline_state` table — service TEXT PRIMARY KEY, state, updated_at (XHS also writes its own row here)
   - [ ] Replace existingRaces load (readFileSync races.json) with SELECT * FROM races — build Map from DB
   - [ ] Replace races.json writeFile with upsertRace per race — incremental logic unchanged
   - [ ] Replace run_log.json write with insertRunLog into scraper_run_logs
   - [ ] Replace pipeline_state.json writes (x2) with upsertPipelineState into pipeline_state
-  - [ ] Remove DATA_DIR env var — add DATABASE_URL to .env.example
+  - [ ] Remove DATA_DIR env var — add DATABASE_URL=ecosystemdb to .env.example
   - [ ] Race Hub reads from races table instead of races.json file
 
 - [ ] Docker & Deploy

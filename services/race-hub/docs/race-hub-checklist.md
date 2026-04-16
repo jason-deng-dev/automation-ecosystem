@@ -58,10 +58,11 @@
   - [ ] Add shortcode to race hub page
   - [ ] Smoke test end-to-end
 - [ ] PostgreSQL migration
+  - Database: `ecosystemdb` — same DB as Scraper; Race Hub is a read-only consumer of the `races` table
   - [ ] Add `pg` to package.json dependencies
-  - [ ] Create `db/pool.js` — pg Pool with DATABASE_URL
+  - [ ] Create `db/pool.js` — pg Pool with DATABASE_URL (points to ecosystemdb)
   - [ ] Update `server.js` — SELECT * FROM races instead of readFileSync races.json
-  - [ ] Remove DATA_DIR env var — add DATABASE_URL to .env.example
+  - [ ] Remove DATA_DIR env var — add DATABASE_URL=ecosystemdb to .env.example
 - [ ] Docker & Deploy
   - [ ] Write Dockerfile
   - [ ] Verify container starts and serves races correctly with docker-compose up

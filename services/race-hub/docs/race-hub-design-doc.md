@@ -1,8 +1,8 @@
 ## 1. What This Is
 
-The Race Hub is a persistent Express server running as a Docker container on AWS Lightsail. It reads `races.json` from the shared Docker volume (written weekly by the Scraper container) and serves it to the WordPress site via REST API. A React SPA embedded in WordPress as a plugin fetches from this API and renders the race listings page.
+The Race Hub is a persistent Express server running as a Docker container on AWS Lightsail. It reads the `races` table from `ecosystemdb` (written weekly by the Scraper container) and serves it to the WordPress site via REST API. A React SPA embedded in WordPress as a plugin fetches from this API and renders the race listings page.
 
-The Race Hub has no scraping logic. It is a pure data server — reads a file, serves it via HTTP, applies query param filtering.
+The Race Hub has no scraping logic. It is a pure data server — reads from DB, serves it via HTTP, applies query param filtering.
 
 ---
 
@@ -17,8 +17,7 @@ The Race Hub has no scraping logic. It is a pure data server — reads a file, s
 │   pure cron process                       │                         │
 │          │ writes                         │ reads                   │
 │          ▼                               ▼                          │
-│    scraper/races.json  ◄─────────────────┘                          │
-│    (shared volume)                                                  │
+│         PostgreSQL: ecosystemdb → races table                       │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
                                     │
@@ -36,7 +35,7 @@ The Race Hub has no scraping logic. It is a pure data server — reads a file, s
                        running.moximoxi.net/racehub/
 ```
 
-**Scraper and Race Hub are separate containers.** The Scraper is a pure cron process — no HTTP server. The Race Hub is a persistent Express server. They are decoupled: the scraper writes a file, the Race Hub serves it. Either can be restarted independently.
+**Scraper and Race Hub share `ecosystemdb`.** The Scraper is a pure cron process — no HTTP server. The Race Hub is a persistent Express server. They are decoupled via the DB: the scraper upserts rows into `races`, the Race Hub reads them. Either can be restarted independently.
 
 **How WordPress receives the data:** The React SPA is bundled (Vite) and registered as a WordPress plugin. When a visitor loads the race hub page, the browser makes a `GET /api/races` request directly to the Race Hub container on Lightsail. WordPress just hosts the shortcode and the bundled JS/CSS — all data and logic live on the VPS. CORS is configured to allow requests from `running.moximoxi.net`.
 
