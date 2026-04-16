@@ -57,15 +57,18 @@
   - [ ] Upload plugin to running.moximoxi.net
   - [ ] Add shortcode to race hub page
   - [ ] Smoke test end-to-end
-- [ ] PostgreSQL migration
+- [x] PostgreSQL migration
   - Database: `ecosystemdb` — same DB as Scraper; Race Hub is a read-only consumer of the `races` table
-  - [ ] Add `pg` to package.json dependencies
-  - [ ] Create `db/pool.js` — pg Pool with DATABASE_URL (points to ecosystemdb)
-  - [ ] Update `server.js` — SELECT * FROM races instead of readFileSync races.json
-  - [ ] Remove DATA_DIR env var — add DATABASE_URL=ecosystemdb to .env.example
+  - [x] Add `pg` to package.json dependencies
+  - [x] Create `db/pool.js` — pg Pool with DATABASE_URL (points to ecosystemdb)
+  - [x] Update `server.js` — SELECT * FROM races instead of readFileSync races.json
+  - [x] Remove DATA_DIR env var — add DATABASE_URL=ecosystemdb to .env.example
 - [ ] Docker & Deploy
-  - [ ] Write Dockerfile
-  - [ ] Verify container starts and serves races correctly with docker-compose up
+  - [x] Write Dockerfile — node:22-alpine, npm ci, CMD node server.js (no build step — pure JS)
+  - [x] Write `cicd-race-hub.yml` — deploy on push to main; build → Docker Hub → SSH pull + restart
+  - [ ] `npm install` locally — pull in `pg` dependency after package.json update
+  - [ ] Transfer `.env` to VPS: `scp services/race-hub/.env lightsail:~/race-hub/.env`
+  - [ ] Verify container starts and serves races correctly from `ecosystemdb`
   - [ ] Verify CORS works from WordPress origin in production
 
 ---

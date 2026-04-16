@@ -1,17 +1,30 @@
 import express from 'express';
-import fs from 'fs';
 import cors from 'cors';
 import 'dotenv/config';
+import pool from './db/pool.js';
 
 const app = express();
 app.use(cors({ origin: process.env.CORS_ORIGIN.split(',') }))
 
-app.get('/api/races/', (req, res) => res.json(getAllRaces()));
-
-function getAllRaces() {
-    const races = fs.readFileSync(`${process.env.DATA_DIR}/scraper/races.json`, 'utf-8')
-    return JSON.parse(races)
-}
+app.get('/api/races/', async (req, res) => {
+    const result = await pool.query(`
+        SELECT
+            name, url, date, location,
+            entry_start AS "entryStart",
+            entry_end AS "entryEnd",
+            website, description,
+            registration_open AS "registrationOpen",
+            registration_url AS "registrationUrl",
+            images, info, notice,
+            name_zh, date_zh, location_zh,
+            entry_start_zh AS "entryStart_zh",
+            entry_end_zh AS "entryEnd_zh",
+            description_zh, info_zh, notice_zh
+        FROM races
+        ORDER BY scraped_at DESC
+    `);
+    res.json({ races: result.rows });
+});
 
 
 app.listen(process.env.PORT, (err) => {

@@ -1,0 +1,44 @@
+name: CICD — race-hub
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'services/race-hub/**'
+  pull_request:
+    paths:
+      - 'services/race-hub/**'
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: services/race-hub
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/race-hub:latest
+      - name: Deploy to Lightsail
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ubuntu
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/race-hub:latest
+            docker stop race-hub || true
+            docker rm race-hub || true
+            docker run -d \
+              --name race-hub \
+              --env-file ~/race-hub/.env \
+              --restart unless-stopped \
+              --network host \
+              ${{ secrets.DOCKERHUB_USERNAME }}/race-hub:latest
