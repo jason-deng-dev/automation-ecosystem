@@ -39,6 +39,8 @@ jobs:
           context: services/race-hub
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/race-hub:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/race-hub:cache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/race-hub:cache,mode=max
       - name: Deploy to Lightsail
         uses: appleboy/ssh-action@v1
         with:

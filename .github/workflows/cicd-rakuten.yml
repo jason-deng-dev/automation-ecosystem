@@ -39,6 +39,8 @@ jobs:
           context: services/rakuten
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/rakuten:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/rakuten:cache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/rakuten:cache,mode=max
       - name: Deploy to Lightsail
         uses: appleboy/ssh-action@v1
         with:

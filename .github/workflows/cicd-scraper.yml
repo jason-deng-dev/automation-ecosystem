@@ -39,6 +39,8 @@ jobs:
           context: services/scraper
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/scraper:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/scraper:cache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/scraper:cache,mode=max
       - name: Deploy to Lightsail
         uses: appleboy/ssh-action@v1
         with:
