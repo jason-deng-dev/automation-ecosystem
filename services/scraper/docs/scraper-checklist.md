@@ -40,8 +40,9 @@
   - [ ] Race Hub reads from races table instead of races.json file
 
 - [ ] Docker & Deploy
-  - [ ] Write Dockerfile
-  - [ ] Verify container starts and cron fires correctly with docker-compose up
-  - [ ] Verify races written to PostgreSQL on run
+  - [x] Write Dockerfile — node:22-alpine, npm ci, CMD node scripts/run-scheduler.js
+  - [x] Write `cicd-scraper.yml` — CI runs `npm test`; CD builds → Docker Hub → SSH deploy on push to main
+  - [ ] Transfer `.env` to VPS: `scp services/scraper/.env lightsail:~/scraper/.env`
+  - [ ] Verify container starts and cron fires on Lightsail — races written to `ecosystemdb.races`
 
 ---

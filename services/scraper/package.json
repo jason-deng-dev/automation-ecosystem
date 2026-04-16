@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "node run-scraper.js",
+    "start": "node scripts/run-scheduler.js",
     "test": "vitest run"
   },
   "keywords": [],
