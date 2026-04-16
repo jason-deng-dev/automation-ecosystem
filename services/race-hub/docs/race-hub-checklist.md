@@ -61,11 +61,11 @@
   - [x] Bundle with Vite → wp-plugin/dist/ (assets/race-hub.js + assets/index.css)
   - [x] WordPress plugin PHP — register [race_hub] shortcode, enqueue bundled assets
   - [x] Upload plugin to running.moximoxi.net
-  - [ ] Set up nginx + SSL on VPS for api.moximoxi.net → port 3001 (DNS propagating — api.moximoxi.net → 13.192.170.85)
-  - [ ] Rebuild bundle with VITE_API_URL=https://api.moximoxi.net, re-upload plugin
-  - [ ] Add shortcode to race hub page
-  - [ ] Smoke test end-to-end
-  - [ ] Verify CORS works from WordPress origin in production
+  - [x] Set up nginx + SSL on VPS for api.moximoxi.net → port 3001 (DNS propagating — api.moximoxi.net → 13.192.170.85)
+  - [x] Rebuild bundle with VITE_API_URL=https://api.moximoxi.net, re-upload plugin
+  - [x] Add shortcode to race hub page
+  - [x] Smoke test end-to-end
+  - [x] Verify CORS works from WordPress origin in production
 - [x] PostgreSQL migration
   - Database: `ecosystemdb` — same DB as Scraper; Race Hub is a read-only consumer of the `races` table
   - [x] Add `pg` to package.json dependencies
