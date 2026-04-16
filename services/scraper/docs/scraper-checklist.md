@@ -40,7 +40,7 @@
   - [x] Remove DATA_DIR env var — add DATABASE_URL=ecosystemdb to .env.example
   - [x] Race Hub reads from races table instead of races.json file
 
-- [ ] Docker & Deploy
+- [x] Docker & Deploy
   - [x] Write Dockerfile — node:22-alpine, npm ci, CMD node scripts/run-scheduler.js
   - [x] Write `cicd-scraper.yml` — CI runs `npm test`; CD builds → Docker Hub → SSH deploy on push to main
   - [x] Transfer `.env` to VPS: `scp services/scraper/.env lightsail:~/scraper/.env`
