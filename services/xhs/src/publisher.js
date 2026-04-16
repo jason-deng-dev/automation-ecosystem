@@ -1,24 +1,44 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { insertPostArchive } from './db/queries.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const AUTH_PATH = path.join(__dirname, '../../auth.json');
+
+function humanDelay(min, max) {
+	return new Promise(resolve => setTimeout(resolve, min + Math.random() * (max - min)));
+}
+
 async function publishPost({ title, hook, contents, cta, description, hashtags, comments, post_type, race_name, input_tokens, output_tokens }) {
-	if (!fs.existsSync(`${process.env.DATA_DIR}/xhs/auth.json`)) {
+	if (!fs.existsSync(AUTH_PATH)) {
 		console.error('auth.json not found — run refresh-auth.bat to log in first');
 		return false;
 	}
+
+	// Random offset to avoid predictable posting time. Cron should be set 30 min early;
+	// publisher delays 0–60 min so the post lands in a ±30 min window around the target time.
+	const offsetMin = Math.round(Math.random() * 60);
+	console.log(`Random post offset: waiting ${offsetMin} min`);
+	await humanDelay(0, 60 * 60 * 1000);
+
 	const browser = await chromium.launch({ headless: false });
-	const context = await browser.newContext({ storageState: `${process.env.DATA_DIR}/xhs/auth.json` });
+	const context = await browser.newContext({ storageState: AUTH_PATH });
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	const page = await context.newPage();
 
 	console.log('Starting post publish...');
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
+		await humanDelay(3000, 8000);
 		await page.getByText('写长文').click();
 
 		await page.getByText('新的创作').click();
-		// title
-		await page.getByPlaceholder('输入标题').fill(title);
+		// title — clipboard paste fires real browser paste events, unlike fill() which sets DOM value directly
+		await page.evaluate(async (text) => navigator.clipboard.writeText(text), title);
+		await page.getByPlaceholder('输入标题').click();
+		await page.keyboard.press('Control+V');
 
 		// content body: hook (H1) + each section (H2 subtitle + body) + cta
 		await page.locator('[data-placeholder="输入文字，内容将自动保存"]').click();
@@ -47,8 +67,8 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 			await page.keyboard.type(`${hashtag}`);
 			await page.waitForTimeout(1000);
 			await page.keyboard.press('Enter');
-		}0
-		await page.waitForTimeout(1000);
+		}
+		await humanDelay(500, 1500);
 		await page.getByRole('button', { name: '发布' }).click();
 		await page.waitForURL('**/success?source&bind_status=not_bind&__debugger__=&proxy=');
 		console.log('Post published successfully');
@@ -68,6 +88,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		});
 		await page.waitForTimeout(3000);
 		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
+		await humanDelay(3000, 8000);
 		await page.waitForSelector('#userPostedFeeds .note-item');
 		await page.locator('#userPostedFeeds .note-item').first().click();
 
@@ -97,24 +118,24 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 }
 
 async function checkAuth() {
-	if (!fs.existsSync(`${process.env.DATA_DIR}/xhs/auth.json`)) {
+	if (!fs.existsSync(AUTH_PATH)) {
 		console.error('auth.json not found — run refresh-auth.bat to log in first');
 		return false;
 	}
 	const browser = await chromium.launch({ headless: false });
-	const context = await browser.newContext({ storageState: `${process.env.DATA_DIR}/xhs/auth.json` });
+	const context = await browser.newContext({ storageState: AUTH_PATH });
 	const page = await context.newPage();
 
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
-		await page.waitForTimeout(2000);
+		await humanDelay(2000, 4000);
 		// error handling for auth failure on publish page
 		if (await page.locator('#login-btn').isVisible()) {
 			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
 		}
 
 		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
-		await page.waitForTimeout(2000);
+		await humanDelay(2000, 4000);
 		// error handling for auth failure on comment add page
 		if (await page.locator('#login-btn').first().isVisible()) {
 			throw new Error('Authentication expired — run refresh-auth.bat to re-login');

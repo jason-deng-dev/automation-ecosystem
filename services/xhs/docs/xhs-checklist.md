@@ -161,22 +161,11 @@
   - [x] Remove `DATA_DIR` env var dependency — add DATABASE_URL to .env.example
   - [x] `auth.json` stays as file — no migration needed
 
-- [ ] xhs-login.js — dashboard re-auth flow
-  - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
-  - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
-  - [ ] Detect successful login via post-login URL redirect
-  - [ ] Run headless (headless: true) — dashboard streams screenshots via SSE instead of showing a browser window
-
-- [ ] Dashboard integration — manual trigger + preview mode
-  - [ ] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
-  - [ ] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
-  - [ ] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
-
-- [ ] Bot detection mitigations (publisher.js)
-  - [ ] Replace all `page.fill()` with clipboard paste — `page.evaluate(() => navigator.clipboard.writeText(text))` + `Ctrl+V`
-  - [ ] Add `humanDelay(min, max)` helper — random sleep between min/max ms, applied between all major actions
-  - [ ] Add random 3–8s page dwell after navigation before first interaction
-  - [ ] Add ±15–30 min random offset to actual post time inside publisher (cron fires at 21:00, post lands 20:30–21:30)
+- [x] Bot detection mitigations (publisher.js)
+  - [x] Replace all `page.fill()` with clipboard paste — `page.evaluate(() => navigator.clipboard.writeText(text))` + `Ctrl+V`
+  - [x] Add `humanDelay(min, max)` helper — random sleep between min/max ms, applied between all major actions
+  - [x] Add random 3–8s page dwell after navigation before first interaction
+  - [x] Add ±15–30 min random offset to actual post time inside publisher (cron fires at 21:00, post lands 20:30–21:30)
 
 - [ ] Docker & Deploy
   - [x] Write Dockerfile (XHS container)
@@ -185,6 +174,17 @@
   - [ ] Verify container starts and cron fires correctly with docker-compose up
   - [ ] Transfer auth.json to Lightsail instance
   - [ ] Verify XHS container runs correctly on Lightsail
+
+- [ ] Dashboard integration — manual trigger + preview mode
+  - [ ] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
+  - [ ] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
+  - [ ] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
+
+- [ ] xhs-login.js — dashboard re-auth flow (requires deploy + dashboard)
+  - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
+  - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
+  - [x] Detect successful login via post-login URL redirect
+  - [ ] Run headless (headless: true) — dashboard streams screenshots via SSE instead of showing a browser window
 
 - [ ] Tune prompt output format for XHS page layout
   - [ ] Update prompts to produce fewer lines per section, more content per line — allows 一键排版 to split pages at correct section boundaries

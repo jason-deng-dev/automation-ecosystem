@@ -1,14 +1,18 @@
-import 'dotenv/config';
 import { chromium } from 'playwright';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const AUTH_PATH = path.join(__dirname, '../auth.json');
 
 const browser = await chromium.launch({ headless: false });
 
-if (!fs.existsSync(`${process.env.DATA_DIR}/xhs/auth.json`)) {
-	fs.writeFileSync(`${process.env.DATA_DIR}/xhs/auth.json`, '{"cookies":[],"origins":[]}');
+if (!fs.existsSync(AUTH_PATH)) {
+	fs.writeFileSync(AUTH_PATH, '{"cookies":[],"origins":[]}');
 }
 
-const context = await browser.newContext({ storageState: `${process.env.DATA_DIR}/xhs/auth.json` });
+const context = await browser.newContext({ storageState: AUTH_PATH });
 
 const page = await context.newPage();
 console.log('Starting login process...')
@@ -27,6 +31,6 @@ if (await page.locator('.login-box-container').isVisible()){
 	await page.locator('.login-box-container img').click()
 	await page.locator('.login-box-container').waitFor({ state: 'hidden' })
 }
-await context.storageState({ path: `${process.env.DATA_DIR}/xhs/auth.json` }); // saves cookies/session to file
+await context.storageState({ path: AUTH_PATH }); // saves cookies/session to file
 console.log('Login successful — auth.json saved.')
 await browser.close();
