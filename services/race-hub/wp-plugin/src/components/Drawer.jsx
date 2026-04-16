@@ -83,7 +83,7 @@ export default function Drawer({ race, onClose }) {
         onClick={onClose}
       />
 
-      {/* Panel */}
+      {/* Panel — mobile: full-screen slide from right. Desktop: centered modal */}
       <aside
         className={`
           fixed z-50 bg-surface flex flex-col overflow-hidden
@@ -99,9 +99,15 @@ export default function Drawer({ race, onClose }) {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Drag handle — mobile only */}
-        <div className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pl-1 pr-2 py-6 flex items-center">
-          <div className="w-1 h-10 rounded-full bg-white/60" />
+        {/* Swipe handle tab — mobile only, sticks out left edge */}
+        <div className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full bg-surface border border-r-0 border-border px-1.5 py-4 flex flex-col items-center gap-1">
+          <span className="material-symbols-outlined text-muted text-[16px]">chevron_left</span>
+          <span
+            className="text-muted font-body uppercase"
+            style={{ fontSize: '8px', letterSpacing: '0.1em', writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
+            {text.swipe_to_close ?? 'swipe'}
+          </span>
         </div>
 
         {race && (
@@ -109,9 +115,9 @@ export default function Drawer({ race, onClose }) {
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+              className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center bg-border hover:bg-[#c6c6c6] transition-colors"
             >
-              <span className="material-symbols-outlined text-white text-[18px] block">close</span>
+              <span className="material-symbols-outlined text-ink text-[18px]">close</span>
             </button>
 
             {/* Scrollable content */}
@@ -157,7 +163,6 @@ export default function Drawer({ race, onClose }) {
                 {/* Images — swipe gallery on mobile, strip on desktop */}
                 {race.images?.filter(Boolean).length > 0 && (
                   <>
-                    {/* Mobile: swipe gallery */}
                     <div className="relative md:hidden">
                       <div
                         ref={galleryRef}
@@ -181,7 +186,6 @@ export default function Drawer({ race, onClose }) {
                       )}
                     </div>
 
-                    {/* Desktop: side-by-side strip */}
                     <div className="hidden md:flex gap-0.5 h-36">
                       {race.images.filter(Boolean).map((img, i) => (
                         <div key={i} className="relative flex-1 overflow-hidden">
@@ -242,13 +246,13 @@ export default function Drawer({ race, onClose }) {
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="shrink-0 p-6 border-t border-border bg-surface">
+            {/* CTA — inline in scroll, not sticky, dark background */}
+            <div className="shrink-0 p-4 border-t border-border">
               <a
                 href={race.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full bg-accent text-white font-headline font-bold text-sm py-5 tracking-[0.25em] uppercase text-center hover:bg-accent-dark transition-colors"
+                className="block w-full bg-ink text-surface font-headline font-bold text-sm py-4 tracking-[0.25em] uppercase text-center hover:bg-neutral-700 transition-colors active:scale-[0.98]"
               >
                 {text.drawer_cta}
               </a>
@@ -257,7 +261,7 @@ export default function Drawer({ race, onClose }) {
                   href={race.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full mt-2 py-3 text-center font-body text-[12px] uppercase tracking-widest text-muted hover:text-ink transition-colors underline underline-offset-4"
+                  className="block w-full mt-2 py-2.5 text-center font-body text-[12px] uppercase tracking-widest text-muted hover:text-ink transition-colors underline underline-offset-4"
                 >
                   {text.drawer_official_site}
                 </a>

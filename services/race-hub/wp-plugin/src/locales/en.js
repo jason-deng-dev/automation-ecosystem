@@ -44,6 +44,7 @@ const enText = {
   drawer_race_info: 'Race Information',
   drawer_notes: 'Notes',
   drawer_cta: 'Register Now',
+  swipe_to_close: 'swipe',
   drawer_official_site: 'Official Site',
 
   // Badge

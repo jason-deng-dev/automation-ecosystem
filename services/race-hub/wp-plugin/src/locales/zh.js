@@ -44,6 +44,7 @@ const zhText = {
   drawer_race_info: '赛事详情',
   drawer_notes: '注意事项',
   drawer_cta: '立即报名',
+  swipe_to_close: '右滑',
   drawer_official_site: '官方网站',
 
   // Badge
