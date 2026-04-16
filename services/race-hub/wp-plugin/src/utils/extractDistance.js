@@ -18,10 +18,13 @@ function parseKmFromString(str) {
   // Time-based events — no distance
   if (/\d+[-\s]hours?/i.test(str)) return null
 
-  // Prefer the first explicit km value (ignores GPS-corrected values in parens that follow)
-  // e.g. "30km (GPS 24.5km)" → 30, "【50K】51.2km" → 51.2
-  // Strip elevation components before parsing: /±\d+m/, /D\+\d+m/, /\/\+\d+m/
-  const stripped = str.replace(/[\/±]?\s*[Dd]?\+?\d+(\.\d+)?\s*m\b/g, '')
+  // Strip bracket labels like [50K] or [April 24] — content inside is an abbreviation/prefix,
+  // not the authoritative distance. e.g. "【50K】51.2km" → strip [50K] → "51.2km" → 51.2
+  str = str.replace(/\[.*?\]/g, '')
+
+  // Strip elevation components before parsing: ±\d+m, D+\d+m, /+\d+m
+  // Require an elevation prefix (±, /, D+) so bare metres like "500m" are not stripped.
+  const stripped = str.replace(/([\/±]|[Dd]\+)\s*\d+(\.\d+)?\s*m\b/g, '')
 
   // km / k / K — with optional space, decimal allowed
   const kmMatch = stripped.match(/(\d+(?:\.\d+)?)\s*[kK][mM]?(?!\w)/)
