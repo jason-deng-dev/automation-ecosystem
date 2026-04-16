@@ -1,7 +1,8 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
+import { insertPostArchive } from './db/queries.js';
 
-async function publishPost({ title, hook, contents, cta, description, hashtags, comments }) {
+async function publishPost({ title, hook, contents, cta, description, hashtags, comments, post_type, race_name, input_tokens, output_tokens }) {
 	if (!fs.existsSync(`${process.env.DATA_DIR}/xhs/auth.json`)) {
 		console.error('auth.json not found — run refresh-auth.bat to log in first');
 		return false;
@@ -51,7 +52,20 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.getByRole('button', { name: '发布' }).click();
 		await page.waitForURL('**/success?source&bind_status=not_bind&__debugger__=&proxy=');
 		console.log('Post published successfully');
-		archivePost(new Date().toISOString(), { title, hook, contents, cta, description, hashtags, comments });
+		await insertPostArchive({
+			postType: post_type,
+			raceName: race_name ?? null,
+			title,
+			hook,
+			contents,
+			cta,
+			description,
+			hashtags,
+			comments,
+			inputTokens: input_tokens ?? 0,
+			outputTokens: output_tokens ?? 0,
+			published: true,
+		});
 		await page.waitForTimeout(3000);
 		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
 		await page.waitForSelector('#userPostedFeeds .note-item');
@@ -116,23 +130,6 @@ async function checkAuth() {
 	} finally {
 		await browser.close();
 	}
-}
-
-function archivePost(dateAndTime, post) {
-	const date = new Date(dateAndTime); // 2026-03-24T21:05:32.000Z
-	const day = date.getDay(); // 0=Sun, 1=Mon...6=Sat
-	const diff = day === 0 ? -6 : 1 - day;
-	date.setDate(date.getDate() + diff);
-	const weekStart = date.toISOString().split('T')[0]; // "2026-03-23"
-	const filePath = `${process.env.DATA_DIR}/xhs/post_archive/${weekStart}.json`;
-	let archive = {};
-
-	if (fs.existsSync(filePath)) {
-		archive = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-	}
-	archive[dateAndTime] = post;
-	fs.writeFileSync(filePath, JSON.stringify(archive, null, 2));
-	console.log(`Post archived to ${weekStart}.json`);
 }
 
 export { publishPost, checkAuth };

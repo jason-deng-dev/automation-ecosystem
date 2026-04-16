@@ -1,31 +1,28 @@
 import 'dotenv/config';
 import fs from 'fs';
 import Anthropic from '@anthropic-ai/sdk';
+import { getRaces, getPostedRaces, insertPostedRace } from './db/queries.js';
 
 const defaultPrompts = JSON.parse(fs.readFileSync('./config/prompts.json', 'utf-8'));
-const defaultRaces = JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/scraper/races.json`, 'utf-8'));
 const defaultClient = new Anthropic({
 	apiKey: process.env['ANTHROPIC_API_KEY'],
 	maxRetries: 3,
 	timeout: 30000,
 });
 
-// if file exists, postHistoryRaw = file content, empty otherwise
-const postHistoryRaw = fs.existsSync(`${process.env.DATA_DIR}/xhs/post_history.json`)
-	? fs.readFileSync(`${process.env.DATA_DIR}/xhs/post_history.json`, 'utf-8').trim()
-	: '';
-const defaultPostedRaces = postHistoryRaw ? JSON.parse(postHistoryRaw) : [];
-
 async function generatePost(
 	type,
 	{
-		races = defaultRaces,
-		postedRaces = defaultPostedRaces,
+		races = null,
+		postedRaces = null,
 		client = defaultClient,
 		prompts = defaultPrompts,
-		writeHistory = (races) => fs.writeFileSync(`${process.env.DATA_DIR}/xhs/post_history.json`, JSON.stringify(races, null, 2)),
+		writeHistory = null,
 	} = {},
 ) {
+	if (!races) races = await getRaces();
+	if (!postedRaces) postedRaces = await getPostedRaces();
+	if (!writeHistory) writeHistory = (newPostedRaces) => insertPostedRace(newPostedRaces[newPostedRaces.length - 1]);
 	const systemPrompt = prompts.systemPrompt;
 	let { comments, contextToUse, raceName, input_tokens, output_tokens} = await getContextPrompts(type, {
 		races,
@@ -64,13 +61,15 @@ async function generatePost(
 
 	const hashtags = getHashtags(type);
 
-	return { title, hook, contents, cta, description, hashtags, comments,  input_tokens, output_tokens};
+	return { title, hook, contents, cta, description, hashtags, comments, input_tokens, output_tokens, post_type: type, race_name: raceName || null };
 }
 
 async function getContextPrompts(
 	type,
-	{ races = defaultRaces, postedRaces = defaultPostedRaces, client = defaultClient, prompts = defaultPrompts } = {},
+	{ races = null, postedRaces = null, client = defaultClient, prompts = defaultPrompts } = {},
 ) {
+	if (!races) races = await getRaces();
+	if (!postedRaces) postedRaces = await getPostedRaces();
 	let raceName = '';
 	let input_tokens = 0;
 	let output_tokens = 0;
@@ -97,11 +96,13 @@ function cleanName(str) {
 }
 
 async function chooseRace({
-	races = defaultRaces,
-	postedRaces = defaultPostedRaces,
+	races = null,
+	postedRaces = null,
 	client = defaultClient,
 	prompts = defaultPrompts,
 } = {}) {
+	if (!races) races = await getRaces();
+	if (!postedRaces) postedRaces = await getPostedRaces();
 	// need two way logic
 	const availableRaces = races.races.filter(
 		(r) =>

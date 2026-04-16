@@ -801,6 +801,7 @@ XHS enforces a **300-character limit per comment**. This is enforced in the prom
 | Manual post | `docker exec xhs node scripts/run-manualPost.js <type>` |
 | Preview (generate only) | `docker exec xhs node scripts/run-preview.js <type>` |
 | Re-auth | `docker exec xhs node scripts/xhs-login.js` |
+| Reload schedule | `docker exec xhs node scripts/run-reloadSchedule.js` |
 
 Post type is passed as a positional argument (`process.argv[2]`) — e.g. `run-manualPost.js race`.
 
@@ -971,6 +972,7 @@ services/xhs/
     │   ├── run-scheduler.js                # Entry point — starts cron scheduler
     │   ├── run-manualPost.js               # Dashboard: trigger a manual post (docker exec)
     │   ├── run-preview.js                  # Dashboard: generate only, skip publish (docker exec)
+    │   ├── run-reloadSchedule.js           # Dashboard/analytics: reload xhs_schedule from DB, re-register cron jobs
     │   ├── run-testRun.js                  # Dev tool — queue-based 7-day cycle test
     │   ├── test-gen.js                     # Dev tool — single real API call to generate a sample post
     │   ├── xhs-login.js                    # Auth setup — auto-navigates to QR code, saves auth.json
@@ -1000,7 +1002,7 @@ services/xhs/
 | Table | Direction | Contains |
 |---|---|---|
 | `races` | XHS reads | Race data from scraper — used by generator to pick race context |
-| `xhs_schedule` | Dashboard writes → XHS reads | Per-day post schedule — scheduler polls for changes |
+| `xhs_schedule` | Dashboard writes → XHS reads | Per-day post schedule — loaded once on startup; dashboard/analytics service triggers `setupAllDailyCrons()` to reload (no polling) |
 | `pipeline_state` | XHS writes | `{ service: "xhs", state: "idle \| running \| failed" }` |
 | `xhs_run_logs` | XHS writes | Per-run: type, outcome, error stage/msg, token counts |
 | `xhs_post_history` | XHS reads + writes | Race names already posted — dedup tracker, reset monthly |

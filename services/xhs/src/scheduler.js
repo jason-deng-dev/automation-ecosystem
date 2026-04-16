@@ -1,23 +1,20 @@
 import nodeCron from 'node-cron';
 import { generatePost } from './generator.js';
 import { publishPost, checkAuth } from './publisher.js';
-import fs from 'fs';
-function startScheduler() {
-	fs.watch(`${process.env.DATA_DIR}/xhs/config.json`, setupAllDailyCrons);
+import { getSchedule, insertRunLog, upsertPipelineState, deleteOldPostHistory } from './db/queries.js';
 
-	// Daily posts according to config.json
-	setupAllDailyCrons();
+async function startScheduler() {
+	await setupAllDailyCrons();
 
-	// Monthly: reset post_history.json
+	// Monthly: reset post_history (delete rows from previous months)
 	nodeCron.schedule(
 		'0 0 1 * *',
-		() => {
+		async () => {
 			try {
-				fs.writeFileSync(`${process.env.DATA_DIR}/xhs/post_history.json`, JSON.stringify([], null, 2));
-				console.log('post_history.json reset successful');
+				await deleteOldPostHistory();
+				console.log('xhs_post_history monthly reset successful');
 			} catch (err) {
-				console.error(`post_history.json reset failed`);
-				return;
+				console.error(`xhs_post_history monthly reset failed: ${err.message}`);
 			}
 		},
 		{ timezone: 'Asia/Shanghai' },
@@ -31,20 +28,20 @@ function getPostTypeTest() {
 
 let dailyCronJobs = [];
 
-function setupAllDailyCrons() {
+export async function setupAllDailyCrons() {
 	// clear existing cron jobs
 	dailyCronJobs.forEach((job) => job.stop());
 	dailyCronJobs = [];
-	const config = Object.entries(JSON.parse(fs.readFileSync(`${process.env.DATA_DIR}/xhs/config.json`, 'utf-8')));
-	for (const day of config) {
-		const dayOfWeek = day[0];
-		for (const post of day[1]) {
-			const [hour, minute] = post['time'].split(':');
-			const type = post['type'];
-			const cronTime = `${minute} ${hour} * * ${dayOfWeek}`;
-			dailyCronJobs.push(nodeCron.schedule(cronTime, () => Run(type), { timezone: 'Asia/Shanghai' }));
-		}
+
+	const schedule = await getSchedule();
+	for (const row of schedule) {
+		const [hour, minute] = row.time.split(':');
+		const cronTime = `${minute} ${hour} * * ${row.day}`;
+		dailyCronJobs.push(
+			nodeCron.schedule(cronTime, () => Run(row.post_type), { timezone: 'Asia/Shanghai' }),
+		);
 	}
+	console.log(`Registered ${dailyCronJobs.length} cron job(s) from xhs_schedule`);
 }
 
 const jobQueue = [];
@@ -57,8 +54,8 @@ async function Run(postType) {
 	let outcome = 'success';
 	let errorStage = null;
 	let errorMsg = null;
-	const pipeline_state_filePath = `${process.env.DATA_DIR}/xhs/pipeline_state.json`;
-	fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: 'running'}));
+
+	await upsertPipelineState('running');
 
 	try {
 		console.log('Starting Authentication check...');
@@ -72,7 +69,7 @@ async function Run(postType) {
 				return;
 			}
 		} catch (err) {
-			console.error(`Publish post failed : ${err.message}`);
+			console.error(`Auth check failed: ${err.message}`);
 			outcome = 'failed';
 			errorStage = 'auth';
 			errorMsg = err.message;
@@ -81,14 +78,14 @@ async function Run(postType) {
 				process.exit(1);
 			}
 		}
-		let post;
 
+		let post;
 		console.log('Starting XHS article generation...');
 		try {
 			post = await generatePost(type);
 			({ input_tokens, output_tokens } = post);
 		} catch (err) {
-			console.error(`Generate post failed : ${err.message}`);
+			console.error(`Generate post failed: ${err.message}`);
 			outcome = 'failed';
 			errorStage = 'generate';
 			errorMsg = err.message;
@@ -106,7 +103,7 @@ async function Run(postType) {
 				return;
 			}
 		} catch (err) {
-			console.error(`Publish post failed : ${err.message}`);
+			console.error(`Publish post failed: ${err.message}`);
 			outcome = 'failed';
 			errorStage = 'publish';
 			errorMsg = err.message;
@@ -114,18 +111,15 @@ async function Run(postType) {
 		}
 	} finally {
 		console.log('Process complete');
-		const timestamp = new Date().toISOString();
-		const log = { type, outcome, errorStage, errorMsg, input_tokens, output_tokens };
-		const run_log_filePath = `${process.env.DATA_DIR}/xhs/run_log.json`;
-		if (!fs.existsSync(run_log_filePath)) {
-			fs.writeFileSync(run_log_filePath, JSON.stringify({}));
-		}
-		const run_log = JSON.parse(fs.readFileSync(run_log_filePath, 'utf-8'));
-		run_log[timestamp] = log;
-		fs.writeFileSync(run_log_filePath, JSON.stringify(run_log, null, 2));
-		console.log(`Run Log saved as ${timestamp}`);
-
-		fs.writeFileSync(pipeline_state_filePath, JSON.stringify({ state: outcome === 'success' ? 'idle' : 'failed' }));
+		await insertRunLog({
+			postType: type,
+			outcome,
+			errorStage,
+			errorMsg,
+			inputTokens: input_tokens,
+			outputTokens: output_tokens,
+		});
+		await upsertPipelineState(outcome === 'success' ? 'idle' : 'failed');
 	}
 }
 
@@ -147,6 +141,4 @@ async function testRun() {
 	}
 }
 
-
-
-export { startScheduler, testRun, Run};
+export { startScheduler, testRun, Run };

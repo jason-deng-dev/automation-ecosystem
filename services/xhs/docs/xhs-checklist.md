@@ -129,24 +129,24 @@
   - [x] Scheduler watches xhs/config.json for changes and re-registers cron jobs at runtime
   - [x] Write xhs/pipeline_state.json to shared volume on run start (running) and run end (idle / failed) — dashboard reads this for GET /api/pipeline-state
   - [x] Remove scraper.js from XHS container — reads scraper/races.json from shared volume instead
-- [ ] PostgreSQL migration (shared volume → DB)
-  - [ ] Add `pg` to package.json dependencies
-  - [ ] Create `src/db/pool.js` — pg Pool with DATABASE_URL
-  - [ ] Create `src/db/queries.js` — all DB operations (see table specs below)
-  - [ ] Create `src/db/schema.sql` — all XHS tables
-  - [ ] Add `xhs_schedule` table — day (0–6), time, post_type; replaces `xhs/config.json`
-  - [ ] Add `xhs_run_logs` table — published_at TIMESTAMPTZ, post_type, outcome, error_stage, error_msg, input_tokens, output_tokens; used for ops/dashboard monitoring
-  - [ ] Add `xhs_post_history` table — race_name, posted_at, month (for monthly reset)
-  - [ ] Add `xhs_post_archive` table — full analytics record per post: published_at TIMESTAMPTZ, post_type, race_name (nullable — race posts only), title, hook, contents JSONB, cta, description, hashtags TEXT[], comments TEXT[], input_tokens, output_tokens, published BOOLEAN (false = preview run); analytics source of truth, no join needed
-  - [ ] Replace `races.json` file read with SELECT from `races` table
-  - [ ] Replace `config.json` file watch with DB poll on `xhs_schedule` table — re-register cron jobs on change
-  - [ ] Replace `pipeline_state.json` write with UPSERT into `pipeline_state` table
-  - [ ] Replace `run_log.json` append with INSERT into `xhs_run_logs`
-  - [ ] Replace `post_history.json` read/write with SELECT/INSERT on `xhs_post_history`
-  - [ ] Replace `post_archive/` writes with INSERT into `xhs_post_archive` — include post_type, race_name, token counts, published flag
-  - [ ] Monthly reset — DELETE FROM xhs_post_history WHERE month != current month
-  - [ ] Remove `DATA_DIR` env var dependency — add DATABASE_URL to .env.example
-  - [ ] `auth.json` stays as file — no migration needed
+- [x] PostgreSQL migration (shared volume → DB)
+  - [x] Add `pg` to package.json dependencies
+  - [x] Create `src/db/pool.js` — pg Pool with DATABASE_URL
+  - [x] Create `src/db/queries.js` — all DB operations (see table specs below)
+  - [x] Create `src/db/schema.sql` — all XHS tables
+  - [x] Add `xhs_schedule` table — day (0–6), time, post_type; replaces `xhs/config.json`
+  - [x] Add `xhs_run_logs` table — published_at TIMESTAMPTZ, post_type, outcome, error_stage, error_msg, input_tokens, output_tokens; used for ops/dashboard monitoring
+  - [x] Add `xhs_post_history` table — race_name, posted_at, month (for monthly reset)
+  - [x] Add `xhs_post_archive` table — full analytics record per post: published_at TIMESTAMPTZ, post_type, race_name (nullable — race posts only), title, hook, contents JSONB, cta, description, hashtags TEXT[], comments TEXT[], input_tokens, output_tokens, published BOOLEAN (false = preview run); analytics source of truth, no join needed
+  - [x] Replace `races.json` file read with SELECT from `races` table
+  - [x] Replace `config.json` file watch with one-time DB load of `xhs_schedule` on startup — no polling; dashboard/analytics service triggers reload via `setupAllDailyCrons()` (docker exec or HTTP endpoint)
+  - [x] Replace `pipeline_state.json` write with UPSERT into `pipeline_state` table
+  - [x] Replace `run_log.json` append with INSERT into `xhs_run_logs`
+- [x] Replace `post_history.json` read/write with SELECT/INSERT on `xhs_post_history`
+  - [x] Replace `post_archive/` writes with INSERT into `xhs_post_archive` — include post_type, race_name, token counts, published flag
+  - [x] Monthly reset — DELETE FROM xhs_post_history WHERE month != current month
+  - [x] Remove `DATA_DIR` env var dependency — add DATABASE_URL to .env.example
+  - [x] `auth.json` stays as file — no migration needed
 
 - [ ] xhs-login.js — dashboard re-auth flow
   - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
