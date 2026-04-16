@@ -53,28 +53,26 @@ export default function FilterBar({
 				{/* Primary row */}
 				<div className="flex items-center gap-4 py-4">
 					{/* Brand — desktop only */}
-					<div className="shrink-0 w-55 pr-4 border-r border-border hidden md:block">
+					<div className="shrink-0 w-55 pr-4 border-r border-border max-md:hidden">
 						<span className="font-headline font-black text-[18px] uppercase tracking-tight text-ink leading-none">
 							{text.site_title}
 						</span>
 					</div>
 
 					{/* Search */}
-					<div className="relative flex-grow max-w-md">
-						<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[18px]">
-							search
-						</span>
+					<div className="flex items-center border border-border grow max-w-md focus-within:border-ink transition-colors">
+						<span className="material-symbols-outlined pl-3 text-muted text-[18px] shrink-0">search</span>
 						<input
 							type="text"
 							value={search}
 							onChange={(e) => onSearchChange(e.target.value)}
 							placeholder={text.search_placeholder}
-							className="w-full border border-border bg-transparent py-2.5 pl-10 pr-4 font-body text-[13px] text-ink placeholder:text-disabled focus:border-ink focus:outline-none rounded-none transition-colors"
+							className="w-full border-none bg-transparent py-2.5 pl-2 pr-4 font-body text-[13px] text-ink placeholder:text-disabled focus:outline-none"
 						/>
 					</div>
 
 					{/* Status — always visible */}
-					<div className="relative w-37.5 hidden md:block">
+					<div className="relative w-37.5 max-md:hidden">
 						<label className="absolute -top-2 left-2 bg-surface px-1 font-headline text-[11px] font-bold uppercase tracking-[0.15em] text-muted z-10">
 							{text.status_label}
 						</label>
@@ -101,26 +99,10 @@ export default function FilterBar({
 						)}
 					</button>
 
-					{/* Count + Lang toggle */}
-					<div className="flex items-center gap-3 ml-auto shrink-0">
-						<span className="font-body text-[13px] font-semibold uppercase tracking-[0.05em] text-muted min-w-22.5 text-right">
-							{count} {count === 1 ? text.race_singular : text.race_plural}
-						</span>
-						<div className="flex border border-border">
-							<button
-								onClick={() => lang !== 'en' && toggleLang()}
-								className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest transition-colors ${lang === 'en' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
-							>
-								EN
-							</button>
-							<button
-								onClick={() => lang !== 'zh' && toggleLang()}
-								className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest border-l border-border transition-colors ${lang === 'zh' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
-							>
-								中文
-							</button>
-						</div>
-					</div>
+					{/* Count */}
+					<span className="font-body text-[13px] font-semibold uppercase tracking-[0.05em] text-muted ml-auto shrink-0 min-w-22.5 text-right">
+						{count} {count === 1 ? text.race_singular : text.race_plural}
+					</span>
 				</div>
 
 				{/* Expanded filters — animated accordion */}

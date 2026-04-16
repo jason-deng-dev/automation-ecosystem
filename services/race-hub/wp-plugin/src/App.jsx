@@ -134,7 +134,7 @@ export default function App() {
 	return (
 		<LangContext value={[lang, toggleLang]}>
 			<div className="race-hub-root min-h-screen bg-bg font-body">
-				<header className="sticky top-0 z-40 bg-surface border-b border-border">
+				<header className="bg-surface border-b border-border">
 					<FilterBar
 						search={search}
 						onSearchChange={setSearch}
@@ -197,6 +197,23 @@ export default function App() {
 						</div>
 					)}
 				</main>
+
+				<footer className="max-w-7xl mx-auto px-4 pb-8 md:px-6 flex justify-center">
+					<div className="flex border border-border">
+						<button
+							onClick={() => lang !== 'en' && toggleLang()}
+							className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest transition-colors ${lang === 'en' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
+						>
+							EN
+						</button>
+						<button
+							onClick={() => lang !== 'zh' && toggleLang()}
+							className={`px-2.5 py-1.5 font-headline font-bold text-[10px] uppercase tracking-widest border-l border-border transition-colors ${lang === 'zh' ? 'bg-ink text-surface' : 'text-muted hover:text-ink'}`}
+						>
+							中文
+						</button>
+					</div>
+				</footer>
 
 				<Drawer race={selectedRace} onClose={() => setSelectedRace(null)} />
 			</div>
