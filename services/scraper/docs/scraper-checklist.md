@@ -9,6 +9,7 @@
   - [x] Add pipeline_state.json output — running/idle/failed
   - [x] Validate output — abort + preserve previous races.json if < 30 races returned
   - [x] Wire weekly cron (Sunday 2am JST)
+  - [x] cleanRaces() exported and tested — 8 cases covering past/future/range/unparseable dates
 - [x] Dashboard integration
   - [x] Support manual trigger via docker exec from dashboard (no Express server needed)
 - [x] Incremental Scraping
@@ -37,12 +38,12 @@
   - [x] Replace run_log.json write with insertRunLog into scraper_run_logs
   - [x] Replace pipeline_state.json writes (x2) with upsertPipelineState into pipeline_state
   - [x] Remove DATA_DIR env var — add DATABASE_URL=ecosystemdb to .env.example
-  - [ ] Race Hub reads from races table instead of races.json file
+  - [x] Race Hub reads from races table instead of races.json file
 
 - [ ] Docker & Deploy
   - [x] Write Dockerfile — node:22-alpine, npm ci, CMD node scripts/run-scheduler.js
   - [x] Write `cicd-scraper.yml` — CI runs `npm test`; CD builds → Docker Hub → SSH deploy on push to main
-  - [ ] Transfer `.env` to VPS: `scp services/scraper/.env lightsail:~/scraper/.env`
-  - [ ] Verify container starts and cron fires on Lightsail — races written to `ecosystemdb.races`
+  - [x] Transfer `.env` to VPS: `scp services/scraper/.env lightsail:~/scraper/.env`
+  - [x] Verify container starts and cron fires on Lightsail — races written to `ecosystemdb.races`
 
 ---

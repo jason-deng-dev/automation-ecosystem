@@ -301,4 +301,4 @@ async function translateRaces(races) {
 	return translatedRaces;
 }
 
-export { populateRaces, getInfo };
+export { populateRaces, getInfo, cleanRaces };

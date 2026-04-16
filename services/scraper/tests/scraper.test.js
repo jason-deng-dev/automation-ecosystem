@@ -2,6 +2,7 @@
 // Tests: validate scraper output shape, required fields, minimum race count
 // Tested against sample-races.json fixture — shape/completeness, not exact content
 import { describe, it, expect } from "vitest";
+import { cleanRaces } from "../src/scraper.js";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
@@ -178,5 +179,50 @@ describe("scraper output", () => {
 				}
 			}
 		});
+	});
+});
+
+// ── cleanRaces ────────────────────────────────────────────────────────────────
+// cleanRaces filters out past races by end date. Uses 2020 as "past" and 2099
+// as "future" so tests stay deterministic regardless of when they run.
+
+const makeRace = (date) => ({ name: 'Test Race', date, url: 'https://runjapan.jp/test' });
+
+describe("cleanRaces", () => {
+	it("keeps race with future date", () => {
+		expect(cleanRaces([makeRace("January 1 2099")])).toHaveLength(1);
+	});
+
+	it("removes race with past date", () => {
+		expect(cleanRaces([makeRace("January 1 2020")])).toHaveLength(0);
+	});
+
+	it("uses end date of a date range — removes past range", () => {
+		expect(cleanRaces([makeRace("March 1 2020 - March 31 2020")])).toHaveLength(0);
+	});
+
+	it("uses end date of a date range — keeps future range", () => {
+		expect(cleanRaces([makeRace("January 1 2099 - December 31 2099")])).toHaveLength(1);
+	});
+
+	it("keeps race with unparseable date (do not silently drop)", () => {
+		expect(cleanRaces([makeRace("TBD")])).toHaveLength(1);
+	});
+
+	it("returns only future races from mixed array", () => {
+		const result = cleanRaces([
+			makeRace("January 1 2020"),
+			makeRace("January 1 2099"),
+		]);
+		expect(result).toHaveLength(1);
+		expect(result[0].date).toBe("January 1 2099");
+	});
+
+	it("returns empty array when all races are past", () => {
+		expect(cleanRaces([makeRace("June 1 2020"), makeRace("December 31 2021")])).toHaveLength(0);
+	});
+
+	it("returns all races when all are future", () => {
+		expect(cleanRaces([makeRace("January 1 2099"), makeRace("June 1 2099")])).toHaveLength(2);
 	});
 });
