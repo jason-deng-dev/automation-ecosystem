@@ -1,6 +1,6 @@
 **Project:** automation-ecosystem
 
-**Last updated:** April 2026
+**Last updated:** April 16 2026
 
 ---
 
@@ -8,9 +8,9 @@
 
 | Service | Status |
 |---|---|
-| XHS | Feature complete — Dockerfile written, awaiting docker-compose & deploy |
-| Scraper | Feature complete — awaiting Dockerfile & deploy |
-| Race Hub | SPA + i18n complete — Vite bundle + WP plugin + deploy remaining |
+| XHS | Deployed — live on Lightsail, docker-compose + dashboard integration remaining |
+| Scraper | Deployed — live on Lightsail, docker-compose remaining |
+| Race Hub | Deployed — live at running.moximoxi.net/racehub/, docker-compose remaining |
 | Rakuten | Feature complete — deployed on Lightsail, rate limited, dashboard endpoints done; docker-compose remaining |
 | Dashboard | Home cards done (XHS + Scraper) — detail pages not started |
 | Analytics | Not started — planned FastAPI service, XHS weights endpoint first |
@@ -22,16 +22,16 @@
 
 - [x] Scheduler, generator, publisher fully built
 - [x] 7-day post cycle verified end-to-end
-- [x] Structured run_log.json and pipeline_state.json output
-- [x] Weekly cron + config-driven schedule (hot-reloadable)
-- [x] Manual trigger via run-testRun.js
-- [x] Shared volume migration
-- [x] Dockerfile written
-- [ ] PostgreSQL migration — xhs_run_logs, xhs_post_history, xhs_post_archive (full analytics record), xhs_schedule, pipeline_state; replace all file ops with DB
-- [ ] Bot detection mitigations (publisher.js)
-- [ ] Dashboard re-auth flow (headless QR scan via SSE)
+- [x] Structured run logging — xhs_run_logs, xhs_post_archive, pipeline_state (PostgreSQL)
+- [x] Weekly cron + config-driven schedule (xhs_schedule table, hot-reloadable)
+- [x] PostgreSQL migration — all file ops replaced with DB (xhs_run_logs, xhs_post_history, xhs_post_archive, xhs_schedule, pipeline_state)
+- [x] Bot detection mitigations — clipboard paste, humanDelay(), random post time offset ±15–30min
+- [x] Dockerfile + CI/CD pipeline (cicd-xhs.yml)
+- [x] Deployed — container live on Lightsail, 7 cron jobs registered, awaiting cron fire confirmation
+- [ ] Dashboard integration — manual trigger + preview mode (docker exec scripts)
+- [ ] Dashboard re-auth flow — headless QR scan + SSE screenshot stream
+- [ ] Tune prompt output format for XHS 一键排版 page layout
 - [ ] docker-compose integration
-- [ ] Deploy to Lightsail + smoke test
 
 ---
 
@@ -40,26 +40,25 @@
 
 - [x] Incremental scraping (skip already-scraped races)
 - [x] DeepL EN→ZH translation for all race fields
-- [x] Structured run_log.json and pipeline_state.json output
-- [x] Abort + preserve races.json if < 30 races returned
-- [x] Weekly cron (Sunday 2am JST)
-- [x] Manual trigger via docker exec
-- [ ] PostgreSQL migration — races table, scraper_run_logs, pipeline_state; replace all file writes with DB ops
-- [ ] Dockerfile
+- [x] Abort + preserve if < 30 races returned
+- [x] Weekly cron (Sunday 2am JST), manual trigger via docker exec
+- [x] PostgreSQL migration — races, scraper_run_logs, pipeline_state; all file writes replaced with DB ops
+- [x] Dockerfile + CI/CD pipeline (cicd-scraper.yml)
+- [x] Deployed — container live on Lightsail, cron verified, races writing to ecosystemdb.races
 - [ ] docker-compose integration
-- [ ] Verify races written to PostgreSQL on run
 
 ---
 
 ## Race Hub (`services/race-hub/`)
 > Full checklist: `services/race-hub/docs/race-hub-checklist.md`
 
-- [x] GET /api/races — serve races.json
+- [x] GET /api/races — serve races.json (reads from `races` PostgreSQL table)
 - [x] React SPA (listing, detail, filter, search, drawer)
 - [x] i18n — EN/ZH toggle
-- [ ] Vite bundle + WordPress plugin PHP/shortcode
-- [ ] PostgreSQL migration — server.js reads from races table instead of races.json
-- [ ] Dockerfile
+- [x] Vite bundle + WordPress plugin PHP/shortcode
+- [x] Deployed — live at running.moximoxi.net/racehub/ over HTTPS (api.moximoxi.net → VPS :3001)
+- [x] PostgreSQL migration — server.js reads from races table instead of races.json
+- [x] Dockerfile + CI/CD pipeline (cicd-race-hub.yml)
 - [ ] docker-compose integration
 
 ---
