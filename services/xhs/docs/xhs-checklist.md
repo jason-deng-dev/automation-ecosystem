@@ -6,10 +6,12 @@
   - [x] Install @anthropic-ai/sdk
   - [x] Set up .env (Anthropic API key)
   - [x] Set up .gitignore
+
 - [x] Build scraper.js (self-contained RunJapan scraper)
   - [x] Fetch race listings from RunJapan
   - [x] Parse and normalize race data
   - [x] Write to races.json
+
 - [x] Build post generator with Claude API
   - [x] system prompt/context prompt template setup
   - [x] Specify JSON output format in system prompt (title, hook, contents[], cta, description)
@@ -35,6 +37,7 @@
     - [x] getHashtags() wired — append to response before returning from generatePost()
     - [x] When a marathon is used it is added to post_history.json
     - [x] When selecting a marathon filter out marathons in post_history.json
+
 - [x] Code quality / robustness (generator + scraper)
   - [x] Add named exports to generator.js and scraper.js
   - [x] Replace chooseRaceMock() with chooseRace() in production code path
@@ -57,6 +60,7 @@
   - [x] Add dotenv import + RUNJAPAN_BASE_URL / RUNJAPAN_TIMEOUT from .env in scraper
   - [x] Add retries + timeout to Anthropic client — maxRetries: 3, timeout: 30s
   - [x] Add axios-retry to scraper — 3 retries, exponential backoff, network errors + 5xx only
+
 - [x] Setup tests (Vitest)
   - [x] Install Vitest
   - [x] Create tests/ folder structure (fixtures/, scraper.test.js, context-builder.test.js, generator.test.js, scheduler.test.js)
@@ -67,13 +71,16 @@
   - [x] context-builder.test.js — test each post type builds correct context
   - [x] generator.test.js — mock Anthropic client, verify API called correctly
   - [x] scheduler.test.js — skipped: getPostType() is a plain lookup table, not worth 7 test cases; cron wiring already covered by individual unit tests
+
 - [x] Test generation across all post types
+
 - [x] Build scheduler.js (orchestrator)
   - [x] Post type rotation logic (7-day schedule)
   - [x] Add wearables/equipment to rotation schedule
   - [x] Simulate 7-day schedule and verify correct post types fire in order
   - [x] Wire full daily cron (scraper weekly, generate → publish daily)
   - [x] Add run-scheduler.js entry point
+
 - [x] Build publisher.js (Playwright)
   - [x] Auth setup (one-time)
     - [x] Add auth.json to .gitignore
@@ -113,22 +120,28 @@
     - [x] Fix `checkAuth()` missing `return true` — caused infinite auth-failed loop in scheduler
     - [x] Fix scheduler — call `process.exit(1)` on auth error to hard-stop cron job
     - [x] Refactor xhs-login.js — auto-advance on login detection instead of page.pause()
+
 - [x] Post archive
   - [x] Write generated post to data/post_archive/ on successful publish (weekly JSON file keyed by ISO timestamp)
   - [x] archivePost() in publisher.js — computes Monday of current week as filename, merges into existing file
+
 - [x] Test 7-day post cycle
   - [x] Verify all 7 post types fire in order (scheduler test mode — queue-based, back-to-back)
   - [x] Verify race dedup works — no repeat races across cycle
+
 - [x] Structured run logging (dashboard prerequisite)
   - [x] Append to `xhs/run_log.json` on every pipeline run — timestamp, post_type, outcome, error_stage, error_message, tokens_input, tokens_output
   - [x] Pull token counts from `usage` field on every Claude API response and include in log entry
+
 - [x] Monthly post_history.json reset — clear the array at the start of each month so the race pool doesn't get permanently exhausted
+
 - [x] Shared volume migration
   - [x] Update all file read/write paths to use shared volume mount (scraper/races.json, xhs/run_log.json, xhs/post_archive/, xhs/auth.json)
   - [x] Move hardcoded dayTypeMap + cron times out of scheduler.js into xhs/config.json
   - [x] Scheduler watches xhs/config.json for changes and re-registers cron jobs at runtime
   - [x] Write xhs/pipeline_state.json to shared volume on run start (running) and run end (idle / failed) — dashboard reads this for GET /api/pipeline-state
   - [x] Remove scraper.js from XHS container — reads scraper/races.json from shared volume instead
+
 - [x] PostgreSQL migration (shared volume → DB)
   - [x] Add `pg` to package.json dependencies
   - [x] Create `src/db/pool.js` — pg Pool with DATABASE_URL
@@ -142,7 +155,7 @@
   - [x] Replace `config.json` file watch with one-time DB load of `xhs_schedule` on startup — no polling; dashboard/analytics service triggers reload via `setupAllDailyCrons()` (docker exec or HTTP endpoint)
   - [x] Replace `pipeline_state.json` write with UPSERT into `pipeline_state` table
   - [x] Replace `run_log.json` append with INSERT into `xhs_run_logs`
-- [x] Replace `post_history.json` read/write with SELECT/INSERT on `xhs_post_history`
+  - [x] Replace `post_history.json` read/write with SELECT/INSERT on `xhs_post_history`
   - [x] Replace `post_archive/` writes with INSERT into `xhs_post_archive` — include post_type, race_name, token counts, published flag
   - [x] Monthly reset — DELETE FROM xhs_post_history WHERE month != current month
   - [x] Remove `DATA_DIR` env var dependency — add DATABASE_URL to .env.example
@@ -153,15 +166,18 @@
   - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
   - [ ] Detect successful login via post-login URL redirect
   - [ ] Run headless (headless: true) — dashboard streams screenshots via SSE instead of showing a browser window
+
 - [ ] Dashboard integration — manual trigger + preview mode
   - [ ] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
   - [ ] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
   - [ ] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
+
 - [ ] Bot detection mitigations (publisher.js)
   - [ ] Replace all `page.fill()` with clipboard paste — `page.evaluate(() => navigator.clipboard.writeText(text))` + `Ctrl+V`
   - [ ] Add `humanDelay(min, max)` helper — random sleep between min/max ms, applied between all major actions
   - [ ] Add random 3–8s page dwell after navigation before first interaction
   - [ ] Add ±15–30 min random offset to actual post time inside publisher (cron fires at 21:00, post lands 20:30–21:30)
+
 - [ ] Docker & Deploy
   - [x] Write Dockerfile (XHS container)
   - [x] Write .dockerignore
@@ -169,6 +185,7 @@
   - [ ] Verify container starts and cron fires correctly with docker-compose up
   - [ ] Transfer auth.json to Lightsail instance
   - [ ] Verify XHS container runs correctly on Lightsail
+
 - [ ] Tune prompt output format for XHS page layout
   - [ ] Update prompts to produce fewer lines per section, more content per line — allows 一键排版 to split pages at correct section boundaries
 
