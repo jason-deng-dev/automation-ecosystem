@@ -10,7 +10,20 @@ on:
       - 'services/race-hub/**'
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: services/race-hub/wp-plugin
+      - run: npm test
+        working-directory: services/race-hub/wp-plugin
+
   deploy:
+    needs: test
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:

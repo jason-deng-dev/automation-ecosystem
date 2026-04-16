@@ -10,6 +10,7 @@
 - [x] `ci-scrapper.yml` — on push to `services/scraper/**`, run `npm test` (filename has typo — `scrapper` not `scraper`)
 - [x] `ci-xhs.yml` — on push to `services/xhs/**`, run `npm test`
 - [x] `cicd-rakuten.yml` — CI + CD combined; CI runs `npm test` on push to `services/rakuten/**`
+- [x] `cicd-race-hub.yml` — added test job (wp-plugin vitest); deploy now gated on tests passing
 - [x] Verify all three workflows pass on GitHub
 
 ---
@@ -45,9 +46,9 @@
 - [x] PostgreSQL migration — migrate race-hub from `races.json` file read to `SELECT * FROM races` in `ecosystemdb`
 - [x] Write `Dockerfile` for race-hub
 - [x] Write `cicd-race-hub.yml` — deploy only (no tests); build image, push to Docker Hub, SSH deploy
-- [ ] Transfer `.env` to VPS (`~/race-hub/.env`) — `scp services/race-hub/.env lightsail:~/race-hub/.env`
-- [ ] `npm install` in `services/race-hub/` — pull in `pg` dependency
-- [ ] Verify race-hub container starts and serves races from `ecosystemdb` on Lightsail
+- [x] Transfer `.env` to VPS (`~/race-hub/.env`) — `scp services/race-hub/.env lightsail:~/race-hub/.env`
+- [x] `npm install` in `services/race-hub/` — pull in `pg` dependency
+- [x] Verify race-hub container starts and serves races from `ecosystemdb` on Lightsail
 
 ### xhs (depends on `ecosystemdb.races` populated by scraper — already migrated to DB)
 - [ ] Fix bot detection mitigations in publisher.js (see xhs-checklist.md)

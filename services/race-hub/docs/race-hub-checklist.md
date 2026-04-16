@@ -51,6 +51,11 @@
   - [x] Replace all hardcoded English strings in JSX with `t.key` references (FilterBar, Drawer, Header, RaceCard, Badge, App.jsx)
   - [x] Render `_zh` fields in Drawer when `lang=zh` (name, date, location, entryStart/End, description, info, notice), fallback to English fields if `_zh` is null — API always returns full data, React picks the right field
   - [x] Smoke test: toggle to `zh` shows Chinese; toggle to `en` shows English; null `_zh` gracefully falls back
+- [x] Tests (Vitest)
+  - [x] Add vitest to wp-plugin/package.json + vitest.config.js (environment: node)
+  - [x] extractDistance.test.js — 20 cases: km/K/mi/m, named distances, GPS stripping, elevation, time-based, normalisation
+  - [x] extractDate.test.js — valid parse, null, invalid string, multiple races, field preservation
+  - [x] extractRegion.test.js — all 6 regions, unknown prefecture, null/missing location
 - [ ] Bundle & Deploy
   - [ ] Bundle with Vite → wp-plugin/dist/
   - [ ] WordPress plugin PHP — register [race_hub] shortcode, enqueue bundled assets
@@ -66,9 +71,9 @@
 - [ ] Docker & Deploy
   - [x] Write Dockerfile — node:22-alpine, npm ci, CMD node server.js (no build step — pure JS)
   - [x] Write `cicd-race-hub.yml` — deploy on push to main; build → Docker Hub → SSH pull + restart
-  - [ ] `npm install` locally — pull in `pg` dependency after package.json update
-  - [ ] Transfer `.env` to VPS: `scp services/race-hub/.env lightsail:~/race-hub/.env`
-  - [ ] Verify container starts and serves races correctly from `ecosystemdb`
+  - [x] `npm install` locally — pull in `pg` dependency after package.json update
+  - [x] Transfer `.env` to VPS: `scp services/race-hub/.env lightsail:~/race-hub/.env`
+  - [x] Verify container starts and serves races correctly from `ecosystemdb`
   - [ ] Verify CORS works from WordPress origin in production
 
 ---
