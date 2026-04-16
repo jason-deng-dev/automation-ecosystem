@@ -57,23 +57,27 @@
   - [x] extractDate.test.js — valid parse, null, invalid string, multiple races, field preservation
   - [x] extractRegion.test.js — all 6 regions, unknown prefecture, null/missing location
 - [ ] Bundle & Deploy
-  - [ ] Bundle with Vite → wp-plugin/dist/
-  - [ ] WordPress plugin PHP — register [race_hub] shortcode, enqueue bundled assets
-  - [ ] Upload plugin to running.moximoxi.net
+  - [x] Configure vite.config.js — stable output filenames (no hash) for WordPress enqueue compatibility
+  - [x] Bundle with Vite → wp-plugin/dist/ (assets/race-hub.js + assets/index.css)
+  - [x] WordPress plugin PHP — register [race_hub] shortcode, enqueue bundled assets
+  - [x] Upload plugin to running.moximoxi.net
+  - [ ] Set up nginx + SSL on VPS for api.moximoxi.net → port 3001 (DNS propagating — api.moximoxi.net → 13.192.170.85)
+  - [ ] Rebuild bundle with VITE_API_URL=https://api.moximoxi.net, re-upload plugin
   - [ ] Add shortcode to race hub page
   - [ ] Smoke test end-to-end
+  - [ ] Verify CORS works from WordPress origin in production
 - [x] PostgreSQL migration
   - Database: `ecosystemdb` — same DB as Scraper; Race Hub is a read-only consumer of the `races` table
   - [x] Add `pg` to package.json dependencies
   - [x] Create `db/pool.js` — pg Pool with DATABASE_URL (points to ecosystemdb)
   - [x] Update `server.js` — SELECT * FROM races instead of readFileSync races.json
   - [x] Remove DATA_DIR env var — add DATABASE_URL=ecosystemdb to .env.example
-- [ ] Docker & Deploy
+- [x] Docker & Deploy
   - [x] Write Dockerfile — node:22-alpine, npm ci, CMD node server.js (no build step — pure JS)
-  - [x] Write `cicd-race-hub.yml` — deploy on push to main; build → Docker Hub → SSH pull + restart
+  - [x] Write `cicd-race-hub.yml` — test job (wp-plugin vitest) gates deploy; Docker layer caching via buildx
   - [x] `npm install` locally — pull in `pg` dependency after package.json update
   - [x] Transfer `.env` to VPS: `scp services/race-hub/.env lightsail:~/race-hub/.env`
   - [x] Verify container starts and serves races correctly from `ecosystemdb`
-  - [ ] Verify CORS works from WordPress origin in production
+  - [x] Port 3001 open in Lightsail firewall + UFW
 
 ---

@@ -168,14 +168,15 @@
   - [x] Add random 3–8s page dwell after navigation before first interaction
   - [x] Add ±15–30 min random offset to actual post time inside publisher (cron fires at 21:00, post lands 20:30–21:30)
 
-- [ ] Docker & Deploy
+- [x] Docker & Deploy
   - [x] Write Dockerfile (XHS container)
   - [x] Write .dockerignore
   - [x] Complete Dockerfile — install Playwright + Chromium browser dependencies
-  - [x] Write `cicd-xhs.yml` — replaces ci-xhs.yml; test job gates deploy; auth.json bind-mounted from ~/xhs/auth.json on VPS
-  - [ ] Transfer `.env` to VPS (`~/xhs/.env`) — `scp services/xhs/.env lightsail:~/xhs/.env`
-  - [ ] Transfer auth.json to Lightsail instance — `scp services/xhs/auth.json lightsail:~/xhs/auth.json`
-  - [ ] Verify XHS container runs correctly on Lightsail
+  - [x] Write `cicd-xhs.yml` — replaces ci-xhs.yml; test job gates deploy; auth.json bind-mounted from /home/ubuntu/xhs/auth.json on VPS
+  - [x] Transfer `.env` to VPS (`~/xhs/.env`)
+  - [x] Transfer auth.json to Lightsail instance (`~/xhs/auth.json`)
+  - [x] Seed `ecosystemdb` — ran schema.sql + seeded xhs_schedule (7 rows) + pipeline_state via psql
+  - [x] Verify XHS container runs on Lightsail — 7 cron jobs registered; awaiting cron fire to confirm publish
 
 - [ ] Dashboard integration — manual trigger + preview mode
   - [ ] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
