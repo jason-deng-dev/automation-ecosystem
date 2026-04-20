@@ -1,5 +1,4 @@
 import { getScraperMetrics } from '../lib/scrapperController';
-import ScraperTriggerButton from './ScraperTriggerButton';
 
 export default async function ScraperMetric({ dict }) {
 	const { lastRun, pipelineState, successRate, totalRaces, dataFreshness, racesScraped, nextScrape } = await getScraperMetrics();
@@ -37,6 +36,10 @@ export default async function ScraperMetric({ dict }) {
 								: `${dict.failed}${lastRun.error_msg ? ` — ${lastRun.error_msg}` : ''}`}
 					</span>
 				</div>
+			</div>
+
+			<div className="border-t border-border pt-5 flex flex-col gap-3">
+				<span className="text-xs tracking-wide uppercase text-text-secondary">{dict.dataFreshness}</span>
 				<div className="flex justify-between text-base">
 					<span className="text-text-secondary">{dict.totalRaces}</span>
 					<span className="font-medium">{totalRaces}</span>
@@ -52,10 +55,6 @@ export default async function ScraperMetric({ dict }) {
 					<span className="font-medium">{nextScrape}</span>
 				</div>
 				<div className="flex justify-between text-base">
-					<span className="text-text-secondary">{dict.dataFreshness}</span>
-					<span className="font-medium">{dataFreshness}</span>
-				</div>
-				<div className="flex justify-between text-base">
 					<span className="text-text-secondary">{dict.successRate30d}</span>
 					<span className="font-medium">
 						{successRate === null
@@ -64,8 +63,6 @@ export default async function ScraperMetric({ dict }) {
 					</span>
 				</div>
 			</div>
-
-			<ScraperTriggerButton dict={dict} />
 		</div>
 	);
 }

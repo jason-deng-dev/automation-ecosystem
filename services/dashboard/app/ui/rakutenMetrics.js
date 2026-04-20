@@ -1,5 +1,4 @@
 import { getRakutenMetrics } from '../lib/rakutenController';
-import RakutenTriggerButton from './RakutenTriggerButton';
 
 export default async function RakutenMetric({ dict }) {
 	const { totalCached, totalPushed, lastUpdated, categories, lastRun, pipelineState } = await getRakutenMetrics();
@@ -29,6 +28,10 @@ export default async function RakutenMetric({ dict }) {
 					<span className="text-text-secondary">{dict.wcLive}</span>
 					<span className="font-medium">{totalPushed.toLocaleString()}</span>
 				</div>
+			</div>
+
+			<div className="border-t border-border pt-5 flex flex-col gap-3">
+				<span className="text-xs tracking-wide uppercase text-text-secondary">{dict.lastOperation}</span>
 				<div className="flex justify-between text-base">
 					<span className="text-text-secondary">{dict.lastSync}</span>
 					<span className="font-medium">
@@ -73,8 +76,6 @@ export default async function RakutenMetric({ dict }) {
 					))
 				)}
 			</div>
-
-			<RakutenTriggerButton dict={dict} />
 		</div>
 	);
 }
