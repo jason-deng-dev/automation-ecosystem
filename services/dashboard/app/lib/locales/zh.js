@@ -71,6 +71,18 @@ export default {
 	triggered: "已触发",
 	triggerFailed: "失败 — 请重试",
 
+	// Rakuten config editor
+	pricingConfig: "定价配置",
+	yenToYuan: "日元 → 人民币汇率",
+	markupPercent: "加价比例 %",
+	searchFillThreshold: "搜索补充阈值",
+	productsPerCategory: "每分类商品数",
+	lastUpdated: "最后更新",
+	save: "保存",
+	saving: "保存中...",
+	saved: "已保存",
+	saveFailed: "失败 — 请重试",
+
 	// Rakuten card
 	rakutenPipeline: "乐天 · 商品聚合",
 	catalogSize: "商品总数",

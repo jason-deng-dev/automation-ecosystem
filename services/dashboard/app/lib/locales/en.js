@@ -71,6 +71,18 @@ export default {
 	triggered: "Triggered",
 	triggerFailed: "Failed — try again",
 
+	// Rakuten config editor
+	pricingConfig: "Pricing Config",
+	yenToYuan: "JPY → CNY Rate",
+	markupPercent: "Markup %",
+	searchFillThreshold: "Search Fill Threshold",
+	productsPerCategory: "Products per Category",
+	lastUpdated: "Last updated",
+	save: "Save",
+	saving: "Saving...",
+	saved: "Saved",
+	saveFailed: "Failed — try again",
+
 	// Rakuten card
 	rakutenPipeline: "Rakuten Aggregator",
 	catalogSize: "Catalog Size",
