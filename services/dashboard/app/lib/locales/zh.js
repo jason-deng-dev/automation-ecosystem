@@ -87,6 +87,29 @@ export default {
 	triggered: "已触发",
 	triggerFailed: "失败 — 请重试",
 
+	// XHS detail page
+	xhsSchedule: "发布计划",
+	addSlot: "添加时段",
+	postArchive: "发布存档",
+	postTitle: "标题",
+	tokens: "用量",
+	runNow: "立即发布",
+	stage: "阶段",
+	hook: "钩子",
+	hashtags: "标签",
+	comments: "评论",
+	sections: "正文",
+
+	// Rakuten detail page
+	runLog: "运行日志",
+	importLog: "导入日志",
+	operation: "操作",
+	priceUpdates: "价格更新",
+	removedStale: "清除过期",
+	itemName: "商品",
+	itemStatus: "状态",
+	noErrors: "无错误",
+
 	// Rakuten config editor
 	pricingConfig: "定价配置",
 	yenToYuan: "日元 → 人民币汇率",

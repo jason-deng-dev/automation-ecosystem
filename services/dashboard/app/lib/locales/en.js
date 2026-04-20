@@ -101,6 +101,29 @@ export default {
 	saved: "Saved",
 	saveFailed: "Failed — try again",
 
+	// XHS detail page
+	xhsSchedule: "Schedule",
+	addSlot: "Add Slot",
+	postArchive: "Post Archive",
+	postTitle: "Title",
+	tokens: "Tokens",
+	runNow: "Run Now",
+	stage: "Stage",
+	hook: "Hook",
+	hashtags: "Hashtags",
+	comments: "Comments",
+	sections: "Sections",
+
+	// Rakuten detail page
+	runLog: "Run Log",
+	importLog: "Import Log",
+	operation: "Operation",
+	priceUpdates: "Price Updates",
+	removedStale: "Removed Stale",
+	itemName: "Product",
+	itemStatus: "Status",
+	noErrors: "No errors",
+
 	// Rakuten card
 	rakutenPipeline: "Rakuten Aggregator",
 	catalogSize: "Catalog Size",

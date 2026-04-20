@@ -1,14 +1,12 @@
 import "dotenv/config";
-import { normalizeItems, RakutenResponseItem, translateNames, translateKeyword } from "../utils";
+import { normalizeItems, RakutenResponseItem, translateNames } from "../utils";
 
 
 
 
 
 export const getProductsByKeyword = async (keyword: string, count: number, sortMode: string = '-reviewCount') => {
-	const translatedKeyword = await translateKeyword(keyword);
-	console.log(`keyword: "${keyword}" → translated: "${translatedKeyword}"`);
-	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&keyword=${translatedKeyword}&hits=${count}&availability=1&applicationId=${process.env.RAKUTEN_APP_ID}&sort=${sortMode}`;
+	const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&keyword=${encodeURIComponent(keyword)}&hits=${count}&availability=1&applicationId=${process.env.RAKUTEN_APP_ID}&sort=${sortMode}`;
 	try {
 		const res = await fetch(itemSearchEndpoint, {
 			headers: {

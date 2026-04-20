@@ -21,18 +21,16 @@
 
 ---
 
-**Layout principle: home cards = metrics + action triggers. Detail pages = scrollable data tables.**
+**Layout principle: home cards = metrics only. Detail pages = scrollable data tables + action triggers.**
 
 - [x] Home page — pipeline cards
   - [x] XHS card: run state, last run, next scheduled post, auth status, success rate, error breakdown, post type distribution, API token totals
   - [x] Scraper card: run state, last run, next scrape, total races, last scraped, data freshness, success rate
   - [x] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator, per-category breakdown
-  - [ ] Home card triggers
+  - [ ] Home card triggers (deprioritized — triggers moved to detail pages for cleaner home layout)
     - [ ] XHS — "Run Now" button: post type dropdown + `POST /api/xhs/trigger` (non-blocking docker exec)
     - [ ] XHS — "Preview" button: post type dropdown + `POST /api/xhs/preview`, display returned post JSON
     - [ ] XHS — Re-auth: Login button in auth banner → `POST /api/xhs/login` → SSE screenshot stream panel for QR scan
-    - [ ] Scraper — "Run Scraper Now" button: `POST /api/scraper/trigger` (non-blocking docker exec)
-    - [ ] Rakuten — "Run Sync Now" button: `POST /api/rakuten/sync` (proxies to rakuten service)
   - [ ] Poll or SSE to keep cards live without page refresh
 
 ---
@@ -53,26 +51,26 @@
 
 ---
 
-- [ ] Scraper section (detail page)
+- [x] Scraper section (detail page)
   - [x] `scrapperController.js` — pipeline state, last run, success rate, data freshness, races scraped
   - [x] Scraper home card
-  - [ ] races.json viewer — table of current races (name, date, location, entry status badge)
-    - [ ] `GET /api/scraper/races` — query `races` table
-  - [ ] Run history table: timestamp, races scraped, failure count, outcome
-    - [ ] `GET /api/scraper/run-history` — query `scraper_run_logs` table
-  - [ ] Failed URLs list — expandable from last run log
+  - [x] Races table viewer — name, date, location, entry status badge (zh/en aware)
+  - [x] Run history table: timestamp, outcome, races scraped, failure count, error message
+  - [x] Failed URLs list — collapsible, from last run log
+  - [x] "Run Scraper Now" trigger button — `POST /api/scraper/trigger` (non-blocking docker exec)
+  - [x] Collapsible sections with chevron indicator
+  - [x] Fixed column widths + whitespace-nowrap
 
 ---
 
 - [ ] Rakuten section (detail page)
   - [x] `rakutenController.js` — pipeline state, catalog size, WC live count, last sync, per-category breakdown, error indicator
   - [x] Rakuten home card
-  - [ ] Catalog stats page: total cached, pushed to WooCommerce, per-category breakdown
-    - [ ] `GET /api/rakuten/stats` — query `product_stats` + `products` tables
-  - [ ] Pricing config editor — inline editable fields, save calls rakuten service
-    - [ ] `GET /api/rakuten/config` — query `config` table
-    - [ ] `POST /api/rakuten/config` — proxy to rakuten `POST /api/config` (updates DB + reloads pricing + re-pushes prices)
-  - [ ] Import log table: timestamp, product name, status (success/failed/skipped), error message
+  - [x] Pricing config editor — inline editable fields, save calls rakuten service
+    - [x] `GET /api/rakuten/config` — query `config` table
+    - [x] `POST /api/rakuten/config` — proxy to rakuten `POST /api/config`
+  - [x] "Run Sync Now" trigger button — `POST /api/rakuten/sync` (proxies to rakuten service)
+  - [ ] Import log table: timestamp, product name, status, error message
     - [ ] `GET /api/rakuten/import-log` — query `import_logs` table
   - [ ] Run log table: timestamp, operation, products fetched/pushed/stale deleted, errors
     - [ ] `GET /api/rakuten/run-log` — query `run_logs` table

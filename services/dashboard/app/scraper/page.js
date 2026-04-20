@@ -61,7 +61,7 @@ export default async function ScraperPage() {
 							</thead>
 							<tbody>
 								{runs.map((r, i) => (
-									<tr key={i} style={{ borderBottom: '1px solid #1A1A1A' }}>
+									<tr key={i} className="row-hover" style={{ borderBottom: '1px solid #1A1A1A' }}>
 										<td className="px-6 py-3 font-medium whitespace-nowrap">
 											{new Date(r.logged_at).toLocaleString('en-CA', { timeZone: 'Asia/Tokyo', hour12: false })}
 										</td>
@@ -112,18 +112,24 @@ export default async function ScraperPage() {
 					{races.length === 0 ? (
 						<span className="px-6 py-5 block text-base text-text-secondary">—</span>
 					) : (
-						<table className="w-full text-sm">
+						<table className="w-full text-sm table-fixed">
+							<colgroup>
+								<col style={{ width: '38%' }} />
+								<col style={{ width: '18%' }} />
+								<col style={{ width: '32%' }} />
+								<col style={{ width: '12%' }} />
+							</colgroup>
 							<thead>
 								<tr style={{ borderBottom: '1px solid #2A2A2A' }}>
 									<th className="px-6 py-2 text-left font-medium tracking-wide" style={{ color: '#888888' }}>{dict.raceName}</th>
-									<th className="px-6 py-2 text-left font-medium tracking-wide whitespace-nowrap" style={{ color: '#888888', width: '140px' }}>{dict.raceDate}</th>
-									<th className="px-6 py-2 text-left font-medium tracking-wide whitespace-nowrap" style={{ color: '#888888', width: '200px' }}>{dict.raceLocation}</th>
-									<th className="px-6 py-2 text-left font-medium tracking-wide whitespace-nowrap" style={{ color: '#888888', width: '90px' }}>{dict.entryStatus}</th>
+									<th className="px-6 py-2 text-left font-medium tracking-wide" style={{ color: '#888888' }}>{dict.raceDate}</th>
+									<th className="px-6 py-2 text-left font-medium tracking-wide" style={{ color: '#888888' }}>{dict.raceLocation}</th>
+									<th className="px-6 py-2 text-left font-medium tracking-wide" style={{ color: '#888888' }}>{dict.entryStatus}</th>
 								</tr>
 							</thead>
 							<tbody>
 								{races.map((r, i) => (
-									<tr key={i} style={{ borderBottom: '1px solid #1A1A1A' }}>
+									<tr key={i} className="row-hover" style={{ borderBottom: '1px solid #1A1A1A' }}>
 										<td className="px-6 py-3 font-medium">
 											<a href={r.url} target="_blank" rel="noreferrer"
 												className="link-accent-hover"
