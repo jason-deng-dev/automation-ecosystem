@@ -27,24 +27,21 @@
   - [x] XHS card: run state, last run, next scheduled post, auth status, success rate, error breakdown, post type distribution, API token totals
   - [x] Scraper card: run state, last run, next scrape, total races, last scraped, data freshness, success rate
   - [x] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator, per-category breakdown
-  - [ ] Home card triggers (deprioritized — triggers moved to detail pages for cleaner home layout)
-    - [ ] XHS — "Run Now" button: post type dropdown + `POST /api/xhs/trigger` (non-blocking docker exec)
-    - [ ] XHS — "Preview" button: post type dropdown + `POST /api/xhs/preview`, display returned post JSON
-    - [ ] XHS — Re-auth: Login button in auth banner → `POST /api/xhs/login` → SSE screenshot stream panel for QR scan
+  - [x] Home card triggers — removed, home is monitoring-only; triggers live on detail pages
   - [ ] Poll or SSE to keep cards live without page refresh
 
 ---
 
-- [ ] XHS section (detail page)
-  - [ ] Schedule management
-    - [ ] `GET /api/xhs/schedule` — read `xhs_schedule` table
-    - [ ] `POST /api/xhs/schedule` — write `xhs_schedule` table; scheduler polls for changes and re-registers cron jobs
-    - [ ] Weekly grid UI — per-day rows, time picker + post type dropdown per slot, add/remove slot, save button
-  - [ ] Run history table: timestamp, post type, outcome, error stage, error message, token counts
-    - [ ] `GET /api/xhs/run-history` — query `xhs_run_logs` table
-  - [ ] Post archive viewer
-    - [ ] `GET /api/xhs/post-archive` — query `xhs_post_archive` table
-    - [ ] List: title, post type, publish timestamp — expandable to show full post content
+- [x] XHS section (detail page)
+  - [x] Schedule management
+    - [x] `GET /api/xhs/schedule` — read `xhs_schedule` table
+    - [x] `POST /api/xhs/schedule` — write `xhs_schedule` table; scheduler polls for changes and re-registers cron jobs
+    - [x] Weekly grid UI — per-day rows, time picker + post type dropdown per slot, add/remove slot, save button
+  - [x] Run history table: timestamp, post type, outcome, error stage, error message, token counts
+    - [x] `GET /api/xhs/run-history` — query `xhs_run_logs` table (inline in page.js)
+  - [x] Post archive viewer
+    - [x] `GET /api/xhs/post-archive` — query `xhs_post_archive` table (inline in page.js)
+    - [x] List: title, post type, publish timestamp — expandable to show full post content
   - [ ] Live log stream
     - [ ] `GET /api/xhs/logs/stream` — SSE stream of XHS process stdout
     - [ ] Scrollable log panel, auto-scroll to bottom, colour-coded lines
