@@ -49,6 +49,7 @@ export async function itemRequestByKeyword(keywordZH: string) {
 		if (!res || res.length === 0) {
 			console.log(`[request] Rakuten returned 0 results — retrying with English translation`);
 			const englishKeyword = await translateKeyword(keywordZH);
+			await new Promise(res => setTimeout(res, 1000));
 			res = await getProductsByKeyword(englishKeyword, searchFillThreshold);
 		}
 		if (!res || res.length === 0) {
