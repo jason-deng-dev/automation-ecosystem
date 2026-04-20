@@ -19,3 +19,38 @@ body {
   color: #EDEDED;
   font-family: 'Inter', 'Noto Sans SC', sans-serif;
 }
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.link-hover {
+  color: #888888;
+  transition: color 0.15s;
+}
+.link-hover:hover {
+  color: #EDEDED;
+}
+
+details summary { list-style: none; }
+details summary::-webkit-details-marker { display: none; }
+details summary .chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+details[open] summary .chevron {
+  transform: rotate(180deg);
+}
+
+.link-accent-hover {
+  color: #EDEDED;
+  transition: color 0.15s;
+}
+.link-accent-hover:hover {
+  color: #C8102E;
+}

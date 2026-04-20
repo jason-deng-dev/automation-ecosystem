@@ -61,9 +61,12 @@ export default async function RakutenMetric({ dict }) {
 					<span className="text-base text-text-secondary">—</span>
 				) : (
 					categories.map((cat) => (
-						<div key={cat.category_name} className="flex justify-between text-base">
-							<span className="text-text-secondary">{dict.categoryName?.[cat.category_name] ?? cat.category_name ?? '—'}</span>
-							<span className="font-medium">
+						<div key={cat.category_name} className="flex justify-between text-base gap-2">
+							<span className="text-text-secondary">
+								{dict.categoryName?.[cat.category_name] ?? cat.category_name ?? '—'}
+								<span className="ml-2 text-xs" style={{ color: '#555555' }}>({cat.subcategory_count} {dict.subcategories})</span>
+							</span>
+							<span className="font-medium shrink-0">
 								{Number(cat.pushed)}/{Number(cat.total)}
 							</span>
 						</div>

@@ -10,6 +10,7 @@ export default function RakutenConfigEditor({ config, dict }) {
 		products_per_category: config?.products_per_category ?? '',
 	});
 	const [status, setStatus] = useState('idle');
+	const [saveHovered, setSaveHovered] = useState(false);
 
 	function handleChange(key, val) {
 		setValues(v => ({ ...v, [key]: val }));
@@ -40,7 +41,7 @@ export default function RakutenConfigEditor({ config, dict }) {
 		{ key: 'yen_to_yuan', label: dict.yenToYuan, step: '0.0001' },
 		{ key: 'markup_percent', label: dict.markupPercent, step: '1' },
 		{ key: 'search_fill_threshold', label: dict.searchFillThreshold, step: '1' },
-		{ key: 'products_per_category', label: dict.productsPerCategory, step: '1' },
+		{ key: 'products_per_category', label: dict.productsPerCategory, step: '1', note: dict.productsPerCategoryNote },
 	];
 
 	const saveColor = { idle: '#EDEDED', saving: '#F5A623', saved: '#3ECF8E', error: '#C8102E' }[status];
@@ -60,19 +61,24 @@ export default function RakutenConfigEditor({ config, dict }) {
 			</div>
 
 			<div className="flex flex-col gap-4">
-				{fields.map(({ key, label, step }) => (
-					<div key={key} className="flex justify-between items-center gap-4">
-						<span className="text-base text-text-secondary">{label}</span>
-						<input
-							type="number"
-							step={step}
-							value={values[key]}
-							onChange={e => handleChange(key, e.target.value)}
-							className="w-32 text-right text-base font-medium bg-transparent border-b px-1 py-0.5 outline-none transition-colors"
-							style={{ borderColor: '#2A2A2A', color: '#EDEDED' }}
-							onFocus={e => (e.target.style.borderColor = '#EDEDED')}
-							onBlur={e => (e.target.style.borderColor = '#2A2A2A')}
-						/>
+				{fields.map(({ key, label, step, note }) => (
+					<div key={key} className="flex flex-col gap-1">
+						<div className="flex justify-between items-center gap-4">
+							<span className="text-base text-text-secondary">{label}</span>
+							<input
+								type="number"
+								step={step}
+								value={values[key]}
+								onChange={e => handleChange(key, e.target.value)}
+								className="w-32 flex-none text-right text-base font-medium bg-transparent border-b px-1 py-0.5 outline-none transition-colors"
+								style={{ borderColor: '#2A2A2A', color: '#EDEDED' }}
+								onMouseEnter={e => { if (document.activeElement !== e.target) e.target.style.borderColor = '#555555'; }}
+								onMouseLeave={e => { if (document.activeElement !== e.target) e.target.style.borderColor = '#2A2A2A'; }}
+								onFocus={e => { e.target.style.borderColor = '#EDEDED'; e.target.select(); }}
+								onBlur={e => (e.target.style.borderColor = '#2A2A2A')}
+							/>
+						</div>
+						{note && <span className="text-xs" style={{ color: '#555555' }}>{note}</span>}
 					</div>
 				))}
 			</div>
@@ -80,8 +86,14 @@ export default function RakutenConfigEditor({ config, dict }) {
 			<button
 				onClick={handleSave}
 				disabled={status === 'saving'}
+				onMouseEnter={() => setSaveHovered(true)}
+				onMouseLeave={() => setSaveHovered(false)}
 				className="w-full text-sm font-medium tracking-wide uppercase px-4 py-2 border transition-colors disabled:opacity-50"
-				style={{ borderColor: saveColor, color: saveColor }}
+				style={{
+					borderColor: saveColor,
+					color: saveColor,
+					backgroundColor: saveHovered && status === 'idle' ? 'rgba(237,237,237,0.08)' : 'transparent',
+				}}
 			>
 				{saveLabel}
 			</button>

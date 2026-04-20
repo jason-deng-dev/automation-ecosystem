@@ -64,6 +64,22 @@ export default {
 	dataFreshness: "数据新鲜度",
 	belowThreshold: "低于阈值",
 
+	// Scraper detail page
+	runHistory: "运行历史",
+	racesViewer: "赛事列表",
+	failedUrls: "失败链接",
+	timestamp: "时间",
+	outcome: "结果",
+	racesScraped: "已爬取",
+	failures: "失败数",
+	errorMsg: "错误",
+	raceName: "赛事",
+	raceDate: "日期",
+	raceLocation: "地点",
+	entryStatus: "报名状态",
+	entryOpen: "报名中",
+	entryClosed: "已截止",
+
 	// Trigger buttons
 	runScraper: "立即运行爬虫",
 	runSync: "立即同步",
@@ -77,6 +93,8 @@ export default {
 	markupPercent: "加价比例 %",
 	searchFillThreshold: "搜索补充阈值",
 	productsPerCategory: "每分类商品数",
+	productsPerCategoryNote: "每个顶级分类的目标数量 — 均分给各子分类",
+	subcategories: "子分类",
 	lastUpdated: "最后更新",
 	save: "保存",
 	saving: "保存中...",

@@ -64,6 +64,22 @@ export default {
 	dataFreshness: "Data Freshness",
 	belowThreshold: "below threshold",
 
+	// Scraper detail page
+	runHistory: "Run History",
+	racesViewer: "Races",
+	failedUrls: "Failed URLs",
+	timestamp: "Timestamp",
+	outcome: "Outcome",
+	racesScraped: "Scraped",
+	failures: "Failures",
+	errorMsg: "Error",
+	raceName: "Race",
+	raceDate: "Date",
+	raceLocation: "Location",
+	entryStatus: "Entry",
+	entryOpen: "Open",
+	entryClosed: "Closed",
+
 	// Trigger buttons
 	runScraper: "Run Scraper Now",
 	runSync: "Run Sync Now",
@@ -77,6 +93,8 @@ export default {
 	markupPercent: "Markup %",
 	searchFillThreshold: "Search Fill Threshold",
 	productsPerCategory: "Products per Category",
+	productsPerCategoryNote: "target per top-level category — split evenly across its subcategories",
+	subcategories: "subcats",
 	lastUpdated: "Last updated",
 	save: "Save",
 	saving: "Saving...",

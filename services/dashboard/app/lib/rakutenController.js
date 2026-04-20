@@ -6,11 +6,14 @@ export async function getRakutenMetrics() {
 			`SELECT total_cached, total_pushed, last_updated FROM product_stats WHERE id = 1`
 		),
 		rakutenPool.query(`
-			SELECT c.name AS category_name, COUNT(*) AS total, COUNT(p.wc_product_id) AS pushed
-			FROM products p
-			JOIN subcategories s ON p.subcategory_id = s.id
-			JOIN categories c ON s.category_id = c.id
-			GROUP BY c.name
+			SELECT c.name AS category_name,
+				COUNT(p.id) AS total,
+				COUNT(p.wc_product_id) AS pushed,
+				(SELECT COUNT(*) FROM subcategories s2 WHERE s2.category_id = c.id) AS subcategory_count
+			FROM categories c
+			LEFT JOIN subcategories s ON s.category_id = c.id
+			LEFT JOIN products p ON p.subcategory_id = s.id
+			GROUP BY c.id, c.name
 			ORDER BY c.name
 		`),
 		rakutenPool.query(
