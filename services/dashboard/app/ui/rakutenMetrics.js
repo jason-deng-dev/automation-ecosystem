@@ -1,4 +1,5 @@
 import { getRakutenMetrics } from '../lib/rakutenController';
+import RakutenTriggerButton from './RakutenTriggerButton';
 
 export default async function RakutenMetric({ dict }) {
 	const { totalCached, totalPushed, lastUpdated, categories, lastRun, pipelineState } = await getRakutenMetrics();
@@ -69,6 +70,8 @@ export default async function RakutenMetric({ dict }) {
 					))
 				)}
 			</div>
+
+			<RakutenTriggerButton dict={dict} />
 		</div>
 	);
 }

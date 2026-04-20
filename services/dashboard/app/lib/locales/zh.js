@@ -64,6 +64,13 @@ export default {
 	dataFreshness: "数据新鲜度",
 	belowThreshold: "低于阈值",
 
+	// Trigger buttons
+	runScraper: "立即运行爬虫",
+	runSync: "立即同步",
+	triggering: "触发中...",
+	triggered: "已触发",
+	triggerFailed: "失败 — 请重试",
+
 	// Rakuten card
 	rakutenPipeline: "乐天 · 商品聚合",
 	catalogSize: "商品总数",

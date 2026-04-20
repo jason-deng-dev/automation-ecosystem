@@ -64,6 +64,13 @@ export default {
 	dataFreshness: "Data Freshness",
 	belowThreshold: "below threshold",
 
+	// Trigger buttons
+	runScraper: "Run Scraper Now",
+	runSync: "Run Sync Now",
+	triggering: "Triggering...",
+	triggered: "Triggered",
+	triggerFailed: "Failed — try again",
+
 	// Rakuten card
 	rakutenPipeline: "Rakuten Aggregator",
 	catalogSize: "Catalog Size",

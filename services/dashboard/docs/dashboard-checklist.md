@@ -14,62 +14,76 @@
 
 ---
 
+- [x] DB connection
+  - [x] `ecosystemPool` — `DATABASE_URL` → ecosystemdb (XHS + Scraper tables)
+  - [x] `rakutenPool` — `RAKUTEN_DATABASE_URL` → rakutendb (same Postgres instance, port 5432)
+  - [x] SSH tunnel config (`~/.ssh/config` LocalForward 5555→5432) for local dev
+
+---
+
 **Layout principle: home cards = metrics + action triggers. Detail pages = scrollable data tables.**
 
-- [ ] Home page — pipeline cards
+- [x] Home page — pipeline cards
   - [x] XHS card: run state, last run, next scheduled post, auth status, success rate, error breakdown, post type distribution, API token totals
   - [x] Scraper card: run state, last run, next scrape, total races, last scraped, data freshness, success rate
-  - [ ] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator
-  - [ ] Action triggers on each home card (manual trigger, re-auth, etc.) — XHS card has placeholder UI stubs, not wired up
+  - [x] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator, per-category breakdown
+  - [ ] Home card triggers
+    - [ ] XHS — "Run Now" button: post type dropdown + `POST /api/xhs/trigger` (non-blocking docker exec)
+    - [ ] XHS — "Preview" button: post type dropdown + `POST /api/xhs/preview`, display returned post JSON
+    - [ ] XHS — Re-auth: Login button in auth banner → `POST /api/xhs/login` → SSE screenshot stream panel for QR scan
+    - [ ] Scraper — "Run Scraper Now" button: `POST /api/scraper/trigger` (non-blocking docker exec)
+    - [ ] Rakuten — "Run Sync Now" button: `POST /api/rakuten/sync` (proxies to rakuten service)
   - [ ] Poll or SSE to keep cards live without page refresh
 
 ---
 
 - [ ] XHS section (detail page)
   - [ ] Schedule management
-    - [ ] `GET /api/xhs/schedule` — read `xhs/config.json`
-    - [ ] `POST /api/xhs/schedule` — write `xhs/config.json`
+    - [ ] `GET /api/xhs/schedule` — read `xhs_schedule` table
+    - [ ] `POST /api/xhs/schedule` — write `xhs_schedule` table; scheduler polls for changes and re-registers cron jobs
     - [ ] Weekly grid UI — per-day rows, time picker + post type dropdown per slot, add/remove slot, save button
   - [ ] Run history table: timestamp, post type, outcome, error stage, error message, token counts
-    - [ ] `GET /api/xhs/run-history` — read `xhs/run_log.json`
+    - [ ] `GET /api/xhs/run-history` — query `xhs_run_logs` table
   - [ ] Post archive viewer
-    - [ ] `GET /api/xhs/post-archive` — read `xhs/post_archive/` weekly files
+    - [ ] `GET /api/xhs/post-archive` — query `xhs_post_archive` table
     - [ ] List: title, post type, publish timestamp — expandable to show full post content
   - [ ] Live log stream
     - [ ] `GET /api/xhs/logs/stream` — SSE stream of XHS process stdout
     - [ ] Scrollable log panel, auto-scroll to bottom, colour-coded lines
-  - [ ] Home card triggers
-    - [ ] Manual trigger: `POST /api/xhs/trigger` — post type dropdown + "Run now" button
-    - [ ] Preview: `POST /api/xhs/preview` — post type dropdown + "Preview" button, display returned JSON
-    - [ ] Re-auth: `POST /api/xhs/login` + `GET /api/xhs/login/stream` — triggered by auth banner Login button (shown automatically when authStatus === 'failed'); SSE screenshot stream as `<img>` for QR scan, close on `{ type: 'done' }`
 
 ---
 
 - [ ] Scraper section (detail page)
-  - [x] `scrapperController.js` — pipeline state, last run, success rate, data freshness, races scraped, failed URLs, manual trigger
+  - [x] `scrapperController.js` — pipeline state, last run, success rate, data freshness, races scraped
   - [x] Scraper home card
+  - [ ] races.json viewer — table of current races (name, date, location, entry status badge)
+    - [ ] `GET /api/scraper/races` — query `races` table
   - [ ] Run history table: timestamp, races scraped, failure count, outcome
-    - [ ] `GET /api/scraper/run-history` — read `scraper/run_log.json`
-  - [ ] Failed URLs list — expandable from last run
-  - [ ] races.json viewer — table of current races (name, date, location)
-  - [ ] Home card triggers
-    - [ ] Manual trigger: `POST /api/scraper/trigger` — spawn scraper via docker exec
+    - [ ] `GET /api/scraper/run-history` — query `scraper_run_logs` table
+  - [ ] Failed URLs list — expandable from last run log
 
 ---
 
 - [ ] Rakuten section (detail page)
-  - Note: all data reads from PostgreSQL directly (shared volume JSON files removed — see rakuten §11.16)
-  - Note: `POST /api/rakuten/trigger` and `POST /api/rakuten/retry` removed — trigger-category is redundant (use config + sync), retry self-heals via weekly sync
-  - [ ] Catalog stats: total cached, pushed to WooCommerce, per-category breakdown
-    - [ ] `GET /api/rakuten/stats` — query `product_stats` table in PostgreSQL
-  - [ ] Import log table with failed imports panel
-    - [ ] `GET /api/rakuten/import-log` — query `import_logs` table in PostgreSQL
+  - [x] `rakutenController.js` — pipeline state, catalog size, WC live count, last sync, per-category breakdown, error indicator
+  - [x] Rakuten home card
+  - [ ] Catalog stats page: total cached, pushed to WooCommerce, per-category breakdown
+    - [ ] `GET /api/rakuten/stats` — query `product_stats` + `products` tables
   - [ ] Pricing config editor — inline editable fields, save calls rakuten service
-    - [ ] `GET /api/rakuten/config` — query `config` table in PostgreSQL
-    - [ ] `POST /api/rakuten/config` — call rakuten `POST /api/config` (updates DB + reloads pricing + re-pushes prices)
-  - [ ] Manual sync trigger
-    - [ ] `POST /api/rakuten/sync` — call rakuten `POST /api/sync` (triggers `runWeeklySync()`)
-  - [ ] Run log table — query `run_logs` table in PostgreSQL
+    - [ ] `GET /api/rakuten/config` — query `config` table
+    - [ ] `POST /api/rakuten/config` — proxy to rakuten `POST /api/config` (updates DB + reloads pricing + re-pushes prices)
+  - [ ] Import log table: timestamp, product name, status (success/failed/skipped), error message
+    - [ ] `GET /api/rakuten/import-log` — query `import_logs` table
+  - [ ] Run log table: timestamp, operation, products fetched/pushed/stale deleted, errors
+    - [ ] `GET /api/rakuten/run-log` — query `run_logs` table
+
+---
+
+- [ ] XHS re-auth flow (broken — needs fix)
+  - [ ] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec, begin screenshot polling
+  - [ ] `GET /api/xhs/login/stream` — SSE stream of `page.screenshot()` every 2s; final event `{ type: 'done' }` on login detect
+  - [ ] Add `runReAuth()` to `xhsController.js` (currently called by route but not exported)
+  - [ ] Client component: screenshot panel on XHS card, connects to SSE stream, renders each frame as `<img>`, closes on `done`
 
 ---
 

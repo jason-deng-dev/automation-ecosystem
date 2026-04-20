@@ -1,4 +1,5 @@
 import { getScraperMetrics } from '../lib/scrapperController';
+import ScraperTriggerButton from './ScraperTriggerButton';
 
 export default async function ScraperMetric({ dict }) {
 	const { lastRun, pipelineState, successRate, totalRaces, dataFreshness, racesScraped, nextScrape } = await getScraperMetrics();
@@ -63,6 +64,8 @@ export default async function ScraperMetric({ dict }) {
 					</span>
 				</div>
 			</div>
+
+			<ScraperTriggerButton dict={dict} />
 		</div>
 	);
 }
