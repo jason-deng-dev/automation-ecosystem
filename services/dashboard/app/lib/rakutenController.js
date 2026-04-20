@@ -8,8 +8,8 @@ export async function getRakutenMetrics() {
 		rakutenPool.query(`
 			SELECT c.name AS category_name, COUNT(*) AS total, COUNT(p.wc_product_id) AS pushed
 			FROM products p
-			LEFT JOIN subcategories s ON p.subcategory_id = s.id
-			LEFT JOIN categories c ON s.category_id = c.id
+			JOIN subcategories s ON p.subcategory_id = s.id
+			JOIN categories c ON s.category_id = c.id
 			GROUP BY c.name
 			ORDER BY c.name
 		`),

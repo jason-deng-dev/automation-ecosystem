@@ -73,4 +73,11 @@ export default {
 	newPushed: "新增上架",
 	recentErrors: "近期错误",
 	byCategory: "分类统计",
+	categoryName: {
+		"Running Gear": "跑步装备",
+		"Training": "训练器材",
+		"Nutrition & Supplements": "营养补剂",
+		"Recovery & Care": "恢复护理",
+		"Sportswear": "运动服装",
+	},
 };

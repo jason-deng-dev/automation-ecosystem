@@ -73,4 +73,11 @@ export default {
 	newPushed: "New Products Pushed",
 	recentErrors: "Recent Errors",
 	byCategory: "By Category",
+	categoryName: {
+		"Running Gear": "Running Gear",
+		"Training": "Training",
+		"Nutrition & Supplements": "Nutrition & Supplements",
+		"Recovery & Care": "Recovery & Care",
+		"Sportswear": "Sportswear",
+	},
 };
