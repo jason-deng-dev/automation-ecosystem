@@ -45,7 +45,7 @@ export async function itemRequestByKeyword(keywordZH: string) {
 
 		// 1. Rakuten keyword search (count from searchFillThreshold in DB config)
 		const res = await getProductsByKeyword(keywordZH, searchFillThreshold);
-		if (!res) {
+		if (!res || res.length === 0) {
 			console.log(`[request] Rakuten returned no results — aborting`);
 			log.errors.push(`Rakuten returned no results for keyword: ${keywordZH}`);
 			return { success: false };
