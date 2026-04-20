@@ -319,21 +319,12 @@ export function cleanTitle(name: string): { title: string; promoText: string } {
 export async function translateKeyword(keyword: string): Promise<string> {
 	const hasChinese = /[\u4e00-\u9fff]/.test(keyword);
 	if (!hasChinese) {
-		console.log(`[translateKeyword] no Chinese — using as-is: "${keyword}"`);
+		console.log(`[translateKeyword] no Chinese detected — using keyword as-is: "${keyword}"`);
 		return keyword;
 	}
-	const chineseParts = keyword.match(/[\u4e00-\u9fff]+/g)!;
-	const nonChineseParts = keyword.split(/[\u4e00-\u9fff]+/);
 	const deeplClient = new deepl.DeepLClient(process.env.DEEPL_API_KEY!);
-	const results = await deeplClient.translateText(chineseParts, "zh", "ja");
-	const parts: string[] = [nonChineseParts[0]];
-	for (let i = 0; i < results.length; i++) {
-		parts.push(results[i].text);
-		parts.push(nonChineseParts[i + 1] || '');
-	}
-	const translated = parts.map(p => p.trim()).filter(Boolean).join(' ').trim();
-	console.log(`[translateKeyword] "${keyword}" → "${translated}"`);
-	return translated;
+	const result = await deeplClient.translateText(keyword, "zh", "ja");
+	return result.text;
 }
 
 export async function translateNames(normalizedItems: RakutenDbQueryItem[]): Promise<RakutenDbQueryItem[]> {
