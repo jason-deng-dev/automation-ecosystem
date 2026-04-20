@@ -20,6 +20,12 @@ body {
   font-family: 'Inter', 'Noto Sans SC', sans-serif;
 }
 
+input[type='time']::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -37,15 +43,21 @@ input[type='number'] {
   color: #EDEDED;
 }
 
+.row-hover:hover {
+  background-color: rgba(237, 237, 237, 0.04);
+}
+
 details summary { list-style: none; }
 details summary::-webkit-details-marker { display: none; }
+
 details summary .chevron {
   display: inline-block;
-  transition: transform 0.2s;
+  transition: transform 0.25s ease;
 }
 details[open] summary .chevron {
   transform: rotate(180deg);
 }
+
 
 .link-accent-hover {
   color: #EDEDED;
