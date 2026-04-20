@@ -63,4 +63,14 @@ export default {
 	nextScrape: "Next Scrape",
 	dataFreshness: "Data Freshness",
 	belowThreshold: "below threshold",
+
+	// Rakuten card
+	rakutenPipeline: "Rakuten Aggregator",
+	catalogSize: "Catalog Size",
+	wcLive: "WooCommerce Live",
+	lastSync: "Last Sync",
+	lastOperation: "Last Operation",
+	newPushed: "New Products Pushed",
+	recentErrors: "Recent Errors",
+	byCategory: "By Category",
 };

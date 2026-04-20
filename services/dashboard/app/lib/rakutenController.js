@@ -1,7 +1,7 @@
-import { rakutenPool } from './db/pool.js';
+import { rakutenPool, ecosystemPool } from './db/pool.js';
 
 export async function getRakutenMetrics() {
-	const [totalsRes, categoryRes, lastRunRes] = await Promise.all([
+	const [totalsRes, categoryRes, lastRunRes, pipelineStateRes] = await Promise.all([
 		rakutenPool.query(
 			`SELECT total_cached, total_pushed, last_updated FROM product_stats WHERE id = 1`
 		),
@@ -14,13 +14,22 @@ export async function getRakutenMetrics() {
 			ORDER BY c.name
 		`),
 		rakutenPool.query(
-			`SELECT operation, new_products_pushed, created_at FROM run_logs ORDER BY created_at DESC LIMIT 1`
+			`SELECT operation, new_products_pushed, errors, timestamp FROM run_logs ORDER BY timestamp DESC LIMIT 1`
 		),
+		ecosystemPool.query(`SELECT state FROM pipeline_state WHERE service = 'rakuten'`),
 	]);
 
 	const stats = totalsRes.rows[0] ?? null;
 	const categories = categoryRes.rows;
-	const lastRun = lastRunRes.rows[0] ?? null;
+	const lastRunRow = lastRunRes.rows[0] ?? null;
+	const lastRun = lastRunRow ? {
+		operation: lastRunRow.operation,
+		newPushed: Number(lastRunRow.new_products_pushed ?? 0),
+		errors: lastRunRow.errors ?? [],
+		createdAt: lastRunRow.timestamp,
+	} : null;
+
+	const pipelineState = pipelineStateRes.rows[0]?.state ?? 'idle';
 
 	return {
 		totalCached: Number(stats?.total_cached ?? 0),
@@ -28,5 +37,6 @@ export async function getRakutenMetrics() {
 		lastUpdated: stats?.last_updated ?? null,
 		categories,
 		lastRun,
+		pipelineState,
 	};
 }

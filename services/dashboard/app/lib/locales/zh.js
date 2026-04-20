@@ -63,4 +63,14 @@ export default {
 	nextScrape: "下次爬取",
 	dataFreshness: "数据新鲜度",
 	belowThreshold: "低于阈值",
+
+	// Rakuten card
+	rakutenPipeline: "乐天 · 商品聚合",
+	catalogSize: "商品总数",
+	wcLive: "已上架 WooCommerce",
+	lastSync: "上次同步",
+	lastOperation: "上次操作",
+	newPushed: "新增上架",
+	recentErrors: "近期错误",
+	byCategory: "分类统计",
 };

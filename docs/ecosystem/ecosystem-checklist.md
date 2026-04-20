@@ -1,6 +1,6 @@
 **Project:** automation-ecosystem
 
-**Last updated:** April 16 2026
+**Last updated:** April 17 2026
 
 ---
 
@@ -83,6 +83,9 @@
 - [x] Rate limiting — express-rate-limit + Redis, 100 req/15min on POST /api/request-product
 - [x] Dashboard endpoints — POST /api/sync (manual trigger), POST /api/config (already done)
 - [x] Dockerfile + deploy to Lightsail — container live, CD pipeline active (cicd-rakuten.yml)
+- [ ] CSS for `.product-specs` table on WordPress (2-col, bordered, `th` background)
+- [ ] Handoff document — markup config, shipping rate, exchange rate update, pipeline ops, AWS/Stripe MFA transfer
+- [ ] Size/color preference capture — WooCommerce Product Add-Ons (size dropdown + color text field)
 - [ ] docker-compose integration
 
 ---
@@ -125,9 +128,9 @@
 - [x] Provision AWS Lightsail VPS
 - [x] SSH keys + GitHub Secrets (DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VPS_HOST, VPS_SSH_KEY)
 - [x] Docker Hub account + credentials
-- [ ] Dockerfiles for all services (Rakuten ✓, XHS ✓ — Scraper, Race Hub, Dashboard, Analytics pending)
+- [ ] Dockerfiles for all services — Dashboard, Analytics pending (Rakuten ✓, XHS ✓, Scraper ✓, Race Hub ✓)
 - [ ] docker-compose.yml (all services + PostgreSQL)
-- [ ] CD workflows per service (Rakuten ✓ — XHS, Scraper, Race Hub, Dashboard, Analytics pending)
+- [ ] CD workflows per service — Dashboard, Analytics pending (Rakuten ✓, XHS ✓, Scraper ✓, Race Hub ✓)
 - [ ] Smoke test all pipelines end-to-end on Lightsail
 
 ---
@@ -140,3 +143,57 @@
 - [ ] Race Hub architecture diagram
 - [ ] Dashboard architecture diagram
 - [ ] Ecosystem-wide diagram
+
+---
+
+## Improvements Roadmap (`docs/improvements.md`)
+> Full detail: `docs/improvements.md` — ordered by priority
+
+**⚠ Core platform work must ship before starting these** (dashboard detail pages, XHS manual/preview scripts, Rakuten `.product-specs` CSS)
+
+- [ ] OAuth2 / SSO — Auth.js + Google OAuth; whitelist single email; protects all dashboard trigger endpoints
+- [ ] Telegram alerts — pipeline failure notifications (XHS, Scraper, Rakuten); single `sendTelegramAlert()` util
+- [ ] Zod validation — schemas on all POST endpoints; invalid input returns 400 before touching DB
+- [ ] LangFuse LLM observability — trace all Claude API calls; self-hosted Docker container
+- [ ] BullMQ job queue — replace `docker exec` triggers with Redis-backed queue; named queues per pipeline; Bull Board UI in dashboard
+- [ ] Claude tool use / function calling — refactor `chooseRace()` + Rakuten genre classifier to typed tool schema; remove brittle JSON.parse
+- [ ] Python Analytics Service + RAG pipeline — Phase 1: ingest XHS Excel export, FastAPI dashboard endpoints; Phase 2: pgvector embeddings, few-shot injection, semantic dedup
+- [ ] Retry with exponential backoff — `withRetry()` wrapper on all external API calls (Rakuten, DeepL, WC, Claude)
+- [ ] Pino structured logging — replace `console.log` across all services; JSON logs with `level`/`service`/`timestamp`
+- [ ] Health check endpoints — `GET /health` on all Express apps; dashboard polls every 30s; service up/down indicator
+- [ ] Claude-assisted failure diagnosis — on pipeline failure, pass last N log lines to Claude; display natural-language diagnosis in dashboard
+- [ ] Redis caching layer — cache-aside pattern; Rakuten rankings, DeepL translations, dashboard stats, race list
+- [ ] Terraform (deferred) — infrastructure as code for Lightsail instance; resume polish only
+
+---
+
+## Quant Dev Improvements (`docs/quant-improvements.md`)
+> Full detail: `docs/quant-improvements.md` — build after core platform ships
+
+**⚠ Prereqs same as Improvements Roadmap above — do not start until core platform done**
+
+### Tier 1 — Core (ship all four; all have measurable before/after numbers)
+
+- [ ] `p-limit` semaphore in Rakuten genre sync — bounded concurrent API fetching; target ~3x speedup; `npm install p-limit`
+- [ ] `asyncio.gather()` in FastAPI analytics service — parallel metric computation; measure stats endpoint latency before/after
+- [ ] BullMQ worker pool for Rakuten product request — producer-consumer pattern; 3 concurrent workers; immediate enqueue response + polling (overlaps with Improvements Roadmap BullMQ item)
+- [ ] pybind11 C++ scoring core (`analytics/scoring_core.cpp`) — `compute_scores()` weighted sum; compile inside Docker; benchmark N=100k synthetic matrix on VPS; add C++ + pybind11 to resume
+
+### Tier 2 — Strong additions (deepen C++ story)
+
+- [ ] Time-decay + cosine similarity — extend `scoring_core.cpp`; `time_decay_score()` + `cosine_similarity()`; alpha decay pattern
+- [ ] Monte Carlo content optimizer (`std::async`) — N=10k simulations parallelised across hardware threads; first real C++ speedup benchmark from work project
+
+### Tier 3 — Nice to have (deepen quant vocabulary)
+
+- [ ] EWMA rolling statistics — `ewma_update()` in C++; RiskMetrics σ² recurrence; volatility-adjusted content weighting
+- [ ] OLS feature attribution — Gaussian elimination in C++; factor model analogy; document N=[ ] sample size caveat
+- [ ] Markowitz mean-variance optimizer — Cholesky covariance inversion; efficient frontier; document sample size caveat
+
+### Measurement checklist (fill after building)
+
+- [ ] `asyncio.gather()`: stats endpoint before → after (ms)
+- [ ] `p-limit`: full genre sync before → after (seconds); expected ~3x for concurrency=3
+- [ ] BullMQ: inline handler response before → after (seconds → ms)
+- [ ] pybind11: N=100k Python vs C++ benchmark on VPS (speedup ratio)
+- [ ] Monte Carlo: Python single-threaded vs C++ `std::async`, N=10k (speedup ratio)
