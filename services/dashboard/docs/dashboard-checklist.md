@@ -60,17 +60,15 @@
 
 ---
 
-- [ ] Rakuten section (detail page)
+- [x] Rakuten section (detail page)
   - [x] `rakutenController.js` — pipeline state, catalog size, WC live count, last sync, per-category breakdown, error indicator
   - [x] Rakuten home card
   - [x] Pricing config editor — inline editable fields, save calls rakuten service
     - [x] `GET /api/rakuten/config` — query `config` table
     - [x] `POST /api/rakuten/config` — proxy to rakuten `POST /api/config`
   - [x] "Run Sync Now" trigger button — `POST /api/rakuten/sync` (proxies to rakuten service)
-  - [ ] Import log table: timestamp, product name, status, error message
-    - [ ] `GET /api/rakuten/import-log` — query `import_logs` table
-  - [ ] Run log table: timestamp, operation, products fetched/pushed/stale deleted, errors
-    - [ ] `GET /api/rakuten/run-log` — query `run_logs` table
+  - [x] Import log table: timestamp, product name, status, error message (inline query in page.js)
+  - [x] Run log table: timestamp, operation, products fetched/pushed/stale deleted, errors (inline query in page.js)
 
 ---
 

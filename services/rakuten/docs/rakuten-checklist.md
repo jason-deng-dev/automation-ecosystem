@@ -206,7 +206,12 @@
   - [x] Add extensive pipeline logging — `[api]`, `[request]`, `[push]`, `[translateKeyword]` tags across `app.ts`, `controller.ts`, `woocommerceAPI.ts`, `rakutenAPI.ts`
   - [x] DB keyword pre-search — before Rakuten fetch, query DB for products with `itemName ILIKE '%keyword%'`; include matching `wc_product_id`s in return alongside newly pushed ones
   - [x] Pipeline run logging — write keyword, translated keyword, genre validation result, Claude result, products pushed, and errors to `run_logs` for every `itemRequestByKeyword` operation (same pattern as `runWeeklySync`)
-  - [x] Update keyword search default sort to `-reviewCount` — most reviewed first; best proxy for purchase volume since Item Search API has no purchase count sort and Ranking API doesn't support keyword search
+  - [x] Update keyword search default sort to `standard` — Rakuten's relevance algorithm; better for user-initiated requests (more current/relevant) than `-reviewCount` which biases toward older established products
+  - [x] Add `field=0` (broad search) to keyword search — prefer more matches over fewer
+  - [x] Fix `translateNames([])` crash — `if (normalizedItems.length === 0) return []` guard prevents DeepL "text field required" error when Rakuten returns empty Items array
+  - [x] Fix `success: true` with 0 products — controller now checks `!res || res.length === 0`; empty array is truthy so the old `!res` check was passing through and returning `success: true, productIds: []`
+  - [x] Chinese keyword fallback — if Rakuten returns 0 results, translate keyword ZH→EN via DeepL and retry after 1s (Rakuten rate limit); English brand names are canonical and reliable (`耐克跑鞋` → `Nike Running Shoes`); Japanese katakana translation rejected due to brand name mangling (`鬼冢虎` → `オニヅカ` vs correct `オニツカ`)
+  - [x] Update no-results error message — hint users to search in English or Japanese (e.g. Nike、Onitsuka Tiger、アシックス)
 
 - [x] Rate limiting → §11.14
   - Only public endpoint: `POST /api/request-product` (called by Onamae WP proxy); `/api/config` is internal dashboard only
