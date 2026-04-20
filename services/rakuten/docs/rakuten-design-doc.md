@@ -697,6 +697,25 @@ Redis store ensures rate limit counters persist across container restarts — in
 
 **Why HTML output:** WooCommerce stores and renders description as HTML. Returning a formatted HTML string from `cleanDescription` means no post-processing needed on the WordPress side — TranslatePress still translates the inner text lazily on first page view.
 
+### 11.18 Chinese Keywords Failing on Item Request Flow
+
+**Challenge:** Chinese keywords submitted via the product request flow returned 0 results and an opaque failure. Keywords like `鬼冢虎跑鞋` (Onitsuka Tiger running shoes), `Nike跑鞋`, and `耐克跑鞋` all failed silently.
+
+**Investigation:**
+- Initial suspicion: `translateKeyword` (ZH→JA via DeepL) was mangling brand names — removed it, keywords now passed directly to Rakuten
+- Discovered `translateNames([])` was crashing DeepL with `"The text field is required"` when Rakuten returned `Items: []` (empty array, not null) — the crash was masking the real failure and causing the controller to return `success: true, productIds: []` because `[]` is truthy
+- Confirmed Rakuten API returns 0 results for mixed Chinese+English keywords (`Nike跑鞋`) and unseparated Chinese brand+generic terms (`鬼冢虎跑鞋`), even though the Rakuten website handles them fine — the website does internal processing before querying the search index, the API does not
+- Tried `field=0` (broad search) — no improvement
+- Considered Chinese word segmentation (`nodejieba`) to split `鬼冢虎跑鞋` → `鬼冢虎 跑鞋` — rejected due to added dependency and uncertain results
+- Key insight: English keywords always work on Rakuten (`Nike`, `Onitsuka Tiger`, `running shoes`). Translating ZH→EN via DeepL gives correct brand names (no katakana mangling risk) and generic terms map cleanly
+
+**Solution (three fixes):**
+1. **`translateNames` empty array guard** — `if (normalizedItems.length === 0) return []` prevents DeepL crash when Rakuten returns no items
+2. **`success: true` bug fix** — controller now checks `!res || res.length === 0` instead of `!res` only, so 0-product responses return `{ success: false }` correctly
+3. **ZH→EN fallback** — if first Rakuten search returns 0 results, translate keyword ZH→EN via DeepL, wait 1s (Rakuten rate limit), retry. `耐克跑鞋` → `Nike Running Shoes` → 10 products. Only fires on failure, no overhead for keywords that work directly
+
+**Why English over Japanese:** DeepL translating Chinese brand names to Japanese katakana produces errors (`鬼冢虎` → `オニヅカ` instead of `オニツカ`). English translations are accurate (`鬼冢虎` → `Onitsuka Tiger`) because brand names in English are canonical.
+
 ### 11.10 Ranking API Has No `hits` Parameter
 
 **Challenge:** The Rakuten Ranking API does not accept a `hits` parameter — passing it is silently ignored. Initial implementation passed `count` as `hits`, resulting in the API returning its default page size (30 products) regardless of the requested count.
