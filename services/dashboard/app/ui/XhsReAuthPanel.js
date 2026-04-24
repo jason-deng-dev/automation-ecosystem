@@ -29,13 +29,16 @@ export default function XhsReAuthPanel({ dict }) {
 				} catch {}
 			};
 
-			es.onerror = () => {
-				if (status !== 'done') setStatus('error');
-				es.close();
-			};
+			es.onerror = () => { setStatus('error'); es.close(); };
 		} catch {
 			setStatus('error');
 		}
+	}
+
+	function handleClose() {
+		esRef.current?.close();
+		setStatus('idle');
+		setFrame(null);
 	}
 
 	const color = {
@@ -49,7 +52,7 @@ export default function XhsReAuthPanel({ dict }) {
 	}[status];
 
 	return (
-		<div className="flex flex-col gap-2">
+		<>
 			<button
 				onClick={handleLogin}
 				disabled={status === 'starting' || status === 'streaming'}
@@ -64,14 +67,51 @@ export default function XhsReAuthPanel({ dict }) {
 			>
 				{label}
 			</button>
-			{frame && (
-				<img
-					src={`data:image/jpeg;base64,${frame}`}
-					alt="XHS login QR"
-					className="w-full border"
-					style={{ borderColor: '#2A2A2A' }}
-				/>
+
+			{status === 'streaming' && (
+				<div
+					style={{
+						position: 'fixed', inset: 0,
+						backgroundColor: 'rgba(0,0,0,0.85)',
+						zIndex: 50,
+						display: 'flex', alignItems: 'center', justifyContent: 'center',
+					}}
+				>
+					<div style={{ position: 'relative', width: 'min(520px, 90vw)' }}>
+						<button
+							onClick={handleClose}
+							style={{
+								position: 'absolute', top: '-36px', right: 0,
+								color: '#888888', fontSize: '20px', lineHeight: 1,
+								background: 'none', border: 'none', cursor: 'pointer',
+							}}
+						>
+							✕
+						</button>
+
+						{frame ? (
+							<img
+								src={`data:image/jpeg;base64,${frame}`}
+								alt="XHS login QR"
+								style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
+							/>
+						) : (
+							<div style={{
+								width: '100%', aspectRatio: '1',
+								border: '1px solid #2A2A2A',
+								display: 'flex', alignItems: 'center', justifyContent: 'center',
+								color: '#555555', fontSize: '13px',
+							}}>
+								{dict.triggering}
+							</div>
+						)}
+
+						<p className="text-sm text-center mt-3" style={{ color: '#F5A623' }}>
+							{dict.streaming}
+						</p>
+					</div>
+				</div>
 			)}
-		</div>
+		</>
 	);
 }

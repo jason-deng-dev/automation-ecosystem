@@ -32,17 +32,17 @@ const timeoutHandle = setTimeout(async () => {
 }, 5 * 60 * 1000);
 
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
-await page.waitForTimeout(4000);
-if (await page.locator('.login-container').isVisible()) {
+try {
+	await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
 	await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
-}
+} catch { /* already logged in */ }
 
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
-await page.waitForTimeout(4000);
-if (await page.locator('.login-box-container').isVisible()) {
+try {
+	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
 	await page.locator('.login-box-container img').click();
 	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
-}
+} catch { /* already logged in */ }
 
 clearInterval(screenshotInterval);
 clearTimeout(timeoutHandle);
