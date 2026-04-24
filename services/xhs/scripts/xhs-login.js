@@ -43,6 +43,7 @@ const screenshotInterval = setInterval(async () => {
 const timeoutHandle = setTimeout(async () => {
 	clearInterval(screenshotInterval);
 	emit({ type: 'error', msg: 'Login timeout after 5 minutes' });
+	await new Promise(r => setTimeout(r, 500));
 	await browser.close();
 	process.exit(1);
 }, 5 * 60 * 1000);
@@ -76,4 +77,5 @@ clearTimeout(timeoutHandle);
 await context.storageState({ path: AUTH_PATH });
 emit({ type: 'log', msg: 'Login successful — auth.json saved.' });
 emit({ type: 'done' });
+await new Promise(r => setTimeout(r, 500)); // flush stdout before closing
 await browser.close();
