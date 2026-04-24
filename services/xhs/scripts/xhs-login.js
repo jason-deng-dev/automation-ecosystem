@@ -8,7 +8,7 @@ const AUTH_PATH = path.join(__dirname, '../auth.json');
 
 const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
-const browser = await chromium.launch({ headless: false });
+const browser = await chromium.launch({ headless: true });
 
 if (!fs.existsSync(AUTH_PATH)) {
 	fs.writeFileSync(AUTH_PATH, '{"cookies":[],"origins":[]}');
