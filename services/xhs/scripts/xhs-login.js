@@ -8,30 +8,27 @@ const AUTH_PATH = path.join(__dirname, '../auth.json');
 
 const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
-const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled'] });
+const browser = await chromium.launch({ headless: false });
 
 if (!fs.existsSync(AUTH_PATH)) {
 	fs.writeFileSync(AUTH_PATH, '{"cookies":[],"origins":[]}');
 }
 
-const context = await browser.newContext({
-	storageState: AUTH_PATH,
-	userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-});
-await context.addInitScript(() => {
-	Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-});
+const context = await browser.newContext({ storageState: AUTH_PATH });
+
 const page = await context.newPage();
 
-let screenshotBusy = false;
+process.on('SIGTERM', async () => {
+	clearInterval(screenshotInterval);
+	await browser.close();
+	process.exit(0);
+});
+
 const screenshotInterval = setInterval(async () => {
-	if (screenshotBusy) return;
-	screenshotBusy = true;
 	try {
 		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 	} catch {}
-	screenshotBusy = false;
 }, 1000);
 
 const timeoutHandle = setTimeout(async () => {
@@ -41,24 +38,27 @@ const timeoutHandle = setTimeout(async () => {
 	process.exit(1);
 }, 5 * 60 * 1000);
 
-await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
-try {
-	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 30000 });
-	// NEED THIS CLICK TO GO TO QR CODE PAGE
-	await page.locator('.login-box-container img').click();
-	await page.waitForTimeout(5000);
-	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
-} catch (e) {
-	process.stderr.write(`login flow exited: ${e?.message}\n`);
-	await new Promise(() => {}); // keep streaming until killed or 5-min timeout
+console.log('Starting login process...');
+await page.goto('https://www.xiaohongshu.com');
+
+// await page.pause()
+await page.waitForTimeout(4000)
+if (await page.locator('.login-container').isVisible()){
+	console.log('Login container visible on xhs.com, waiting for login...');
+	await page.locator('.login-container').waitFor({ state: 'hidden' })
 }
 
+
+await page.goto('https://creator.xiaohongshu.com/publish/publish');
+await page.waitForTimeout(4000)
+if (await page.locator('.login-box-container').isVisible()){
+	console.log('Login box visible on creator, clicking QR...');
+	await page.locator('.login-box-container img').click()
+	await page.locator('.login-box-container').waitFor({ state: 'hidden' })
+}
 clearInterval(screenshotInterval);
 clearTimeout(timeoutHandle);
-try {
-	await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 10000 });
-	await page.waitForTimeout(3000);
-} catch { /* skip if unreachable */ }
 await context.storageState({ path: AUTH_PATH });
+console.log('Login successful — auth.json saved.');
 emit({ type: 'done' });
 await browser.close();
