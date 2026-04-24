@@ -70,7 +70,7 @@ try {
 	emit({ type: 'log', msg: `URL after 3s: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
 	try {
-		await page.waitForURL(url => !url.includes('login'), { timeout: 5 * 60 * 1000 });
+		await page.waitForURL(url => !url.toString().includes('login'), { timeout: 5 * 60 * 1000 });
 		emit({ type: 'log', msg: `waitForURL resolved: ${page.url()}` });
 	} catch (e) {
 		emit({ type: 'log', msg: `waitForURL threw: ${e?.message?.slice(0, 120)}` });
