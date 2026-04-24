@@ -6,7 +6,7 @@ let reAuthProc = null;
 export function runReAuth() {
 	if (reAuthProc) return;
 	reAuthProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/xhs-login.js'], {
-		stdio: ['ignore', 'pipe', 'ignore'],
+		stdio: ['ignore', 'pipe', 'pipe'],
 	});
 	reAuthProc.on('exit', () => { reAuthProc = null; });
 }

@@ -18,6 +18,12 @@ export async function GET() {
 				chunk.toString().split('\n').filter(Boolean).forEach(enqueue);
 			});
 
+			proc.stderr.on('data', (chunk) => {
+				chunk.toString().split('\n').filter(Boolean).forEach(line =>
+					enqueue(JSON.stringify({ type: 'error', msg: line }))
+				);
+			});
+
 			proc.on('exit', () => {
 				if (!closed) { closed = true; controller.close(); }
 			});
