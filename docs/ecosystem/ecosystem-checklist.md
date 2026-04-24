@@ -99,6 +99,7 @@
 - [x] Scraper detail page — races table, run history, failed URLs list, manual trigger button
 - [x] Rakuten detail page — pricing config editor, import log table, run log table, manual sync trigger
 - [x] XHS re-auth flow — headless QR scan + SSE screenshot stream
+- [ ] Live container logs — SSE streams of `docker logs -f` for XHS, Scraper, Rakuten; shared LogPanel component
 - [ ] Poll/SSE to keep home cards live
 - [x] Dockerfile + CI/CD pipeline (cicd-dashboard.yml)
 - [ ] docker-compose integration

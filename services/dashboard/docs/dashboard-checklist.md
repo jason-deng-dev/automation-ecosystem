@@ -68,6 +68,15 @@
 
 ---
 
+- [ ] Live container logs (all 3 detail pages)
+  - [ ] `GET /api/xhs/logs/stream` — SSE stream of `docker logs -f xhs`; last 50 lines on connect
+  - [ ] `GET /api/scraper/logs/stream` — SSE stream of `docker logs -f scraper`
+  - [ ] `GET /api/rakuten/logs/stream` — SSE stream of `docker logs -f rakuten`
+  - [ ] Shared `LogPanel` client component — EventSource, auto-scroll, colour-coded lines (error/warn/info)
+  - [ ] Wire into XHS, Scraper, Rakuten detail pages
+
+---
+
 - [x] XHS re-auth flow
   - [x] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec, begin screenshot polling
   - [x] `GET /api/xhs/login/stream` — SSE stream of `page.screenshot()` every 2s; final event `{ type: 'done' }` on login detect
