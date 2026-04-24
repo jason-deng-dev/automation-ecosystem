@@ -39,7 +39,7 @@ const timeoutHandle = setTimeout(async () => {
 }, 5 * 60 * 1000);
 
 console.log('Starting login process...');
-await page.goto('https://www.xiaohongshu.com');
+await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
 
 // await page.pause()
 await page.waitForTimeout(4000)
@@ -49,7 +49,7 @@ if (await page.locator('.login-container').isVisible()){
 }
 
 
-await page.goto('https://creator.xiaohongshu.com/publish/publish');
+await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 await page.waitForTimeout(4000)
 if (await page.locator('.login-box-container').isVisible()){
 	console.log('Login box visible on creator, clicking QR...');
