@@ -86,7 +86,7 @@ try {
 		const info = await page.locator('img.css-1lhmg90').evaluate(img => ({
 			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
 		})).catch(() => null);
-		if (info && info.w > 50 && info.len > 20000) { qrReady = true; }
+		if (info && info.w > 50 && info.len > 3000) { qrReady = true; }
 		emit({ type: 'log', msg: `QR poll ${i + 1}: ${info?.w}x${info?.h} src=${info?.len}` });
 	}
 	if (qrReady) {
