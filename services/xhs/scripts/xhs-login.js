@@ -41,13 +41,19 @@ let resolveFirstFrame;
 const firstFrame = new Promise(r => { resolveFirstFrame = r; });
 
 let screenshotInProgress = false;
+let tickCount = 0;
 const screenshotInterval = setInterval(async () => {
 	if (screenshotInProgress) return;
 	screenshotInProgress = true;
+	tickCount++;
 	try {
 		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 3000 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
+		const info = await page.locator('img.css-1lhmg90').evaluate(img => ({
+			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
+		})).catch(() => null);
+		if (info) emit({ type: 'log', msg: `tick ${tickCount}: QR ${info.w}x${info.h} src=${info.len}` });
 	} catch (e) {
 		emit({ type: 'log', msg: `screenshot error: ${e?.message}` });
 	} finally {
@@ -73,13 +79,20 @@ try {
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
-	// Poll until real QR loads (placeholder is small ~200 bytes, real QR is >1000 bytes)
+	// Poll until real QR loads — check naturalWidth (real QR >100px, placeholder may also have dims)
+	// and src length >5000 chars (real XHS QR is ~10-30KB = 13k-40k base64 chars)
 	let qrReady = false;
-	for (let i = 0; i < 20 && !qrReady; i++) {
+	for (let i = 0; i < 30 && !qrReady; i++) {
 		await page.waitForTimeout(1000);
-		const src = await page.locator('img.css-1lhmg90').getAttribute('src').catch(() => null);
-		if (src && src.length > 1000) { qrReady = true; }
-		emit({ type: 'log', msg: `QR poll ${i + 1}: src length ${src?.length ?? 0}` });
+		const info = await page.locator('img.css-1lhmg90').evaluate(img => ({
+			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
+		})).catch(() => null);
+		if (info && info.w > 50 && info.len > 5000) { qrReady = true; }
+		emit({ type: 'log', msg: `QR poll ${i + 1}: ${info?.w}x${info?.h} src=${info?.len}` });
+	}
+	if (qrReady) {
+		await page.locator('img.css-1lhmg90').scrollIntoViewIfNeeded().catch(() => {});
+		await page.waitForTimeout(500);
 	}
 	emit({ type: 'log', msg: qrReady ? 'QR code ready.' : 'QR timed out — may still be loading.' });
 	emit({ type: 'log', msg: `URL: ${page.url()}` });
