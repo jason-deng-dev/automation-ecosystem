@@ -44,7 +44,7 @@ const screenshotInterval = setInterval(async () => {
 	if (screenshotInProgress) return;
 	screenshotInProgress = true;
 	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
+		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 3000 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
 	} catch (e) {
@@ -72,18 +72,14 @@ try {
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
-	await page.evaluate(() => {
-		window.dispatchEvent(new Event('focus'));
-		document.dispatchEvent(new Event('visibilitychange'));
-	});
-	try {
-		await page.locator('img.css-1lhmg90').waitFor({ state: 'visible', timeout: 10000 });
-		emit({ type: 'log', msg: 'QR code image rendered.' });
-	} catch {
-		emit({ type: 'log', msg: 'QR image wait timed out — may still be loading.' });
-	}
+	await page.waitForTimeout(5000); // wait for QR image to fully load
+	emit({ type: 'log', msg: 'QR ready.' });
 	emit({ type: 'log', msg: `URL: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
+
+
+
+	
 	await new Promise((resolve) => {
 		const onNav = (frame) => {
 			if (frame === page.mainFrame() && !frame.url().includes('login')) {
