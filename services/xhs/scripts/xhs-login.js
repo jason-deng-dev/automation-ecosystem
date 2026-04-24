@@ -79,19 +79,20 @@ try {
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
-	// Poll until real QR loads — check naturalWidth (real QR >100px, placeholder may also have dims)
-	// and src length >5000 chars (real XHS QR is ~10-30KB = 13k-40k base64 chars)
+	// Poll until real QR loads — naturalWidth >50 confirms decoded image, src >3000 skips tiny placeholder
 	let qrReady = false;
 	for (let i = 0; i < 30 && !qrReady; i++) {
 		await page.waitForTimeout(1000);
 		const info = await page.locator('img.css-1lhmg90').evaluate(img => ({
 			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
 		})).catch(() => null);
-		if (info && info.w > 50 && info.len > 5000) { qrReady = true; }
+		if (info && info.w > 50 && info.len > 3000) { qrReady = true; }
 		emit({ type: 'log', msg: `QR poll ${i + 1}: ${info?.w}x${info?.h} src=${info?.len}` });
 	}
 	if (qrReady) {
-		await page.locator('img.css-1lhmg90').scrollIntoViewIfNeeded().catch(() => {});
+		const qrEl = page.locator('img.css-1lhmg90');
+		const qrSrc = await qrEl.getAttribute('src').catch(() => null);
+		if (qrSrc) emit({ type: 'qr-src', data: qrSrc });
 		await page.waitForTimeout(500);
 	}
 	emit({ type: 'log', msg: qrReady ? 'QR code ready.' : 'QR timed out — may still be loading.' });

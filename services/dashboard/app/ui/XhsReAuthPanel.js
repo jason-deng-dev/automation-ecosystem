@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 export default function XhsReAuthPanel({ dict }) {
 	const [status, setStatus] = useState('idle'); // idle | starting | streaming | done | error
 	const [frame, setFrame] = useState(null);
+	const [qrSrc, setQrSrc] = useState(null);
 	const [logs, setLogs] = useState([]);
 	const [hovered, setHovered] = useState(false);
 	const esRef = useRef(null);
@@ -18,6 +19,7 @@ export default function XhsReAuthPanel({ dict }) {
 			if (!res.ok) throw new Error();
 			setStatus('streaming');
 			setLogs([]);
+			setQrSrc(null);
 
 			const es = new EventSource('/api/xhs/login/stream');
 			esRef.current = es;
@@ -26,6 +28,7 @@ export default function XhsReAuthPanel({ dict }) {
 				try {
 					const msg = JSON.parse(e.data);
 					if (msg.type === 'frame') setFrame(msg.data);
+					if (msg.type === 'qr-src') setQrSrc(msg.data);
 					if (msg.type === 'log') setLogs(prev => [...prev, msg.msg]);
 					if (msg.type === 'done') { setStatus('done'); es.close(); }
 					if (msg.type === 'error') { setStatus('error'); es.close(); }
@@ -43,6 +46,7 @@ export default function XhsReAuthPanel({ dict }) {
 		fetch('/api/xhs/login', { method: 'DELETE' });
 		setStatus('idle');
 		setFrame(null);
+		setQrSrc(null);
 	}
 
 	const color = {
@@ -95,10 +99,19 @@ export default function XhsReAuthPanel({ dict }) {
 								✕
 							</button>
 
-							{frame ? (
+							{qrSrc ? (
+								<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+									<img
+										src={qrSrc}
+										alt="XHS QR code"
+										style={{ width: '240px', height: '240px', imageRendering: 'pixelated', border: '8px solid #fff', display: 'block' }}
+									/>
+									<p style={{ color: '#F5A623', fontSize: '13px', margin: 0 }}>Scan with phone</p>
+								</div>
+							) : frame ? (
 								<img
 									src={`data:image/jpeg;base64,${frame}`}
-									alt="XHS login QR"
+									alt="XHS login stream"
 									style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
 								/>
 							) : (
