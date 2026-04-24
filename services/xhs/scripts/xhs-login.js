@@ -17,7 +17,7 @@ const browser = await chromium.launch({
 		'--disable-background-timer-throttling',
 		'--disable-backgrounding-occluded-windows',
 		'--disable-renderer-backgrounding',
-		'--use-gl=swiftshader',
+		'--disable-gpu',
 	],
 });
 
@@ -47,16 +47,18 @@ process.on('SIGTERM', async () => {
 let resolveFirstFrame;
 const firstFrame = new Promise(r => { resolveFirstFrame = r; });
 
+let screenshotInProgress = false;
 const screenshotInterval = setInterval(async () => {
+	if (screenshotInProgress) return;
+	screenshotInProgress = true;
 	try {
-		const buf = await Promise.race([
-			page.screenshot({ type: 'jpeg', quality: 60 }),
-			new Promise((_, rej) => setTimeout(() => rej(new Error('screenshot timeout')), 900)),
-		]);
+		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
 	} catch (e) {
 		emit({ type: 'log', msg: `screenshot error: ${e?.message}` });
+	} finally {
+		screenshotInProgress = false;
 	}
 }, 1000);
 
