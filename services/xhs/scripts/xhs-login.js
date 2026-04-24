@@ -122,8 +122,23 @@ await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
 await page.waitForTimeout(5000);
 try {
 	await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
-	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for login...' });
+	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for QR...' });
+	let xhsQrReady = false;
+	for (let i = 0; i < 20 && !xhsQrReady; i++) {
+		await page.waitForTimeout(1000);
+		const info = await page.locator('img.qrcode-img').evaluate(img => ({
+			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
+		})).catch(() => null);
+		if (info && info.w > 0 && info.len > 1000) { xhsQrReady = true; }
+		emit({ type: 'log', msg: `xhs QR poll ${i + 1}: ${info?.w}x${info?.h} src=${info?.len}` });
+	}
+	if (xhsQrReady) {
+		const xhsQrSrc = await page.locator('img.qrcode-img').getAttribute('src').catch(() => null);
+		if (xhsQrSrc) emit({ type: 'qr-src', data: xhsQrSrc });
+		emit({ type: 'log', msg: 'xhs.com QR ready — scan with phone.' });
+	}
 	await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+	emit({ type: 'qr-scanned' });
 } catch {}
 emit({ type: 'log', msg: 'xhs.com done.' });
 
