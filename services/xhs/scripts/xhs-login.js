@@ -55,15 +55,7 @@ const timeoutHandle = setTimeout(async () => {
 emit({ type: 'log', msg: 'Starting login process...' });
 await firstFrame;
 
-emit({ type: 'log', msg: 'Starting xhs.com login process...' });
-await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
-await page.waitForTimeout(20000);
-try {
-	// await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
-	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for login...' });
-	// await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
-} catch {}
-emit({ type: 'log', msg: 'xhs.com done.' });
+
 
 emit({ type: 'log', msg: 'Starting creator login process...' });
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
@@ -77,7 +69,15 @@ try {
 } catch {}
 emit({ type: 'log', msg: 'Creator login process done.' });
 
-
+emit({ type: 'log', msg: 'Starting xhs.com login process...' });
+await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
+await page.waitForTimeout(5000);
+try {
+	// await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
+	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for login...' });
+	// await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+} catch {}
+emit({ type: 'log', msg: 'xhs.com done.' });
 
 clearInterval(screenshotInterval);
 clearTimeout(timeoutHandle);
