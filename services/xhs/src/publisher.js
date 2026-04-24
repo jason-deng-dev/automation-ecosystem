@@ -119,33 +119,42 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 
 async function checkAuth() {
 	if (!fs.existsSync(AUTH_PATH)) {
-		console.error('auth.json not found — run refresh-auth.bat to log in first');
+		console.error('auth.json not found — run xhs-login.js to log in first');
 		return false;
 	}
-	const browser = await chromium.launch({ headless: false });
-	const context = await browser.newContext({ storageState: AUTH_PATH });
+	const browser = await chromium.launch({
+		headless: true,
+		args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+	});
+	const context = await browser.newContext({
+		storageState: AUTH_PATH,
+		userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+	});
+	await context.addInitScript(() => {
+		Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+		Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
+		Object.defineProperty(document, 'hidden', { get: () => false });
+	});
 	const page = await context.newPage();
+	await page.route(/\.(woff2?|ttf|otf|eot)(\?.*)?$/, route => route.abort());
 
 	try {
-		await page.goto('https://creator.xiaohongshu.com/publish/publish');
+		await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 		await humanDelay(2000, 4000);
-		// error handling for auth failure on publish page
-		if (await page.locator('#login-btn').isVisible()) {
-			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
+		if (await page.locator('.login-box-container').isVisible()) {
+			throw new Error('Authentication expired — re-login required');
 		}
 
-		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
+		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note', { waitUntil: 'commit' });
 		await humanDelay(2000, 4000);
-		// error handling for auth failure on comment add page
-		if (await page.locator('#login-btn').first().isVisible()) {
-			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
+		if (await page.locator('.login-container').isVisible()) {
+			throw new Error('Authentication expired — re-login required');
 		}
 		console.log('Authentication successful');
 		return true;
 	} catch (err) {
-		// console.error('Publish failed:', err.message);
 		if (err.message.includes('Authentication')) {
-			throw new Error('Authentication expired — run refresh-auth.bat to re-login');
+			throw new Error('Authentication expired — re-login required');
 		}
 		return false;
 	} finally {
