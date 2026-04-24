@@ -8,7 +8,7 @@ const AUTH_PATH = path.join(__dirname, '../auth.json');
 
 const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
-const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] });
 
 if (!fs.existsSync(AUTH_PATH)) {
 	fs.writeFileSync(AUTH_PATH, '{"cookies":[],"origins":[]}');
