@@ -133,7 +133,10 @@ export default async function XhsPage() {
 														<div className="text-sm" style={{ color: '#EDEDED' }}>{s.body}</div>
 													</div>
 												))}
-												{p.hashtags?.length > 0 && (
+												{p.cta && (
+												<div className="text-sm font-medium" style={{ color: '#F5A623' }}>{p.cta}</div>
+											)}
+											{p.hashtags?.length > 0 && (
 													<div className="flex flex-wrap gap-1 pt-1">
 														{p.hashtags.map((tag, j) => (
 															<span key={j} className="text-xs" style={{ color: '#C8102E' }}>{tag}</span>
