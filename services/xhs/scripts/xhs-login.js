@@ -25,10 +25,10 @@ const page = await context.newPage();
 
 const screenshotInterval = setInterval(async () => {
 	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
+		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 1500 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 	} catch {}
-}, 2000);
+}, 1000);
 
 const timeoutHandle = setTimeout(async () => {
 	clearInterval(screenshotInterval);

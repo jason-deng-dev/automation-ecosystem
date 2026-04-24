@@ -37,6 +37,7 @@ export default function XhsReAuthPanel({ dict }) {
 
 	function handleClose() {
 		esRef.current?.close();
+		fetch('/api/xhs/login', { method: 'DELETE' });
 		setStatus('idle');
 		setFrame(null);
 	}

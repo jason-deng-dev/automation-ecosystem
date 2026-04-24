@@ -15,6 +15,10 @@ export function getReAuthProc() {
 	return reAuthProc;
 }
 
+export function killReAuth() {
+	if (reAuthProc) { reAuthProc.kill(); reAuthProc = null; }
+}
+
 export async function getXhsMetrics() {
 	const [
 		lastRunRes,
