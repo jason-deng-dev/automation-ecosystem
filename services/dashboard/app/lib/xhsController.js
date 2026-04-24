@@ -5,7 +5,7 @@ let reAuthProc = null;
 
 export function runReAuth() {
 	if (reAuthProc) return;
-	reAuthProc = spawn('docker', ['exec', 'xhs', 'xvfb-run', 'node', 'scripts/xhs-login.js'], {
+	reAuthProc = spawn('docker', ['exec', 'xhs', 'xvfb-run', '-s', '-screen 0 1280x800x24', 'node', 'scripts/xhs-login.js'], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
 	reAuthProc.stderr.on('data', (d) => console.error('[xhs-login stderr]', d.toString()));

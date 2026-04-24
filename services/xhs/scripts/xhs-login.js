@@ -49,7 +49,10 @@ const firstFrame = new Promise(r => { resolveFirstFrame = r; });
 
 const screenshotInterval = setInterval(async () => {
 	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
+		const buf = await Promise.race([
+			page.screenshot({ type: 'jpeg', quality: 60 }),
+			new Promise((_, rej) => setTimeout(() => rej(new Error('screenshot timeout')), 900)),
+		]);
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
 	} catch (e) {
@@ -82,8 +85,13 @@ try {
 		document.dispatchEvent(new Event('visibilitychange'));
 	});
 	emit({ type: 'log', msg: `URL after click: ${page.url()}` });
-	await page.waitForTimeout(3000);
-	emit({ type: 'log', msg: `URL after 3s: ${page.url()}` });
+	try {
+		await page.locator('img.css-1lhmg90').waitFor({ state: 'visible', timeout: 10000 });
+		emit({ type: 'log', msg: 'QR code image rendered.' });
+	} catch {
+		emit({ type: 'log', msg: 'QR image wait timed out — may still be loading.' });
+	}
+	emit({ type: 'log', msg: `URL: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
 	try {
 		await page.waitForURL(url => !url.toString().includes('login'), { timeout: 5 * 60 * 1000 });
