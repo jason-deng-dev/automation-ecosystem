@@ -38,27 +38,25 @@ const timeoutHandle = setTimeout(async () => {
 	process.exit(1);
 }, 5 * 60 * 1000);
 
-console.log('Starting login process...');
+emit({ type: 'log', msg: 'Starting login process...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
 
-// await page.pause()
 await page.waitForTimeout(15000)
 if (await page.locator('.login-container').isVisible()){
-	console.log('Login container visible on xhs.com, waiting for login...');
+	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for login...' });
 	await page.locator('.login-container').waitFor({ state: 'hidden' })
 }
-
 
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 await page.waitForTimeout(15000)
 if (await page.locator('.login-box-container').isVisible()){
-	console.log('Login box visible on creator, clicking QR...');
+	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click()
 	await page.locator('.login-box-container').waitFor({ state: 'hidden' })
 }
 clearInterval(screenshotInterval);
 clearTimeout(timeoutHandle);
 await context.storageState({ path: AUTH_PATH });
-console.log('Login successful — auth.json saved.');
+emit({ type: 'log', msg: 'Login successful — auth.json saved.' });
 emit({ type: 'done' });
 await browser.close();

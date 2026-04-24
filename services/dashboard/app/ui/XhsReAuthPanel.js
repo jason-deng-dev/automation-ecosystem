@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 export default function XhsReAuthPanel({ dict }) {
 	const [status, setStatus] = useState('idle'); // idle | starting | streaming | done | error
 	const [frame, setFrame] = useState(null);
+	const [logs, setLogs] = useState([]);
 	const [hovered, setHovered] = useState(false);
 	const esRef = useRef(null);
 
@@ -16,6 +17,7 @@ export default function XhsReAuthPanel({ dict }) {
 			const res = await fetch('/api/xhs/login', { method: 'POST' });
 			if (!res.ok) throw new Error();
 			setStatus('streaming');
+			setLogs([]);
 
 			const es = new EventSource('/api/xhs/login/stream');
 			esRef.current = es;
@@ -24,12 +26,13 @@ export default function XhsReAuthPanel({ dict }) {
 				try {
 					const msg = JSON.parse(e.data);
 					if (msg.type === 'frame') setFrame(msg.data);
+					if (msg.type === 'log') setLogs(prev => [...prev, msg.msg]);
 					if (msg.type === 'done') { setStatus('done'); es.close(); }
 					if (msg.type === 'error') { setStatus('error'); es.close(); }
 				} catch {}
 			};
 
-			es.onerror = () => { setStatus('error'); es.close(); };
+			es.onerror = () => {};
 		} catch {
 			setStatus('error');
 		}
@@ -78,39 +81,61 @@ export default function XhsReAuthPanel({ dict }) {
 						display: 'flex', alignItems: 'center', justifyContent: 'center',
 					}}
 				>
-					<div style={{ position: 'relative', width: '75vw' }}>
-						<button
-							onClick={handleClose}
-							style={{
-								position: 'absolute', top: '8px', right: '8px',
-								color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
-								background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
-								padding: '4px 8px',
-							}}
-						>
-							✕
-						</button>
+					<div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', width: '75vw' }}>
+						<div style={{ position: 'relative', flex: '1' }}>
+							<button
+								onClick={handleClose}
+								style={{
+									position: 'absolute', top: '8px', right: '8px',
+									color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
+									background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
+									padding: '4px 8px',
+								}}
+							>
+								✕
+							</button>
 
-						{frame ? (
-							<img
-								src={`data:image/jpeg;base64,${frame}`}
-								alt="XHS login QR"
-								style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
-							/>
-						) : (
-							<div style={{
-								width: '100%', aspectRatio: '1',
-								border: '1px solid #2A2A2A',
-								display: 'flex', alignItems: 'center', justifyContent: 'center',
-								color: '#555555', fontSize: '13px',
-							}}>
-								{dict.triggering}
-							</div>
-						)}
+							{frame ? (
+								<img
+									src={`data:image/jpeg;base64,${frame}`}
+									alt="XHS login QR"
+									style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
+								/>
+							) : (
+								<div style={{
+									width: '100%', aspectRatio: '1',
+									border: '1px solid #2A2A2A',
+									display: 'flex', alignItems: 'center', justifyContent: 'center',
+									color: '#555555', fontSize: '13px',
+								}}>
+									{dict.triggering}
+								</div>
+							)}
 
-						<p className="text-sm text-center mt-3" style={{ color: '#F5A623' }}>
-							{dict.streaming}
-						</p>
+							<p className="text-sm text-center mt-3" style={{ color: '#F5A623' }}>
+								{dict.streaming}
+							</p>
+						</div>
+
+						<div style={{
+							width: '280px', flexShrink: 0,
+							border: '1px solid #2A2A2A',
+							backgroundColor: '#0A0A0A',
+							padding: '10px',
+							height: '300px',
+							overflowY: 'auto',
+							fontFamily: 'monospace',
+							fontSize: '12px',
+							color: '#AAAAAA',
+							display: 'flex',
+							flexDirection: 'column',
+							gap: '4px',
+						}}>
+							{logs.length === 0
+								? <span style={{ color: '#444' }}>Waiting for logs...</span>
+								: logs.map((line, i) => <span key={i}>{line}</span>)
+							}
+						</div>
 					</div>
 				</div>
 			)}
