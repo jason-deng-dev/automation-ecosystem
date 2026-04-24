@@ -8,13 +8,22 @@ const AUTH_PATH = path.join(__dirname, '../auth.json');
 
 const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+	headless: true,
+	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled'],
+});
 
 if (!fs.existsSync(AUTH_PATH)) {
 	fs.writeFileSync(AUTH_PATH, '{"cookies":[],"origins":[]}');
 }
 
-const context = await browser.newContext({ storageState: AUTH_PATH });
+const context = await browser.newContext({
+	storageState: AUTH_PATH,
+	userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+});
+await context.addInitScript(() => {
+	Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+});
 
 const page = await context.newPage();
 
@@ -39,7 +48,7 @@ const timeoutHandle = setTimeout(async () => {
 }, 5 * 60 * 1000);
 
 emit({ type: 'log', msg: 'Starting login process...' });
-await page.waitForTimeout(5000)
+await page.waitForTimeout(20000)
 
 emit({ type: 'log', msg: 'Starting xhs.com login process...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
