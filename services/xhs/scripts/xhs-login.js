@@ -48,11 +48,10 @@ const timeoutHandle = setTimeout(async () => {
 }, 5 * 60 * 1000);
 
 emit({ type: 'log', msg: 'Starting login process...' });
-await page.waitForTimeout(20000)
 
 emit({ type: 'log', msg: 'Starting xhs.com login process...' });
-await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
-await page.waitForTimeout(5000)
+await page.goto('https://www.xiaohongshu.com', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3000)
 if (await page.locator('.login-container').isVisible()){
 	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for login...' });
 	await page.locator('.login-container').waitFor({ state: 'hidden' })
@@ -61,8 +60,8 @@ emit({ type: 'log', msg: 'xhs.com login process done.' });
 
 
 emit({ type: 'log', msg: 'Starting creator login process...' });
-await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
-await page.waitForTimeout(5000)
+await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3000)
 if (await page.locator('.login-box-container').isVisible()){
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click()
