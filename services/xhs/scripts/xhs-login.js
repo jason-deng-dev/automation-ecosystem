@@ -67,7 +67,7 @@ try {
 	await page.locator('.login-box-container img').click();
 	await page.waitForTimeout(3000);
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
-	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+	await page.waitForURL(url => !url.includes('login'), { timeout: 5 * 60 * 1000 });
 } catch {}
 emit({ type: 'log', msg: 'Creator login process done.' });
 
