@@ -77,7 +77,7 @@ export default function XhsReAuthPanel({ dict }) {
 						display: 'flex', alignItems: 'center', justifyContent: 'center',
 					}}
 				>
-					<div style={{ position: 'relative', width: 'min(520px, 90vw)' }}>
+					<div style={{ position: 'relative', width: '90vw' }}>
 						<button
 							onClick={handleClose}
 							style={{

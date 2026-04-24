@@ -33,7 +33,7 @@ const timeoutHandle = setTimeout(async () => {
 
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 try {
-	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
+	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 30000 });
 	await page.locator('.login-box-container img').click();
 	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
 } catch { /* already logged in */ }
