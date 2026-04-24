@@ -48,10 +48,7 @@ process.on('SIGTERM', async () => {
 let resolveFirstFrame;
 const firstFrame = new Promise(r => { resolveFirstFrame = r; });
 
-let tickCount = 0;
 const screenshotInterval = setInterval(async () => {
-	tickCount++;
-	emit({ type: 'log', msg: `screenshot tick ${tickCount}` });
 	try {
 		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
 		emit({ type: 'frame', data: buf.toString('base64') });
