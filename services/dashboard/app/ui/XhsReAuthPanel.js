@@ -77,13 +77,14 @@ export default function XhsReAuthPanel({ dict }) {
 						display: 'flex', alignItems: 'center', justifyContent: 'center',
 					}}
 				>
-					<div style={{ position: 'relative', width: '90vw' }}>
+					<div style={{ position: 'relative', width: '75vw' }}>
 						<button
 							onClick={handleClose}
 							style={{
-								position: 'absolute', top: '-36px', right: 0,
-								color: '#888888', fontSize: '20px', lineHeight: 1,
-								background: 'none', border: 'none', cursor: 'pointer',
+								position: 'absolute', top: '8px', right: '8px',
+								color: '#888888', fontSize: '20px', lineHeight: 1, zIndex: 1,
+								background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
+								padding: '4px 8px',
 							}}
 						>
 							✕

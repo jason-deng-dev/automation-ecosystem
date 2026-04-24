@@ -35,6 +35,7 @@ await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 
 try {
 	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 30000 });
 	await page.locator('.login-box-container img').click();
+	await page.waitForTimeout(5000);
 	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
 } catch { /* already logged in */ }
 
