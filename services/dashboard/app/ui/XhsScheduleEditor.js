@@ -6,7 +6,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = ['00', '15', '30', '45'];
 const POST_TYPES = ['race', 'training', 'nutritionSupplement', 'wearable'];
 const POST_TYPE_COLORS = {
-	race: '#C8102E',
+	race: '#22D3EE',
 	training: '#3ECF8E',
 	nutritionSupplement: '#F5A623',
 	wearable: '#6B8AF4',
