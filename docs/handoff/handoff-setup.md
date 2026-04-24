@@ -13,9 +13,11 @@ Work through each section below. Check off each item as it's done.
 - [ ] GitHub repo transferred
 - [ ] GitHub Actions secrets updated
 - [ ] AWS Lightsail access granted
+- [ ] AWS MFA transferred or set up on operator's account (Section 3)
 - [ ] SSH key handed over (or new key set up)
 - [ ] Domain registrar access transferred
 - [ ] Stripe team member added
+- [ ] Stripe MFA transferred to operator's device (Section 6)
 - [ ] WordPress admin account created
 - [ ] XHS creator credentials handed over
 - [ ] Anthropic API account transferred
@@ -322,7 +324,7 @@ psql -U goodsoft rakutendb < rakutendb-handoff-backup-YYYYMMDD.sql
 Before you hand over and leave, confirm everything works end-to-end.
 
 1. **Operator can SSH into the server:** `ssh lightsail` from their machine
-2. **Operator can open the dashboard** in their browser and see all services green
+2. **Operator can open the dashboard** at `http://13.192.170.85:3002` and see all services green
 3. **Operator can log into AWS Lightsail** and see the instance
 4. **Operator can log into Stripe** and see the account balance and payouts
 5. **Operator can log into WordPress** at `/wp-admin`
