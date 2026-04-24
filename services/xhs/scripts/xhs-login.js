@@ -65,9 +65,12 @@ try {
 	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
+	emit({ type: 'log', msg: `URL after click: ${page.url()}` });
 	await page.waitForTimeout(3000);
+	emit({ type: 'log', msg: `URL after 3s: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
 	await page.waitForURL(url => !url.includes('login'), { timeout: 5 * 60 * 1000 });
+	emit({ type: 'log', msg: `URL after waitForURL resolved: ${page.url()}` });
 } catch {}
 emit({ type: 'log', msg: 'Creator login process done.' });
 
