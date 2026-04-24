@@ -58,21 +58,32 @@ CREATE TABLE IF NOT EXISTS xhs_post_history (
 
 -- XHS post archive: replaces xhs/post_archive/ weekly JSON files
 -- analytics source of truth, one row per published post
+-- hook/contents/cta/description/hashtags/comments are NULL for legacy (pre-system) rows
+-- performance columns backfilled from XHS Creator Studio Excel export via analytics service
 CREATE TABLE IF NOT EXISTS xhs_post_archive (
-	id            SERIAL PRIMARY KEY,
-	published_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-	post_type     VARCHAR(32) NOT NULL,
-	race_name     TEXT,                    -- NULL for non-race posts
-	title         TEXT NOT NULL,
-	hook          TEXT NOT NULL,
-	contents      JSONB NOT NULL,          -- array of {subtitle, body}
-	cta           TEXT NOT NULL,
-	description   TEXT NOT NULL,
-	hashtags      TEXT[] NOT NULL,
-	comments      TEXT[] NOT NULL,
-	input_tokens  INTEGER NOT NULL DEFAULT 0,
-	output_tokens INTEGER NOT NULL DEFAULT 0,
-	published     BOOLEAN NOT NULL DEFAULT TRUE  -- FALSE = preview run
+	id               SERIAL PRIMARY KEY,
+	published_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	post_type        VARCHAR(32) NOT NULL,
+	race_name        TEXT,                    -- NULL for non-race posts
+	title            TEXT NOT NULL,
+	hook             TEXT,
+	contents         JSONB,                   -- array of {subtitle, body}
+	cta              TEXT,
+	description      TEXT,
+	hashtags         TEXT[],
+	comments         TEXT[],
+	input_tokens     INTEGER NOT NULL DEFAULT 0,
+	output_tokens    INTEGER NOT NULL DEFAULT 0,
+	published        BOOLEAN NOT NULL DEFAULT TRUE,  -- FALSE = preview run
+	impressions      INTEGER,
+	views            INTEGER,
+	ctr              NUMERIC(6,4),
+	likes            INTEGER,
+	comments_count   INTEGER,
+	saves            INTEGER,
+	shares           INTEGER,
+	followers_gained INTEGER,
+	avg_watch_time   NUMERIC(8,2)
 );
 
 -- Pipeline state: replaces xhs/pipeline_state.json
