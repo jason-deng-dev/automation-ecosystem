@@ -48,7 +48,10 @@ try {
 	await page.locator('.login-box-container img').click();
 	await page.waitForTimeout(5000);
 	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
-} catch { /* already logged in */ }
+} catch (e) {
+	process.stderr.write(`login flow exited: ${e?.message}\n`);
+	await new Promise(() => {}); // keep streaming until killed or 5-min timeout
+}
 
 clearInterval(screenshotInterval);
 clearTimeout(timeoutHandle);
