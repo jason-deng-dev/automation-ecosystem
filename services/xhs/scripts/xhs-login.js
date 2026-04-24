@@ -72,8 +72,9 @@ try {
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
-	await page.waitForTimeout(5000); // wait for QR image to fully load
-	emit({ type: 'log', msg: 'QR ready.' });
+	await page.waitForTimeout(5000);
+	const qrSrc = await page.locator('img.css-1lhmg90').getAttribute('src').catch(() => 'not found');
+	emit({ type: 'log', msg: `QR src: ${String(qrSrc).slice(0, 100)}` });
 	emit({ type: 'log', msg: `URL: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
 
