@@ -29,6 +29,7 @@ export default function XhsReAuthPanel({ dict }) {
 					const msg = JSON.parse(e.data);
 					if (msg.type === 'frame') setFrame(msg.data);
 					if (msg.type === 'qr-src') setQrSrc(msg.data);
+					if (msg.type === 'qr-scanned') setQrSrc(null);
 					if (msg.type === 'log') setLogs(prev => [...prev, msg.msg]);
 					if (msg.type === 'done') { setStatus('done'); es.close(); }
 					if (msg.type === 'error') { setStatus('error'); es.close(); }

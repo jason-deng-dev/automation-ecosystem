@@ -112,6 +112,7 @@ try {
 		page.on('framenavigated', onNav);
 		setTimeout(resolve, 5 * 60 * 1000);
 	});
+	emit({ type: 'qr-scanned' });
 	emit({ type: 'log', msg: `Login detected — URL: ${page.url()}` });
 } catch {}
 emit({ type: 'log', msg: 'Creator login process done.' });
