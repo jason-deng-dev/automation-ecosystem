@@ -42,7 +42,7 @@ console.log('Starting login process...');
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
 
 // await page.pause()
-await page.waitForTimeout(4000)
+await page.waitForTimeout(15000)
 if (await page.locator('.login-container').isVisible()){
 	console.log('Login container visible on xhs.com, waiting for login...');
 	await page.locator('.login-container').waitFor({ state: 'hidden' })
@@ -50,7 +50,7 @@ if (await page.locator('.login-container').isVisible()){
 
 
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
-await page.waitForTimeout(4000)
+await page.waitForTimeout(15000)
 if (await page.locator('.login-box-container').isVisible()){
 	console.log('Login box visible on creator, clicking QR...');
 	await page.locator('.login-box-container img').click()
