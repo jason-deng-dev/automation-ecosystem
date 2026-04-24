@@ -32,7 +32,7 @@ export default function XhsReAuthPanel({ dict }) {
 				} catch {}
 			};
 
-			es.onerror = () => {};
+			es.onerror = () => { setStatus('error'); es.close(); };
 		} catch {
 			setStatus('error');
 		}
