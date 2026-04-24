@@ -33,10 +33,14 @@ process.on('SIGTERM', async () => {
 	process.exit(0);
 });
 
+let resolveFirstFrame;
+const firstFrame = new Promise(r => { resolveFirstFrame = r; });
+
 const screenshotInterval = setInterval(async () => {
 	try {
 		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
 		emit({ type: 'frame', data: buf.toString('base64') });
+		resolveFirstFrame();
 	} catch {}
 }, 1000);
 
@@ -49,6 +53,7 @@ const timeoutHandle = setTimeout(async () => {
 }, 5 * 60 * 1000);
 
 emit({ type: 'log', msg: 'Starting login process...' });
+await firstFrame;
 
 emit({ type: 'log', msg: 'Starting xhs.com login process...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
