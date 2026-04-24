@@ -2,6 +2,11 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
+const DISPLAY = process.env.DISPLAY || ':99';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_PATH = path.join(__dirname, '../auth.json');
@@ -52,7 +57,9 @@ const screenshotInterval = setInterval(async () => {
 	if (screenshotInProgress) return;
 	screenshotInProgress = true;
 	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
+		const tmpPath = '/tmp/xhs-frame.jpg';
+		await execFileAsync('scrot', ['-q', '60', tmpPath], { env: { ...process.env, DISPLAY } });
+		const buf = fs.readFileSync(tmpPath);
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
 	} catch (e) {
