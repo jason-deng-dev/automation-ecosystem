@@ -86,6 +86,10 @@ emit({ type: 'log', msg: 'Starting creator login process...' });
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 try {
 	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
+	// Page fully loaded — force continuous repaints so Xvfb compositor stays active
+	await page.evaluate(() => {
+		setInterval(() => { document.documentElement.setAttribute('data-t', Date.now()); }, 200);
+	});
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
