@@ -11,7 +11,9 @@ export async function GET() {
 			let closed = false;
 
 			const enqueue = (data) => {
-				if (!closed) controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+				if (closed) return;
+				try { controller.enqueue(encoder.encode(`data: ${data}\n\n`)); }
+				catch { closed = true; }
 			};
 
 			proc.stdout.on('data', (chunk) => {
@@ -25,7 +27,9 @@ export async function GET() {
 			});
 
 			proc.on('exit', () => {
-				if (!closed) { closed = true; controller.close(); }
+				if (closed) return;
+				closed = true;
+				try { controller.close(); } catch {}
 			});
 
 			return () => { closed = true; };
