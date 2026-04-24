@@ -41,7 +41,9 @@ const screenshotInterval = setInterval(async () => {
 		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
-	} catch {}
+	} catch (e) {
+		process.stderr.write(`screenshot error: ${e?.message}\n`);
+	}
 }, 1000);
 
 const timeoutHandle = setTimeout(async () => {
