@@ -187,7 +187,13 @@
   - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
   - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
   - [x] Detect successful login via post-login URL redirect
-  - [x] Run headless (headless: true) — dashboard streams screenshots via SSE instead of showing a browser window
+  - [x] Screenshot stream wired — emit({ type: 'frame' }) every 1s, SSE route forwards to dashboard EventSource
+  - [x] Log stream wired — emit({ type: 'log' }) replaces console.log; dashboard shows log panel beside QR view
+  - [ ] Fix headless bot detection — XHS blocks headless Playwright on VPS; screenshots render white, page loads fail
+    - [ ] Install Xvfb in XHS Docker container
+    - [ ] Switch to headless: false + xvfb-run so browser runs in virtual display
+    - [ ] Update xhsController.js spawn command to use xvfb-run
+    - [ ] Update Dockerfile: apt-get install xvfb
 
 
 

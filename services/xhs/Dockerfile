@@ -11,6 +11,7 @@ COPY package*.json ./
 RUN npm ci
 RUN npx playwright install chromium
 RUN npx playwright install-deps chromium
+RUN apt-get install -y xvfb
 
 # Copy the rest of app into container
 # Make sure to setup .dockerignore
