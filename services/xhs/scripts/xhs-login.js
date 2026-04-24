@@ -23,11 +23,15 @@ await context.addInitScript(() => {
 });
 const page = await context.newPage();
 
+let screenshotBusy = false;
 const screenshotInterval = setInterval(async () => {
+	if (screenshotBusy) return;
+	screenshotBusy = true;
 	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 1500 });
+		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 	} catch {}
+	screenshotBusy = false;
 }, 1000);
 
 const timeoutHandle = setTimeout(async () => {
