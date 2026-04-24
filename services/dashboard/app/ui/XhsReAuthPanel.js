@@ -42,7 +42,7 @@ export default function XhsReAuthPanel({ dict }) {
 	}
 
 	const color = {
-		idle: '#EDEDED', starting: '#F5A623', streaming: '#F5A623',
+		idle: '#C8102E', starting: '#F5A623', streaming: '#F5A623',
 		done: '#3ECF8E', error: '#C8102E',
 	}[status];
 
@@ -62,7 +62,7 @@ export default function XhsReAuthPanel({ dict }) {
 				style={{
 					borderColor: color,
 					color: color,
-					backgroundColor: hovered && status === 'idle' ? 'rgba(237,237,237,0.08)' : 'transparent',
+					backgroundColor: hovered && status === 'idle' ? 'rgba(200,16,46,0.15)' : 'transparent',
 				}}
 			>
 				{label}
@@ -82,7 +82,7 @@ export default function XhsReAuthPanel({ dict }) {
 							onClick={handleClose}
 							style={{
 								position: 'absolute', top: '8px', right: '8px',
-								color: '#888888', fontSize: '20px', lineHeight: 1, zIndex: 1,
+								color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
 								background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
 								padding: '4px 8px',
 							}}

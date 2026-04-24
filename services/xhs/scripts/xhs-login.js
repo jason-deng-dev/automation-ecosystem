@@ -18,6 +18,9 @@ const context = await browser.newContext({
 	storageState: AUTH_PATH,
 	userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
 });
+await context.addInitScript(() => {
+	Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+});
 const page = await context.newPage();
 
 const screenshotInterval = setInterval(async () => {
@@ -37,6 +40,7 @@ const timeoutHandle = setTimeout(async () => {
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 try {
 	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 30000 });
+	// NEED THIS CLICK TO GO TO QR CODE PAGE
 	await page.locator('.login-box-container img').click();
 	await page.waitForTimeout(5000);
 	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
