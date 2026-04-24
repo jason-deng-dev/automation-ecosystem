@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import XhsMetric from "./ui/xhsMetrics";
 import ScraperMetric from "./ui/scraperMetrics";
 import RakutenMetric from "./ui/rakutenMetrics";

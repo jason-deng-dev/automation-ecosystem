@@ -100,7 +100,7 @@
 - [x] Rakuten detail page — pricing config editor, import log table, run log table, manual sync trigger
 - [x] XHS re-auth flow — headless QR scan + SSE screenshot stream
 - [ ] Poll/SSE to keep home cards live
-- [ ] Dockerfile
+- [x] Dockerfile + CI/CD pipeline (cicd-dashboard.yml)
 - [ ] docker-compose integration
 
 ---
@@ -126,9 +126,9 @@
 - [x] Provision AWS Lightsail VPS
 - [x] SSH keys + GitHub Secrets (DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VPS_HOST, VPS_SSH_KEY)
 - [x] Docker Hub account + credentials
-- [ ] Dockerfiles for all services — Dashboard, Analytics pending (Rakuten ✓, XHS ✓, Scraper ✓, Race Hub ✓)
+- [ ] Dockerfiles for all services — Analytics pending (Rakuten ✓, XHS ✓, Scraper ✓, Race Hub ✓, Dashboard ✓)
 - [ ] docker-compose.yml (all services + PostgreSQL)
-- [ ] CD workflows per service — Dashboard, Analytics pending (Rakuten ✓, XHS ✓, Scraper ✓, Race Hub ✓)
+- [ ] CD workflows per service — Analytics pending (Rakuten ✓, XHS ✓, Scraper ✓, Race Hub ✓, Dashboard ✓)
 - [ ] Smoke test all pipelines end-to-end on Lightsail
 
 ---

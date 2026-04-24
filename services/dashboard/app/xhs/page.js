@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { ecosystemPool } from '@/app/lib/db/pool';
 import XhsTriggerButton from '@/app/ui/XhsTriggerButton';
 import XhsScheduleEditor from '@/app/ui/XhsScheduleEditor';

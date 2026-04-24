@@ -1,4 +1,5 @@
 import { getXhsMetrics } from '../lib/xhsController';
+import XhsReAuthPanel from './XhsReAuthPanel';
 
 function timeUntil(slot) {
 	const now = new Date();
@@ -32,13 +33,9 @@ export default async function XhsMetric({ dict }) {
 					</span>
 				</div>
 				{authStatus === 'failed' && (
-					<div className="flex items-center justify-between bg-accent/10 border border-accent px-3 py-2">
-						<span className="text-sm text-accent font-medium">{dict.authFailed}</span>
-						<form action="/api/xhs/login" method="post">
-							<button type="submit" className="text-xs font-medium tracking-wide uppercase bg-accent text-white px-3 py-1 hover:bg-accent-hover transition-colors">
-								{dict.login}
-							</button>
-						</form>
+					<div className="flex flex-col gap-2 border border-accent px-3 py-3" style={{ backgroundColor: 'rgba(200,16,46,0.08)' }}>
+						<span className="text-sm font-medium" style={{ color: '#C8102E' }}>{dict.authFailed}</span>
+						<XhsReAuthPanel dict={dict} />
 					</div>
 				)}
 				<div className="flex justify-between text-base">

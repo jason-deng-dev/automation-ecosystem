@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { rakutenPool } from '@/app/lib/db/pool';
 import RakutenConfigEditor from '@/app/ui/RakutenConfigEditor';
 import RakutenTriggerButton from '@/app/ui/RakutenTriggerButton';

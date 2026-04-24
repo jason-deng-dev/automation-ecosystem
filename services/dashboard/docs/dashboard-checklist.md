@@ -77,7 +77,8 @@
 ---
 
 - [ ] Docker & Deploy
-  - [ ] Write Dockerfile
+  - [x] Write Dockerfile
+  - [x] Write CI/CD workflow (cicd-dashboard.yml) — build job gates deploy; Docker socket mounted for docker exec
   - [ ] Add to docker-compose.yml
   - [ ] Verify all docker exec commands work inside container network
   - [ ] Configure PM2 + NGINX on Lightsail

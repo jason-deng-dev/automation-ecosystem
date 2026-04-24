@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { ecosystemPool } from '@/app/lib/db/pool';
 import ScraperTriggerButton from '@/app/ui/ScraperTriggerButton';
 import en from '@/app/lib/locales/en';
