@@ -2,11 +2,6 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-
-const execFileAsync = promisify(execFile);
-const DISPLAY = process.env.DISPLAY || ':99';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_PATH = path.join(__dirname, '../auth.json');
@@ -14,16 +9,8 @@ const AUTH_PATH = path.join(__dirname, '../auth.json');
 const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
 const browser = await chromium.launch({
-	headless: false,
-	args: [
-		'--no-sandbox',
-		'--disable-setuid-sandbox',
-		'--disable-dev-shm-usage',
-		'--disable-background-timer-throttling',
-		'--disable-backgrounding-occluded-windows',
-		'--disable-renderer-backgrounding',
-		'--disable-gpu',
-	],
+	headless: true,
+	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
 });
 
 if (!fs.existsSync(AUTH_PATH)) {
@@ -57,9 +44,7 @@ const screenshotInterval = setInterval(async () => {
 	if (screenshotInProgress) return;
 	screenshotInProgress = true;
 	try {
-		const tmpPath = '/tmp/xhs-frame.jpg';
-		await execFileAsync('scrot', ['-q', '60', tmpPath], { env: { ...process.env, DISPLAY } });
-		const buf = fs.readFileSync(tmpPath);
+		const buf = await page.screenshot({ type: 'jpeg', quality: 60 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
 	} catch (e) {
@@ -80,16 +65,10 @@ const timeoutHandle = setTimeout(async () => {
 emit({ type: 'log', msg: 'Starting login process...' });
 await firstFrame;
 
-
-
 emit({ type: 'log', msg: 'Starting creator login process...' });
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 try {
 	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
-	// Page fully loaded — force continuous repaints so Xvfb compositor stays active
-	await page.evaluate(() => {
-		setInterval(() => { document.documentElement.setAttribute('data-t', Date.now()); }, 200);
-	});
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
@@ -97,7 +76,6 @@ try {
 		window.dispatchEvent(new Event('focus'));
 		document.dispatchEvent(new Event('visibilitychange'));
 	});
-	emit({ type: 'log', msg: `URL after click: ${page.url()}` });
 	try {
 		await page.locator('img.css-1lhmg90').waitFor({ state: 'visible', timeout: 10000 });
 		emit({ type: 'log', msg: 'QR code image rendered.' });
@@ -114,7 +92,7 @@ try {
 			}
 		};
 		page.on('framenavigated', onNav);
-		setTimeout(resolve, 5 * 60 * 1000); // 5 min timeout fallback
+		setTimeout(resolve, 5 * 60 * 1000);
 	});
 	emit({ type: 'log', msg: `Login detected — URL: ${page.url()}` });
 } catch {}
@@ -135,5 +113,5 @@ clearTimeout(timeoutHandle);
 await context.storageState({ path: AUTH_PATH });
 emit({ type: 'log', msg: 'Login successful — auth.json saved.' });
 emit({ type: 'done' });
-await new Promise(r => setTimeout(r, 500)); // flush stdout before closing
+await new Promise(r => setTimeout(r, 500));
 await browser.close();
