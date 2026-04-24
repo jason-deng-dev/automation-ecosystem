@@ -57,10 +57,11 @@ await firstFrame;
 
 emit({ type: 'log', msg: 'Starting xhs.com login process...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit' });
+await page.waitForTimeout(20000);
 try {
-	await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
+	// await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
 	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for login...' });
-	await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+	// await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
 } catch {}
 emit({ type: 'log', msg: 'xhs.com done.' });
 
@@ -71,7 +72,8 @@ try {
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
-	await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+	await page.waitForTimeout(20000);
+	// await page.locator('.login-box-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
 } catch {}
 emit({ type: 'log', msg: 'Creator login process done.' });
 
