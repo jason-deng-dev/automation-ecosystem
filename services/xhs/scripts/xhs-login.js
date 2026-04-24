@@ -29,6 +29,7 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
+await page.route(/\.(woff2?|ttf|otf|eot)(\?.*)?$/, route => route.abort());
 
 process.on('SIGTERM', async () => {
 	clearInterval(screenshotInterval);
@@ -72,9 +73,15 @@ try {
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
-	await page.waitForTimeout(5000);
-	const qrSrc = await page.locator('img.css-1lhmg90').getAttribute('src').catch(() => 'not found');
-	emit({ type: 'log', msg: `QR src: ${String(qrSrc).slice(0, 100)}` });
+	// Poll until real QR loads (placeholder is small ~200 bytes, real QR is >1000 bytes)
+	let qrReady = false;
+	for (let i = 0; i < 20 && !qrReady; i++) {
+		await page.waitForTimeout(1000);
+		const src = await page.locator('img.css-1lhmg90').getAttribute('src').catch(() => null);
+		if (src && src.length > 1000) { qrReady = true; }
+		emit({ type: 'log', msg: `QR poll ${i + 1}: src length ${src?.length ?? 0}` });
+	}
+	emit({ type: 'log', msg: qrReady ? 'QR code ready.' : 'QR timed out — may still be loading.' });
 	emit({ type: 'log', msg: `URL: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
 
