@@ -39,7 +39,15 @@ app.post("/api/request-product", productRequestLimiter, async (req: Request, res
 });
 
 app.post("/api/config", async (req: Request, res: Response) => {
-	const { key, value } = req.body as { key: keyof Config; value: number };
+	const snakeToCamel: Record<string, keyof Config> = {
+		yen_to_yuan: 'yenToYuan',
+		markup_percent: 'markupPercent',
+		search_fill_threshold: 'searchFillThreshold',
+		products_per_category: 'productsPerCategory',
+	};
+	const rawKey = req.body.key as string;
+	const key: keyof Config = snakeToCamel[rawKey] ?? rawKey as keyof Config;
+	const value = req.body.value as number;
 	console.log(`[api] POST /api/config — ${key} = ${value}`);
 	await updateConfig(key, value);
 	await reloadConfig();
