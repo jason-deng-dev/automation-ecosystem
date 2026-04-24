@@ -10,7 +10,14 @@ const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
 const browser = await chromium.launch({
 	headless: false,
-	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+	args: [
+		'--no-sandbox',
+		'--disable-setuid-sandbox',
+		'--disable-dev-shm-usage',
+		'--disable-background-timer-throttling',
+		'--disable-backgrounding-occluded-windows',
+		'--disable-renderer-backgrounding',
+	],
 });
 
 if (!fs.existsSync(AUTH_PATH)) {
@@ -66,6 +73,7 @@ emit({ type: 'log', msg: 'Starting creator login process...' });
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 try {
 	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
+	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
 	emit({ type: 'log', msg: `URL after click: ${page.url()}` });
