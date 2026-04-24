@@ -93,12 +93,17 @@ try {
 	}
 	emit({ type: 'log', msg: `URL: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
-	try {
-		await page.waitForURL(url => !url.toString().includes('login'), { timeout: 5 * 60 * 1000 });
-		emit({ type: 'log', msg: `waitForURL resolved: ${page.url()}` });
-	} catch (e) {
-		emit({ type: 'log', msg: `waitForURL threw: ${e?.message?.slice(0, 120)}` });
-	}
+	await new Promise((resolve) => {
+		const onNav = (frame) => {
+			if (frame === page.mainFrame() && !frame.url().includes('login')) {
+				page.off('framenavigated', onNav);
+				resolve();
+			}
+		};
+		page.on('framenavigated', onNav);
+		setTimeout(resolve, 5 * 60 * 1000); // 5 min timeout fallback
+	});
+	emit({ type: 'log', msg: `Login detected — URL: ${page.url()}` });
 } catch {}
 emit({ type: 'log', msg: 'Creator login process done.' });
 
