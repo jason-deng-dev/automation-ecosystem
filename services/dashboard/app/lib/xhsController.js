@@ -8,7 +8,8 @@ export function runReAuth() {
 	reAuthProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/xhs-login.js'], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
-	reAuthProc.on('exit', () => { reAuthProc = null; });
+	reAuthProc.stderr.on('data', (d) => console.error('[xhs-login stderr]', d.toString()));
+	reAuthProc.on('exit', (code) => { console.log('[xhs-login exit]', code); reAuthProc = null; });
 }
 
 export function getReAuthProc() {
