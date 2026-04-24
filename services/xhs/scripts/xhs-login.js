@@ -17,6 +17,8 @@ const browser = await chromium.launch({
 		'--disable-background-timer-throttling',
 		'--disable-backgrounding-occluded-windows',
 		'--disable-renderer-backgrounding',
+		'--disable-gpu',
+		'--use-gl=swiftshader',
 	],
 });
 
@@ -30,6 +32,9 @@ const context = await browser.newContext({
 });
 await context.addInitScript(() => {
 	Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+	Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
+	Object.defineProperty(document, 'hidden', { get: () => false });
+	document.addEventListener('visibilitychange', () => {}, true);
 });
 
 const page = await context.newPage();
