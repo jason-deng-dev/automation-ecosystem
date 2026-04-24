@@ -84,15 +84,6 @@ await firstFrame;
 
 emit({ type: 'log', msg: 'Starting creator login process...' });
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
-// Force continuous repaints so Xvfb compositor doesn't go idle
-await page.evaluate(() => {
-	const canvas = document.createElement('canvas');
-	canvas.style.cssText = 'position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0.01;pointer-events:none';
-	document.body.appendChild(canvas);
-	const ctx = canvas.getContext('2d');
-	let t = 0;
-	(function paint() { ctx.fillStyle = `hsl(${t++%360},50%,50%)`; ctx.fillRect(0,0,1,1); requestAnimationFrame(paint); })();
-});
 try {
 	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
 	await page.bringToFront();
