@@ -2,14 +2,32 @@ import { ecosystemPool } from './db/pool.js';
 import { spawn } from 'child_process';
 
 let reAuthProc = null;
+let eventBuffer = [];
+const subscribers = new Set();
+
+function broadcast(line) {
+	eventBuffer.push(line);
+	if (eventBuffer.length > 200) eventBuffer.shift();
+	for (const sub of subscribers) sub(line);
+}
 
 export function runReAuth() {
 	if (reAuthProc) return;
+	eventBuffer = [];
 	reAuthProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/xhs-login.js'], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
+	reAuthProc.stdout.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcast);
+	});
 	reAuthProc.stderr.on('data', (d) => console.error('[xhs-login stderr]', d.toString()));
 	reAuthProc.on('exit', (code) => { console.log('[xhs-login exit]', code); reAuthProc = null; });
+}
+
+export function subscribeReAuth(callback) {
+	subscribers.add(callback);
+	eventBuffer.forEach(callback);
+	return () => subscribers.delete(callback);
 }
 
 export function getReAuthProc() {
@@ -84,7 +102,6 @@ export async function getXhsMetrics() {
 
 	const authStatus = lastRun?.errorStage === 'auth' ? 'failed' : 'ok';
 
-	// Compute upcoming post from schedule
 	const slots = scheduleRes.rows;
 	const now = new Date();
 	const currentDay = now.getDay();
