@@ -29,7 +29,9 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
-await page.route(/\.(woff2?|ttf|otf|eot)(\?.*)?$/, route => route.abort());
+await page.route('**/*', route =>
+	route.request().resourceType() === 'font' ? route.abort() : route.continue()
+);
 
 process.on('SIGTERM', async () => {
 	clearInterval(screenshotInterval);
