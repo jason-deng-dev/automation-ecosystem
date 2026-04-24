@@ -256,3 +256,11 @@
 - [ ] Claude quality check on keyword request flow → §9.4
   - [ ] Stage 1 — validate keyword relevance (yes/no), abort early if off-theme
   - [ ] Stage 2 — feed `allGenres` map, return best-fit genre ID as fallback for unknown genres
+
+- [ ] Store + display Rakuten review count/rating on WooCommerce products
+  - [ ] Check Rakuten API response — confirm `reviewAverage` + `reviewCount` fields are present
+  - [ ] Add `review_average NUMERIC(3,2)`, `review_count INTEGER` columns to `products` table in `seed.ts`
+  - [ ] Map fields in `normalizeItem()` in `utils.ts`
+  - [ ] Store as WC custom meta `_rakuten_rating` + `_rakuten_review_count` in `pushProduct()`
+  - [ ] Display in theme/functions.php hook — show star rating + count on product page as "Rakuten Rating" to distinguish from WC native reviews
+  - [ ] Update on weekly sync if rating changes
