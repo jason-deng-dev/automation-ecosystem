@@ -31,13 +31,13 @@ const timeoutHandle = setTimeout(async () => {
 	process.exit(1);
 }, 5 * 60 * 1000);
 
-await page.goto('https://www.xiaohongshu.com');
+await page.goto('https://www.xiaohongshu.com', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(4000);
 if (await page.locator('.login-container').isVisible()) {
 	await page.locator('.login-container').waitFor({ state: 'hidden' });
 }
 
-await page.goto('https://creator.xiaohongshu.com/publish/publish');
+await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(4000);
 if (await page.locator('.login-box-container').isVisible()) {
 	await page.locator('.login-box-container img').click();
