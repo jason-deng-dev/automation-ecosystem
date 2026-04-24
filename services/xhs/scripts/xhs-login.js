@@ -8,13 +8,16 @@ const AUTH_PATH = path.join(__dirname, '../auth.json');
 
 const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
-const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] });
+const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled'] });
 
 if (!fs.existsSync(AUTH_PATH)) {
 	fs.writeFileSync(AUTH_PATH, '{"cookies":[],"origins":[]}');
 }
 
-const context = await browser.newContext({ storageState: AUTH_PATH });
+const context = await browser.newContext({
+	storageState: AUTH_PATH,
+	userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+});
 const page = await context.newPage();
 
 const screenshotInterval = setInterval(async () => {
