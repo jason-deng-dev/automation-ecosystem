@@ -69,8 +69,12 @@ try {
 	await page.waitForTimeout(3000);
 	emit({ type: 'log', msg: `URL after 3s: ${page.url()}` });
 	emit({ type: 'log', msg: 'QR code showing — scan with phone.' });
-	await page.waitForURL(url => !url.includes('login'), { timeout: 5 * 60 * 1000 });
-	emit({ type: 'log', msg: `URL after waitForURL resolved: ${page.url()}` });
+	try {
+		await page.waitForURL(url => !url.includes('login'), { timeout: 5 * 60 * 1000 });
+		emit({ type: 'log', msg: `waitForURL resolved: ${page.url()}` });
+	} catch (e) {
+		emit({ type: 'log', msg: `waitForURL threw: ${e?.message?.slice(0, 120)}` });
+	}
 } catch {}
 emit({ type: 'log', msg: 'Creator login process done.' });
 
