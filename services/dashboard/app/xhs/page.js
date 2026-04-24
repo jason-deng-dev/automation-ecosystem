@@ -1,6 +1,7 @@
 import { ecosystemPool } from '@/app/lib/db/pool';
 import XhsTriggerButton from '@/app/ui/XhsTriggerButton';
 import XhsScheduleEditor from '@/app/ui/XhsScheduleEditor';
+import XhsReAuthPanel from '@/app/ui/XhsReAuthPanel';
 import en from '@/app/lib/locales/en';
 import zh from '@/app/lib/locales/zh';
 
@@ -39,6 +40,7 @@ export default async function XhsPage() {
 
 				{/* Left — controls */}
 				<div className="flex flex-col gap-6">
+					<XhsReAuthPanel dict={dict} />
 					<XhsTriggerButton dict={dict} />
 					<XhsScheduleEditor slots={slots} dict={dict} />
 				</div>

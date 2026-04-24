@@ -178,18 +178,17 @@
   - [x] Seed `ecosystemdb` — ran schema.sql + seeded xhs_schedule (7 rows) + pipeline_state via psql
   - [x] Verify XHS container runs on Lightsail — 7 cron jobs registered; awaiting cron fire to confirm publish
 
-- [ ] Dashboard integration — manual trigger + preview mode
-  - [ ] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
-  - [ ] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
-  - [ ] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
+- [x] Dashboard integration — manual trigger + preview mode
+  - [x] `scripts/run-manualPost.js` — reads type from `process.argv[2]`, triggers a full publish run
+  - [x] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
+  - [x] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
 
-- [ ] xhs-login.js — dashboard re-auth flow (requires deploy + dashboard)
+- [x] xhs-login.js — dashboard re-auth flow (requires deploy + dashboard)
   - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
   - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
   - [x] Detect successful login via post-login URL redirect
-  - [ ] Run headless (headless: true) — dashboard streams screenshots via SSE instead of showing a browser window
+  - [x] Run headless (headless: true) — dashboard streams screenshots via SSE instead of showing a browser window
 
-- [ ] Tune prompt output format for XHS page layout
-  - [ ] Update prompts to produce fewer lines per section, more content per line — allows 一键排版 to split pages at correct section boundaries
+
 
 ---

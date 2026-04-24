@@ -42,10 +42,6 @@
   - [x] Post archive viewer
     - [x] `GET /api/xhs/post-archive` — query `xhs_post_archive` table (inline in page.js)
     - [x] List: title, post type, publish timestamp — expandable to show full post content
-  - [ ] Live log stream
-    - [ ] `GET /api/xhs/logs/stream` — SSE stream of XHS process stdout
-    - [ ] Scrollable log panel, auto-scroll to bottom, colour-coded lines
-
 ---
 
 - [x] Scraper section (detail page)
@@ -72,11 +68,11 @@
 
 ---
 
-- [ ] XHS re-auth flow (broken — needs fix)
-  - [ ] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec, begin screenshot polling
-  - [ ] `GET /api/xhs/login/stream` — SSE stream of `page.screenshot()` every 2s; final event `{ type: 'done' }` on login detect
-  - [ ] Add `runReAuth()` to `xhsController.js` (currently called by route but not exported)
-  - [ ] Client component: screenshot panel on XHS card, connects to SSE stream, renders each frame as `<img>`, closes on `done`
+- [x] XHS re-auth flow
+  - [x] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec, begin screenshot polling
+  - [x] `GET /api/xhs/login/stream` — SSE stream of `page.screenshot()` every 2s; final event `{ type: 'done' }` on login detect
+  - [x] Add `runReAuth()` to `xhsController.js`
+  - [x] Client component: screenshot panel on XHS page, connects to SSE stream, renders each frame as `<img>`, closes on `done`
 
 ---
 

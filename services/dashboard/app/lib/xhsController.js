@@ -1,4 +1,19 @@
 import { ecosystemPool } from './db/pool.js';
+import { spawn } from 'child_process';
+
+let reAuthProc = null;
+
+export function runReAuth() {
+	if (reAuthProc) return;
+	reAuthProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/xhs-login.js'], {
+		stdio: ['ignore', 'pipe', 'ignore'],
+	});
+	reAuthProc.on('exit', () => { reAuthProc = null; });
+}
+
+export function getReAuthProc() {
+	return reAuthProc;
+}
 
 export async function getXhsMetrics() {
 	const [

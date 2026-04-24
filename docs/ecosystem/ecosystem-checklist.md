@@ -1,6 +1,6 @@
 **Project:** automation-ecosystem
 
-**Last updated:** April 17 2026
+**Last updated:** April 24 2026
 
 ---
 
@@ -12,7 +12,7 @@
 | Scraper | Deployed — live on Lightsail, docker-compose remaining |
 | Race Hub | Deployed — live at running.moximoxi.net/racehub/, docker-compose remaining |
 | Rakuten | Feature complete — deployed on Lightsail, rate limited, dashboard endpoints done; docker-compose remaining |
-| Dashboard | Home cards done (XHS + Scraper) — detail pages not started |
+| Dashboard | Home cards done (all 3), detail pages done (all 3) — re-auth flow + SSE + deploy remaining |
 | Analytics | Not started — planned FastAPI service, XHS weights endpoint first |
 
 ---
@@ -28,9 +28,8 @@
 - [x] Bot detection mitigations — clipboard paste, humanDelay(), random post time offset ±15–30min
 - [x] Dockerfile + CI/CD pipeline (cicd-xhs.yml)
 - [x] Deployed — container live on Lightsail, 7 cron jobs registered, awaiting cron fire confirmation
-- [ ] Dashboard integration — manual trigger + preview mode (docker exec scripts)
+- [x] Dashboard integration — manual trigger + preview mode (docker exec scripts)
 - [ ] Dashboard re-auth flow — headless QR scan + SSE screenshot stream
-- [ ] Tune prompt output format for XHS 一键排版 page layout
 - [ ] docker-compose integration
 
 ---
@@ -93,15 +92,14 @@
 ## Dashboard (`services/dashboard/`)
 > Full checklist: `services/dashboard/docs/dashboard-checklist.md`
 
-- [x] Next.js setup, Tailwind, shared volume reads
+- [x] Next.js setup, Tailwind, DB connections (ecosystemPool + rakutenPool)
 - [x] i18n (EN/ZH)
-- [x] XHS home card — all metrics, auth status, error breakdown, token totals
-- [x] Scraper home card — all metrics
-- [ ] Rakuten home card
-- [ ] XHS detail page (schedule editor, run history, log stream, triggers)
-- [ ] Scraper detail page
-- [ ] Rakuten detail page
-- [ ] Poll/SSE to keep cards live
+- [x] Home page — all 3 pipeline cards (XHS, Scraper, Rakuten)
+- [x] XHS detail page — schedule editor (GET/POST /api/xhs/schedule), run history table, post archive viewer
+- [x] Scraper detail page — races table, run history, failed URLs list, manual trigger button
+- [x] Rakuten detail page — pricing config editor, import log table, run log table, manual sync trigger
+- [x] XHS re-auth flow — headless QR scan + SSE screenshot stream
+- [ ] Poll/SSE to keep home cards live
 - [ ] Dockerfile
 - [ ] docker-compose integration
 

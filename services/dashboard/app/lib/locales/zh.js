@@ -36,7 +36,10 @@ export default {
 
 	// Auth banner
 	authFailed: "登录失效 — 需要重新认证",
-	login: "登录",
+	login: "登录小红书",
+	streaming: "等待扫码...",
+	loginDone: "登录成功",
+	loginFailed: "登录失败 — 请重试",
 
 	// Post type labels
 	postType: {

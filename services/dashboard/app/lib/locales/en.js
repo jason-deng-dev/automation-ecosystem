@@ -36,7 +36,10 @@ export default {
 
 	// Auth banner
 	authFailed: "Auth failed — re-authentication required",
-	login: "Login",
+	login: "Login to XHS",
+	streaming: "Waiting for QR scan...",
+	loginDone: "Login successful",
+	loginFailed: "Login failed — try again",
 
 	// Post type labels
 	postType: {
