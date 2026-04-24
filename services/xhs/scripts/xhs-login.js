@@ -17,7 +17,6 @@ const browser = await chromium.launch({
 		'--disable-background-timer-throttling',
 		'--disable-backgrounding-occluded-windows',
 		'--disable-renderer-backgrounding',
-		'--disable-gpu',
 		'--use-gl=swiftshader',
 	],
 });
@@ -78,6 +77,10 @@ try {
 	await page.bringToFront();
 	emit({ type: 'log', msg: 'Login box visible on creator, clicking QR...' });
 	await page.locator('.login-box-container img').click();
+	await page.evaluate(() => {
+		window.dispatchEvent(new Event('focus'));
+		document.dispatchEvent(new Event('visibilitychange'));
+	});
 	emit({ type: 'log', msg: `URL after click: ${page.url()}` });
 	await page.waitForTimeout(3000);
 	emit({ type: 'log', msg: `URL after 3s: ${page.url()}` });
