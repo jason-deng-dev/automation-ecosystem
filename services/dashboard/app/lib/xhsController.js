@@ -11,6 +11,48 @@ function broadcast(line) {
 	for (const sub of subscribers) sub(line);
 }
 
+let manualPostProc = null;
+let manualPostBuffer = [];
+const manualPostSubscribers = new Set();
+
+function broadcastManualPost(line) {
+	manualPostBuffer.push(line);
+	if (manualPostBuffer.length > 200) manualPostBuffer.shift();
+	for (const sub of manualPostSubscribers) sub(line);
+}
+
+export function runManualPost(type) {
+	if (manualPostProc) return;
+	manualPostBuffer = [];
+	manualPostProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/run-manualPost.js', type], {
+		stdio: ['ignore', 'pipe', 'pipe'],
+	});
+	manualPostProc.stdout.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcastManualPost);
+	});
+	manualPostProc.stderr.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcastManualPost);
+	});
+	manualPostProc.on('exit', (code) => {
+		console.log('[manual-post exit]', code);
+		manualPostProc = null;
+	});
+}
+
+export function subscribeManualPost(callback) {
+	manualPostSubscribers.add(callback);
+	manualPostBuffer.forEach(callback);
+	return () => manualPostSubscribers.delete(callback);
+}
+
+export function getManualPostProc() {
+	return manualPostProc;
+}
+
+export function killManualPost() {
+	if (manualPostProc) { manualPostProc.kill(); manualPostProc = null; }
+}
+
 export function runReAuth() {
 	if (reAuthProc) return;
 	eventBuffer = [];

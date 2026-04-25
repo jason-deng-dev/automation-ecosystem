@@ -139,20 +139,29 @@ async function checkAuth() {
 	await page.route(/\.(woff2?|ttf|otf|eot)(\?.*)?$/, route => route.abort());
 
 	try {
+		console.log('checkAuth: navigating to creator.xiaohongshu.com...');
 		await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
+		console.log(`checkAuth: creator page loaded — URL: ${page.url()}`);
 		await humanDelay(2000, 4000);
-		if (await page.locator('.login-box-container').isVisible()) {
+		const creatorLoginVisible = await page.locator('.login-box-container').isVisible();
+		console.log(`checkAuth: creator login-box-container visible: ${creatorLoginVisible}`);
+		if (creatorLoginVisible) {
 			throw new Error('Authentication expired — re-login required');
 		}
 
+		console.log('checkAuth: navigating to www.xiaohongshu.com profile...');
 		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note', { waitUntil: 'commit' });
+		console.log(`checkAuth: xhs.com page loaded — URL: ${page.url()}`);
 		await humanDelay(2000, 4000);
-		if (await page.locator('.login-container').isVisible()) {
+		const xhsLoginVisible = await page.locator('.login-container').isVisible();
+		console.log(`checkAuth: xhs.com login-container visible: ${xhsLoginVisible}`);
+		if (xhsLoginVisible) {
 			throw new Error('Authentication expired — re-login required');
 		}
-		console.log('Authentication successful');
+		console.log('checkAuth: authentication successful');
 		return true;
 	} catch (err) {
+		console.error(`checkAuth error: ${err.message}`);
 		if (err.message.includes('Authentication')) {
 			throw new Error('Authentication expired — re-login required');
 		}
