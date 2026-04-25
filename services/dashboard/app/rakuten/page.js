@@ -2,12 +2,10 @@ export const dynamic = 'force-dynamic';
 import { rakutenPool } from '@/app/lib/db/pool';
 import RakutenConfigEditor from '@/app/ui/RakutenConfigEditor';
 import RakutenTriggerButton from '@/app/ui/RakutenTriggerButton';
-import en from '@/app/lib/locales/en';
-import zh from '@/app/lib/locales/zh';
+import { getDict } from '@/app/lib/dict';
 
 export default async function RakutenPage() {
-	const lang = process.env.NEXT_PUBLIC_LANG || 'en';
-	const dict = lang === 'en' ? en : zh;
+	const dict = await getDict();
 
 	const [configRes, runLogsRes, importLogsRes] = await Promise.all([
 		rakutenPool.query(`SELECT * FROM config WHERE id = 1`),

@@ -2,13 +2,10 @@ export const dynamic = 'force-dynamic';
 import XhsMetric from "./ui/xhsMetrics";
 import ScraperMetric from "./ui/scraperMetrics";
 import RakutenMetric from "./ui/rakutenMetrics";
-import en from "./lib/locales/en";
-import zh from "./lib/locales/zh";
+import { getDict } from "./lib/dict";
 
-export default function Home() {
-	const lang = process.env.NEXT_PUBLIC_LANG || "en";
-
-	const dict = lang === "en" ? en : zh;
+export default async function Home() {
+	const dict = await getDict();
 
 	return (
 		<div className="flex flex-row h-full gap-4">

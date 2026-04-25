@@ -1,12 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { ecosystemPool } from '@/app/lib/db/pool';
 import ScraperTriggerButton from '@/app/ui/ScraperTriggerButton';
-import en from '@/app/lib/locales/en';
-import zh from '@/app/lib/locales/zh';
+import { getDict } from '@/app/lib/dict';
 
 export default async function ScraperPage() {
-	const lang = process.env.NEXT_PUBLIC_LANG || 'en';
-	const dict = lang === 'en' ? en : zh;
+	const dict = await getDict();
 
 	const [runHistoryRes, racesRes, lastRunRes] = await Promise.all([
 		ecosystemPool.query(
