@@ -16,10 +16,17 @@ export async function GET() {
 			};
 
 			const unsubscribe = subscribeRakutenSync(enqueue);
+
+			const keepalive = setInterval(() => {
+				if (closed) return;
+				try { controller.enqueue(encoder.encode(': ping\n\n')); } catch { closed = true; }
+			}, 15000);
+
 			const proc = getRakutenProc();
 			const onExit = () => {
 				if (closed) return;
 				closed = true;
+				clearInterval(keepalive);
 				unsubscribe();
 				try { controller.close(); } catch {}
 			};
@@ -27,11 +34,12 @@ export async function GET() {
 				proc.once('exit', onExit);
 			} else {
 				closed = true;
+				clearInterval(keepalive);
 				unsubscribe();
 				try { controller.close(); } catch {}
 			}
 
-			return () => { closed = true; unsubscribe(); proc?.off('exit', onExit); };
+			return () => { closed = true; clearInterval(keepalive); unsubscribe(); proc?.off('exit', onExit); };
 		},
 	});
 
