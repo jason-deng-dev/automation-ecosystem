@@ -7,6 +7,7 @@ const rakutenAPI_1 = require("./services/rakutenAPI");
 const queries_1 = require("./db/queries");
 const woocommerceAPI_1 = require("./services/woocommerceAPI");
 const claudeAPI_1 = require("./services/claudeAPI");
+const utils_1 = require("./utils");
 // |`POST`|`/api/push/bulk`|Fetch top N per genre from Ranking API → normalize → price → push to WooCommerce|
 // |`GET`|`/api/products`|Products stored in PostgreSQL (by genre or category)|
 // |`GET`|`/api/products/:itemCode`|Single product detail|
@@ -32,8 +33,14 @@ async function itemRequestByKeyword(keywordZH) {
         const { searchFillThreshold } = await (0, queries_1.getConfig)();
         console.log(`[request] searchFillThreshold: ${searchFillThreshold}`);
         // 1. Rakuten keyword search (count from searchFillThreshold in DB config)
-        const res = await (0, rakutenAPI_1.getProductsByKeyword)(keywordZH, searchFillThreshold);
-        if (!res) {
+        let res = await (0, rakutenAPI_1.getProductsByKeyword)(keywordZH, searchFillThreshold);
+        if (!res || res.length === 0) {
+            console.log(`[request] Rakuten returned 0 results — retrying with English translation`);
+            const englishKeyword = await (0, utils_1.translateKeyword)(keywordZH);
+            await new Promise(res => setTimeout(res, 1000));
+            res = await (0, rakutenAPI_1.getProductsByKeyword)(englishKeyword, searchFillThreshold);
+        }
+        if (!res || res.length === 0) {
             console.log(`[request] Rakuten returned no results — aborting`);
             log.errors.push(`Rakuten returned no results for keyword: ${keywordZH}`);
             return { success: false };

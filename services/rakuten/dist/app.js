@@ -36,11 +36,25 @@ app.post("/api/request-product", rateLimiter_1.productRequestLimiter, async (req
     res.json(result);
 });
 app.post("/api/config", async (req, res) => {
-    const { key, value } = req.body;
+    var _a;
+    const snakeToCamel = {
+        yen_to_yuan: 'yenToYuan',
+        markup_percent: 'markupPercent',
+        search_fill_threshold: 'searchFillThreshold',
+        products_per_category: 'productsPerCategory',
+    };
+    const rawKey = req.body.key;
+    const key = (_a = snakeToCamel[rawKey]) !== null && _a !== void 0 ? _a : rawKey;
+    const value = req.body.value;
     console.log(`[api] POST /api/config — ${key} = ${value}`);
     await (0, queries_1.updateConfig)(key, value);
     await (0, pricing_1.reloadConfig)();
     await (0, woocommerceAPI_1.updatePrices)();
+    res.json({ success: true });
+});
+// triggers runWeeklySync()
+app.post("/api/sync", async (req, res) => {
+    await (0, runWeeklySync_1.default)();
     res.json({ success: true });
 });
 async function start() {

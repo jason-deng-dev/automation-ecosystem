@@ -5,9 +5,7 @@ require("dotenv/config");
 const utils_1 = require("../utils");
 const getProductsByKeyword = async (keyword, count, sortMode = 'standard') => {
     var _a;
-    const translatedKeyword = await (0, utils_1.translateKeyword)(keyword);
-    console.log(`keyword: "${keyword}" → translated: "${translatedKeyword}"`);
-    const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&keyword=${translatedKeyword}&hits=${count}&availability=1&applicationId=${process.env.RAKUTEN_APP_ID}&sort=${sortMode}`;
+    const itemSearchEndpoint = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?format=json&keyword=${encodeURIComponent(keyword)}&hits=${count}&availability=1&field=0&applicationId=${process.env.RAKUTEN_APP_ID}&sort=${sortMode}`;
     try {
         const res = await fetch(itemSearchEndpoint, {
             headers: {

@@ -228,6 +228,8 @@
   - [x] POST /api/config — update config row in DB + reload pricing + re-push prices (already implemented)
   - Note: `POST /api/trigger-category` removed — redundant; update `productsPerCategory` in config + trigger `/api/sync` achieves the same result
   - Note: dashboard reads pipeline state, run logs, product stats from DB directly — tracked in dashboard checklist
+  - [x] Bug fix: `runWeeklySync.ts` was never invoked — script only exported the function; added self-call `runWeeklySync().catch(console.error)` at module bottom
+  - [x] Bug fix: stale dist — `getCategoryIds()` was compiled to module top level (unawaited Promise); rebuilt dist so it runs inside the async function as intended
 
 ---
 

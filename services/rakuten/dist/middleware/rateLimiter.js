@@ -13,7 +13,7 @@ redisClient.connect().catch((err) => {
 });
 exports.productRequestLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 5,
+    limit: 100,
     standardHeaders: "draft-8",
     legacyHeaders: false,
     store: new rate_limit_redis_1.RedisStore({

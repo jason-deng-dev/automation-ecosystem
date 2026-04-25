@@ -337,14 +337,17 @@ function cleanTitle(name) {
 async function translateKeyword(keyword) {
     const hasChinese = /[\u4e00-\u9fff]/.test(keyword);
     if (!hasChinese) {
-        console.log(`[translateKeyword] no Chinese detected — using keyword as-is: "${keyword}"`);
+        console.log(`[translateKeyword] no Chinese — using as-is: "${keyword}"`);
         return keyword;
     }
     const deeplClient = new deepl.DeepLClient(process.env.DEEPL_API_KEY);
-    const result = await deeplClient.translateText(keyword, "zh", "ja");
+    const result = await deeplClient.translateText(keyword, "zh", "en-US");
+    console.log(`[translateKeyword] "${keyword}" → "${result.text}"`);
     return result.text;
 }
 async function translateNames(normalizedItems) {
+    if (normalizedItems.length === 0)
+        return [];
     const names = normalizedItems.map((product) => cleanTitle(product.itemName).title);
     console.log(`translating ${names.length} product names via DeepL...`);
     const deeplClient = new deepl.DeepLClient(process.env.DEEPL_API_KEY);
