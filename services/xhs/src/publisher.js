@@ -61,20 +61,24 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.keyboard.press('Control+V');
 
 		// content body: hook (H1) + each section (H2 subtitle + body) + cta
+		// clipboard paste used throughout — keyboard.type() fails to insert Chinese in headless mode
 		console.log('Filling body...');
 		await page.locator('[data-placeholder="输入文字，内容将自动保存"]').click();
 		await page.keyboard.press('Control+Alt+1');
-		await page.keyboard.type(hook);
+		await page.evaluate(async (text) => navigator.clipboard.writeText(text), hook);
+		await page.keyboard.press('Control+V');
 		await page.keyboard.press('Enter');
 		for (const c of contents) {
 			await page.keyboard.press('Control+Alt+2');
-			await page.keyboard.type(c.subtitle);
-
-			await page.keyboard.type(c.body);
+			await page.evaluate(async (text) => navigator.clipboard.writeText(text), c.subtitle);
+			await page.keyboard.press('Control+V');
+			await page.evaluate(async (text) => navigator.clipboard.writeText(text), c.body);
+			await page.keyboard.press('Control+V');
 			await page.keyboard.press('Enter');
 		}
 		await page.keyboard.press('Control+Alt+1');
-		await page.keyboard.type(cta);
+		await page.evaluate(async (text) => navigator.clipboard.writeText(text), cta);
+		await page.keyboard.press('Control+V');
 		await page.keyboard.press('Enter');
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
