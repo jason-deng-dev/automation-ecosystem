@@ -180,7 +180,7 @@ async function publishPost(
 		console.log("Profile loaded, waiting for posts...");
 		
 		for (let i = 0; i < 10; i++) {
-			console.log(`Waiting and screenshot (attempt ${i + 1})...`);
+			console.log(`Waiting (attempt ${i + 1}) — URL: ${page.url()}`);
 			await screenshot();
 			await humanDelay(800, 1500);
 		}
