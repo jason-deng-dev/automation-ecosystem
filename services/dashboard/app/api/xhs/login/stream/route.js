@@ -1,4 +1,4 @@
-import { subscribeReAuth, getReAuthProc } from "@/app/lib/xhsController";
+import { subscribeReAuth, getReAuthProc, killReAuth } from "@/app/lib/xhsController";
 export const runtime = 'nodejs';
 
 export async function GET() {
@@ -31,7 +31,7 @@ export async function GET() {
 				try { controller.close(); } catch {}
 			}
 
-			return () => { closed = true; unsubscribe(); };
+			return () => { closed = true; unsubscribe(); killReAuth(); };
 		},
 	});
 
