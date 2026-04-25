@@ -104,10 +104,17 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await humanDelay(10000, 10000);
 		console.log(`URL after 一键排版: ${page.url()}`);
 		await screenshot();
-		const nextCount = await page.locator('text=下一步').count();
-		console.log(`Playwright text=下一步 count: ${nextCount}`);
+		const frameUrls = page.frames().map(f => f.url());
+		console.log(`Frames after 一键排版: ${JSON.stringify(frameUrls)}`);
+		for (const frame of page.frames()) {
+			const count = await frame.locator('text=下一步').count();
+			if (count > 0) console.log(`Found 下一步 in frame: ${frame.url()}`);
+		}
 		console.log('Clicking 下一步...');
-		await page.locator('text=下一步').first().click();
+		await page.frameLocator('iframe').locator('text=下一步').first().click().catch(async () => {
+			console.log('frameLocator failed, trying page-level click');
+			await page.locator('text=下一步').first().click();
+		});
 		await humanDelay(10000, 10000);
 		await screenshot();
 		console.log(`After 下一步 — URL: ${page.url()}`);
