@@ -73,23 +73,18 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	console.log('Starting post publish...');
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
-		console.log(`URL after goto: ${page.url()}`);
 		await humanDelay(3000, 8000);
 		console.log('Clicking 写长文 tab...');
 		await page.locator('.creator-tab:not([aria-hidden])', { hasText: '写长文' }).click();
-		console.log(`URL after 写长文 click: ${page.url()}`);
 
 		console.log('Clicking 新的创作...');
 		await page.getByText('新的创作').click();
 		await humanDelay(5000, 8000);
-		console.log(`URL after 新的创作 click: ${page.url()}`);
 		await screenshot();
 
 		console.log('Filling title...');
 		await page.getByPlaceholder('输入标题').click();
 		await page.keyboard.type(title);
-		const titleValue = await page.getByPlaceholder('输入标题').inputValue().catch(() => 'N/A');
-		console.log(`Title field value: "${titleValue}"`);
 
 		// content body — dispatch ClipboardEvent directly into ProseMirror (more reliable than
 		// navigator.clipboard + Ctrl+V in headless, where clipboard permissions are unreliable)
@@ -118,32 +113,18 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await pasteText(cta);
 		await page.keyboard.press('Enter');
 
-		const charCount = await page.locator('text=/字数/').first().textContent().catch(() => 'unknown');
-		console.log(`Body char count: ${charCount}`);
 		await screenshot();
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
 		await waitForImageGeneration();
-		console.log(`URL after 一键排版: ${page.url()}`);
-		const frameUrls = page.frames().map(f => f.url());
-		console.log(`Frames after 一键排版: ${JSON.stringify(frameUrls)}`);
-		for (const frame of page.frames()) {
-			const count = await frame.locator('text=下一步').count();
-			if (count > 0) console.log(`Found 下一步 in frame: ${frame.url()}`);
-		}
 		for (let i = 0; i < 3; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
 			await page.locator('text=下一步').first().click().catch(() => {});
-			await screenshot();
-			await screenshotWait(5000);
 			const descExists = await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').count();
 			if (descExists > 0) { console.log('Description field found — proceeding'); break; }
 		}
 		await humanDelay(800, 1000);
 		await screenshot();
-
-
-		console.log(`After 下一步 — URL: ${page.url()}`);
 		console.log('Waiting for description field...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 60000 });
 
@@ -176,12 +157,15 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 			outputTokens: output_tokens ?? 0,
 			published: true,
 		});
+
+
+		
 		await page.waitForTimeout(3000);
 		await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note');
-		await humanDelay(3000, 8000);
+		await humanDelay(15000, 20000);
 		await page.waitForSelector('#userPostedFeeds .note-item');
 		await page.locator('#userPostedFeeds .note-item').first().click();
-
+		await humanDelay(10000, 12000);
 		console.log('Posting comments...');
 		for (const [i, comment] of comments.entries()) {
 			try {
@@ -190,7 +174,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 				await page.locator('#content-textarea').click();
 				await page.keyboard.type(comment);
 				await page.getByRole('button', { name: '发送' }).click();
-				await page.waitForTimeout(4000);
+				await page.waitForTimeout(8000);
 			} catch (err) {
 				console.error(`Comment ${i + 1} failed: ${err.message}`);
 			}
