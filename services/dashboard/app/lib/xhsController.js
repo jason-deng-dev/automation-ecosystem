@@ -27,14 +27,19 @@ export function runManualPost(type) {
 	manualPostProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/run-manualPost.js', type], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
+	let stdoutBuf = '';
 	manualPostProc.stdout.on('data', (chunk) => {
-		chunk.toString().split('\n').filter(Boolean).forEach(broadcastManualPost);
+		stdoutBuf += chunk.toString();
+		const lines = stdoutBuf.split('\n');
+		stdoutBuf = lines.pop();
+		lines.filter(Boolean).forEach(broadcastManualPost);
 	});
 	manualPostProc.stderr.on('data', (chunk) => {
 		chunk.toString().split('\n').filter(Boolean).forEach(broadcastManualPost);
 	});
 	manualPostProc.on('exit', (code) => {
 		console.log('[manual-post exit]', code);
+		if (stdoutBuf.trim()) broadcastManualPost(stdoutBuf.trim());
 		manualPostProc = null;
 	});
 }
