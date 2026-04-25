@@ -167,6 +167,7 @@
   - [x] Add `humanDelay(min, max)` helper — random sleep between min/max ms, applied between all major actions
   - [x] Add random 3–8s page dwell after navigation before first interaction
   - [x] Add ±15–30 min random offset to actual post time inside publisher (cron fires at 21:00, post lands 20:30–21:30)
+  - [x] Manual posts skip random offset — `skipOffset: true` threads from run-manualPost.js → scheduler.Run() → publishPost()
 
 - [x] Docker & Deploy
   - [x] Write Dockerfile (XHS container)

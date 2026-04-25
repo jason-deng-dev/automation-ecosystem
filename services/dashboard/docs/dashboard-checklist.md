@@ -53,6 +53,9 @@
   - [x] "Run Scraper Now" trigger button — `POST /api/scraper/trigger` (non-blocking docker exec)
   - [x] Collapsible sections with chevron indicator
   - [x] Fixed column widths + whitespace-nowrap
+  - [x] Live log panel on trigger button — SSE stream, lingers on failure, ✕ close
+  - [x] Log persist on reload — mount-time GET /api/scraper/trigger restores buffer, reconnects stream if running
+  - [x] Log panel full-width — ScraperTriggerButton moved below header, not inside w-48 wrapper
 
 ---
 
@@ -62,9 +65,11 @@
   - [x] Pricing config editor — inline editable fields, save calls rakuten service
     - [x] `GET /api/rakuten/config` — query `config` table
     - [x] `POST /api/rakuten/config` — proxy to rakuten `POST /api/config`
-  - [x] "Run Sync Now" trigger button — `POST /api/rakuten/sync` (proxies to rakuten service)
+  - [x] "Run Sync Now" trigger button — `POST /api/rakuten/sync` via docker exec (replaces HTTP proxy to rakuten service)
   - [x] Import log table: timestamp, product name, status, error message (inline query in page.js)
   - [x] Run log table: timestamp, operation, products fetched/pushed/stale deleted, errors (inline query in page.js)
+  - [x] Live log panel on trigger button — SSE stream, lingers on failure, ✕ close
+  - [x] Log persist on reload — mount-time GET /api/rakuten/sync restores buffer, reconnects stream if running
 
 ---
 
@@ -77,6 +82,13 @@
   - [x] `GET /api/xhs/login/stream` — SSE stream; emits `qr-src` (data URI) when QR ready, `qr-scanned` on nav, `done` on success
   - [x] Add `runReAuth()` to `xhsController.js`
   - [x] Client component: renders QR data URI directly (no screenshot streaming); two-step login (creator + xhs.com)
+  - [x] Auth banner clears after successful re-login — XhsAuthBanner client component, hides via onDone callback
+
+- [x] XHS manual trigger live log
+  - [x] Live log panel — SSE stream on trigger, lingers on failure, ✕ close
+  - [x] Log persist on reload — mount-time GET /api/xhs/trigger restores buffer, reconnects stream if running
+  - [x] Post type selector dropdown in trigger panel
+  - [x] Manual posts skip random offset — skipOffset:true passed through Run() → publishPost()
 
 ---
 
