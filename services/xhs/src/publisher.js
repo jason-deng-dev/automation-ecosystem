@@ -175,7 +175,7 @@ async function publishPost(
 		await page.waitForTimeout(3000);
 		console.log("Navigating to profile...");
 		await page.goto("https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note", {
-			timeout: 60000,
+			waitUntil: "commit",
 		});
 		console.log("Profile loaded, waiting for posts...");
 		await screenshot();
