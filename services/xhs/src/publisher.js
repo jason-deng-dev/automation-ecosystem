@@ -48,6 +48,14 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		console.log(`SCREENSHOT:${buf.toString('base64')}`);
 	};
 
+	const screenshotWait = async (ms) => {
+		const end = Date.now() + ms;
+		while (Date.now() < end) {
+			await screenshot();
+			await page.waitForTimeout(1000);
+		}
+	};
+
 	const waitForImageGeneration = async (timeout = 90000) => {
 		const end = Date.now() + timeout;
 		while (Date.now() < end) {
@@ -125,8 +133,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		}
 		console.log('Clicking 下一步...');
 		await page.locator('text=下一步').first().click();
-		await humanDelay(10000, 10000);
-		await screenshot();
+		await screenshotWait(15000);
 		console.log(`After 下一步 — URL: ${page.url()}`);
 		console.log('Waiting for description field...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 60000 });
