@@ -43,6 +43,11 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	const page = await context.newPage();
 
+	const screenshot = async () => {
+		const buf = await page.screenshot({ type: 'jpeg', quality: 55 });
+		console.log(`SCREENSHOT:${buf.toString('base64')}`);
+	};
+
 	console.log('Starting post publish...');
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
@@ -56,6 +61,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.getByText('新的创作').click();
 		await humanDelay(5000, 8000);
 		console.log(`URL after 新的创作 click: ${page.url()}`);
+		await screenshot();
 
 		console.log('Filling title...');
 		await page.getByPlaceholder('输入标题').click();
@@ -92,17 +98,18 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 
 		const charCount = await page.locator('text=/字数/').first().textContent().catch(() => 'unknown');
 		console.log(`Body char count: ${charCount}`);
+		await screenshot();
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
 		await humanDelay(10000, 10000);
 		console.log(`URL after 一键排版: ${page.url()}`);
-		await page.screenshot({ path: '/tmp/xhs-after-layout.png', fullPage: true });
-		console.log('Screenshot saved to /tmp/xhs-after-layout.png');
+		await screenshot();
 		const nextCount = await page.locator('text=下一步').count();
 		console.log(`Playwright text=下一步 count: ${nextCount}`);
 		console.log('Clicking 下一步...');
 		await page.locator('text=下一步').first().click();
 		await humanDelay(10000, 10000);
+		await screenshot();
 		console.log(`After 下一步 — URL: ${page.url()}`);
 		console.log('Waiting for description field...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 60000 });

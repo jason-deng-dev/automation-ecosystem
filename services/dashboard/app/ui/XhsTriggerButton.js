@@ -10,12 +10,16 @@ function inferStatus(logs) {
 	return 'done';
 }
 
-function connectStream(url, setLogs, setStatus, esRef, doneKeyword) {
+function connectStream(url, setLogs, setStatus, esRef, doneKeyword, setScreenshot) {
 	const es = new EventSource(url);
 	esRef.current = es;
 	let settled = false;
 	es.onmessage = (e) => {
 		const line = e.data;
+		if (line.startsWith('SCREENSHOT:')) {
+			setScreenshot?.(line.slice('SCREENSHOT:'.length));
+			return;
+		}
 		setLogs(prev => [...prev, line]);
 		if (line.includes(doneKeyword)) { settled = true; setStatus('done'); es.close(); }
 		else if (line.includes('error') || line.includes('Error') || line.includes('failed')) { settled = true; setStatus('error'); }
@@ -27,6 +31,7 @@ export default function XhsTriggerButton({ dict }) {
 	const [postType, setPostType] = useState('race');
 	const [status, setStatus] = useState('idle');
 	const [logs, setLogs] = useState([]);
+	const [screenshot, setScreenshot] = useState(null);
 	const [hovered, setHovered] = useState(false);
 	const esRef = useRef(null);
 	const logsContainerRef = useRef(null);
@@ -36,12 +41,15 @@ export default function XhsTriggerButton({ dict }) {
 			.then(r => r.json())
 			.then(({ running, logs: buffered }) => {
 				if (!buffered.length) return;
-				setLogs(buffered);
+				const textLogs = buffered.filter(l => !l.startsWith('SCREENSHOT:'));
+				const lastShot = [...buffered].reverse().find(l => l.startsWith('SCREENSHOT:'));
+				setLogs(textLogs);
+				if (lastShot) setScreenshot(lastShot.slice('SCREENSHOT:'.length));
 				if (running) {
 					setStatus('running');
-					connectStream('/api/xhs/trigger/stream', setLogs, setStatus, esRef, 'Manual post complete');
+					connectStream('/api/xhs/trigger/stream', setLogs, setStatus, esRef, 'Manual post complete', setScreenshot);
 				} else {
-					setStatus(inferStatus(buffered));
+					setStatus(inferStatus(textLogs));
 				}
 			})
 			.catch(() => {});
@@ -65,7 +73,7 @@ export default function XhsTriggerButton({ dict }) {
 				body: JSON.stringify({ postType }),
 			});
 			if (!res.ok) throw new Error();
-			connectStream('/api/xhs/trigger/stream', setLogs, setStatus, esRef, 'Manual post complete');
+			connectStream('/api/xhs/trigger/stream', setLogs, setStatus, esRef, 'Manual post complete', setScreenshot);
 		} catch {
 			setStatus('error');
 		}
@@ -76,6 +84,7 @@ export default function XhsTriggerButton({ dict }) {
 		fetch('/api/xhs/trigger', { method: 'DELETE' });
 		setStatus('idle');
 		setLogs([]);
+		setScreenshot(null);
 	}
 
 	const color = { idle: '#EDEDED', running: '#F5A623', done: '#3ECF8E', error: '#C8102E' }[status];
@@ -108,7 +117,7 @@ export default function XhsTriggerButton({ dict }) {
 				{label}
 			</button>
 
-			{logs.length > 0 && (
+			{(logs.length > 0 || screenshot) && (
 				<div style={{ border: '1px solid #2A2A2A', backgroundColor: '#0A0A0A', overflow: 'hidden' }}>
 					<div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid #1A1A1A' }}>
 						<span className="text-xs font-medium tracking-wide uppercase" style={{ color }}>
@@ -118,6 +127,13 @@ export default function XhsTriggerButton({ dict }) {
 							<button onClick={handleClose} style={{ color: '#555555', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
 						)}
 					</div>
+					{screenshot && (
+						<img
+							src={`data:image/jpeg;base64,${screenshot}`}
+							alt="Browser state"
+							style={{ width: '100%', display: 'block', borderBottom: '1px solid #1A1A1A' }}
+						/>
+					)}
 					<div ref={logsContainerRef} style={{ height: '200px', overflowY: 'auto', overflowX: 'hidden', padding: '10px', fontFamily: 'monospace', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
 						{logs.map((line, i) => (
 							<span key={i} style={{
