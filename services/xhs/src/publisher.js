@@ -47,7 +47,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
 		await humanDelay(3000, 8000);
-		await page.getByText('写长文').first().click();
+		await page.locator('.creator-tab', { hasText: '写长文' }).click();
 
 		await page.getByText('新的创作').click();
 		// title — clipboard paste fires real browser paste events, unlike fill() which sets DOM value directly
