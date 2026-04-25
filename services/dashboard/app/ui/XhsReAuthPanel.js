@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
-export default function XhsReAuthPanel({ dict }) {
+export default function XhsReAuthPanel({ dict, onDone }) {
 	const [status, setStatus] = useState('idle'); // idle | starting | streaming | done | error
 	const [frame, setFrame] = useState(null);
 	const [qrSrc, setQrSrc] = useState(null);
@@ -31,7 +31,7 @@ export default function XhsReAuthPanel({ dict }) {
 					if (msg.type === 'qr-src') setQrSrc(msg.data);
 					if (msg.type === 'qr-scanned') setQrSrc(null);
 					if (msg.type === 'log') setLogs(prev => [...prev, msg.msg]);
-					if (msg.type === 'done') { setStatus('done'); es.close(); }
+					if (msg.type === 'done') { setStatus('done'); es.close(); onDone?.(); }
 					if (msg.type === 'error') { setStatus('error'); es.close(); }
 				} catch {}
 			};

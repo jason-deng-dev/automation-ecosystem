@@ -1,5 +1,5 @@
 import { getXhsMetrics } from '../lib/xhsController';
-import XhsReAuthPanel from './XhsReAuthPanel';
+import XhsAuthBanner from './XhsAuthBanner';
 
 function timeUntil(slot) {
 	const now = new Date();
@@ -32,12 +32,7 @@ export default async function XhsMetric({ dict }) {
 						{dict.pipelineStateValue[pipelineState] ?? pipelineState}
 					</span>
 				</div>
-				{authStatus === 'failed' && (
-					<div className="flex flex-col gap-2 border border-accent px-3 py-3" style={{ backgroundColor: 'rgba(200,16,46,0.08)' }}>
-						<span className="text-sm font-medium" style={{ color: '#C8102E' }}>{dict.authFailed}</span>
-						<XhsReAuthPanel dict={dict} />
-					</div>
-				)}
+				<XhsAuthBanner dict={dict} initialVisible={authStatus === 'failed'} />
 				<div className="flex justify-between text-base">
 					<span className="text-text-secondary">{dict.lastRun}</span>
 					<span className="font-medium">
