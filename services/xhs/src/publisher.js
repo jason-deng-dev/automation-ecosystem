@@ -96,12 +96,14 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.getByText('一键排版').click();
 		await humanDelay(10000, 10000);
 		console.log(`URL after 一键排版: ${page.url()}`);
-		const allButtons = await page.evaluate(() =>
-			[...document.querySelectorAll('button')].map(b => `[${b.className}] "${b.textContent.trim()}"`)
+		const frameUrls = page.frames().map(f => f.url());
+		console.log(`Frames: ${JSON.stringify(frameUrls)}`);
+		const nextEls = await page.evaluate(() =>
+			[...document.querySelectorAll('*')].filter(el => el.children.length === 0 && el.textContent.trim() === '下一步').map(el => `<${el.tagName} class="${el.className}">`)
 		);
-		console.log(`Buttons on page: ${JSON.stringify(allButtons)}`);
+		console.log(`下一步 elements: ${JSON.stringify(nextEls)}`);
 		console.log('Clicking 下一步...');
-		await page.getByRole('button', { name: '下一步' }).click();
+		await page.locator('text=下一步').first().click();
 		await humanDelay(10000, 10000);
 		console.log(`After 下一步 — URL: ${page.url()}`);
 		console.log('Waiting for description field...');
