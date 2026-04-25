@@ -1,8 +1,8 @@
-import { subscribeManualPost, getManualPostProc, killManualPost } from "@/app/lib/xhsController";
+import { subscribeManualPost, getManualPostProc, getManualPostBuffer } from "@/app/lib/xhsController";
 export const runtime = 'nodejs';
 
 export async function GET() {
-	if (!getManualPostProc()) return new Response('No manual post process running', { status: 404 });
+	if (!getManualPostProc() && !getManualPostBuffer().length) return new Response('No manual post process running', { status: 404 });
 
 	const encoder = new TextEncoder();
 	const stream = new ReadableStream({

@@ -11,13 +11,14 @@ function inferStatus(logs) {
 function connectStream(url, setLogs, setStatus, esRef, doneKeyword) {
 	const es = new EventSource(url);
 	esRef.current = es;
+	let settled = false;
 	es.onmessage = (e) => {
 		const line = e.data;
 		setLogs(prev => [...prev, line]);
-		if (line.includes(doneKeyword)) { setStatus('done'); es.close(); }
-		if (line.includes('error') || line.includes('Error') || line.includes('failed')) setStatus('error');
+		if (line.includes(doneKeyword)) { settled = true; setStatus('done'); es.close(); }
+		else if (line.includes('error') || line.includes('Error') || line.includes('failed')) { settled = true; setStatus('error'); }
 	};
-	es.onerror = () => { setStatus('error'); es.close(); };
+	es.onerror = () => { if (!settled) setStatus('error'); es.close(); };
 }
 
 export default function ScraperTriggerButton({ dict }) {
@@ -90,7 +91,7 @@ export default function ScraperTriggerButton({ dict }) {
 			</button>
 
 			{logs.length > 0 && (
-				<div style={{ border: '1px solid #2A2A2A', backgroundColor: '#0A0A0A' }}>
+				<div style={{ border: '1px solid #2A2A2A', backgroundColor: '#0A0A0A', overflow: 'hidden' }}>
 					<div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid #1A1A1A' }}>
 						<span className="text-xs font-medium tracking-wide uppercase" style={{ color }}>
 							{status === 'done' ? '完成' : status === 'error' ? '失败' : '运行中...'}
@@ -99,9 +100,10 @@ export default function ScraperTriggerButton({ dict }) {
 							<button onClick={handleClose} style={{ color: '#555555', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
 						)}
 					</div>
-					<div ref={logsContainerRef} style={{ height: '200px', overflowY: 'auto', padding: '10px', fontFamily: 'monospace', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+					<div ref={logsContainerRef} style={{ height: '200px', overflowY: 'auto', overflowX: 'hidden', padding: '10px', fontFamily: 'monospace', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
 						{logs.map((line, i) => (
 							<span key={i} style={{
+								wordBreak: 'break-all',
 								color: line.includes('error') || line.includes('Error') || line.includes('failed') ? '#C8102E'
 									: line.includes('success') || line.includes('complete') || line.includes('done') ? '#3ECF8E'
 									: '#AAAAAA',

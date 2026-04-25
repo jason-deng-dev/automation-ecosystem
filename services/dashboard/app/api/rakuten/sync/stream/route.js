@@ -1,8 +1,8 @@
-import { subscribeRakutenSync, getRakutenProc, killRakutenSync } from "@/app/lib/rakutenController";
+import { subscribeRakutenSync, getRakutenProc, getRakutenBuffer } from "@/app/lib/rakutenController";
 export const runtime = 'nodejs';
 
 export async function GET() {
-	if (!getRakutenProc()) return new Response('No rakuten sync process running', { status: 404 });
+	if (!getRakutenProc() && !getRakutenBuffer().length) return new Response('No rakuten sync process running', { status: 404 });
 
 	const encoder = new TextEncoder();
 	const stream = new ReadableStream({

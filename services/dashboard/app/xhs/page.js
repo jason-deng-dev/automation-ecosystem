@@ -40,7 +40,7 @@ export default async function XhsPage() {
 			<div className="grid gap-8 items-start" style={{ gridTemplateColumns: '1fr 2fr' }}>
 
 				{/* Left — controls */}
-				<div className="flex flex-col gap-6">
+				<div className="flex flex-col gap-6 min-w-0">
 					<XhsReAuthPanel dict={dict} />
 					<XhsTriggerButton dict={dict} />
 					<XhsScheduleEditor slots={slots} dict={dict} />

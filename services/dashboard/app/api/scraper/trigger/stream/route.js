@@ -1,8 +1,8 @@
-import { subscribeScraperTrigger, getScraperProc, killScraperTrigger } from "@/app/lib/scrapperController";
+import { subscribeScraperTrigger, getScraperProc, getScraperBuffer } from "@/app/lib/scrapperController";
 export const runtime = 'nodejs';
 
 export async function GET() {
-	if (!getScraperProc()) return new Response('No scraper process running', { status: 404 });
+	if (!getScraperProc() && !getScraperBuffer().length) return new Response('No scraper process running', { status: 404 });
 
 	const encoder = new TextEncoder();
 	const stream = new ReadableStream({
