@@ -89,6 +89,10 @@
   - [x] Log persist on reload — mount-time GET /api/xhs/trigger restores buffer, reconnects stream if running
   - [x] Post type selector dropdown in trigger panel
   - [x] Manual posts skip random offset — skipOffset:true passed through Run() → publishPost()
+  - [x] Stream race condition fixed — routes allow SSE entry when buffer non-empty even if proc already exited
+  - [x] onerror no longer clobbers status already set from received log line (settled flag)
+  - [x] Log panel overflow fixed — overflow:hidden + wordBreak:break-all + min-w-0 on column
+  - [x] publisher.js headless:true — was headless:false, crashed in container (no X server)
 
 ---
 

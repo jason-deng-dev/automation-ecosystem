@@ -101,7 +101,9 @@
 - [x] Scraper detail page — races table, run history, failed URLs list, manual trigger button
 - [x] Rakuten detail page — pricing config editor, import log table, run log table, manual sync trigger
 - [x] XHS re-auth flow — headless QR scan + SSE QR emit; auth banner clears client-side on success
-- [x] Live log panels for all 3 triggers (XHS manual, scraper, Rakuten) — SSE stream, buffer replay on reload, no page scroll jump
+- [x] Live log panels for all 3 triggers (XHS manual, scraper, Rakuten) — SSE stream, buffer replay on reload, no page scroll jump, overflow contained
+- [x] Stream race condition fixed — fast processes no longer show 失败 with empty log panel
+- [x] publisher.js headless:true — was crashing in container (no X server)
 - ~~Live container logs (docker logs -f)~~ — scrapped
 - ~~Poll/SSE home cards~~ — scrapped
 - [x] Dockerfile + CI/CD pipeline (cicd-dashboard.yml)
