@@ -60,26 +60,35 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.getByPlaceholder('输入标题').click();
 		await page.keyboard.press('Control+V');
 
-		// content body: hook (H1) + each section (H2 subtitle + body) + cta
-		// clipboard paste used throughout — keyboard.type() fails to insert Chinese in headless mode
+		// content body — dispatch ClipboardEvent directly into ProseMirror (more reliable than
+		// navigator.clipboard + Ctrl+V in headless, where clipboard permissions are unreliable)
+		const pasteText = async (text) => {
+			await page.evaluate((t) => {
+				const dt = new DataTransfer();
+				dt.setData('text/plain', t);
+				document.activeElement.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+			}, text);
+			await page.waitForTimeout(200);
+		};
+
 		console.log('Filling body...');
-		await page.locator('[data-placeholder="输入文字，内容将自动保存"]').click();
+		await page.locator('div.tiptap.ProseMirror[contenteditable="true"]').first().click();
+		await humanDelay(500, 1000);
 		await page.keyboard.press('Control+Alt+1');
-		await page.evaluate(async (text) => navigator.clipboard.writeText(text), hook);
-		await page.keyboard.press('Control+V');
+		await pasteText(hook);
 		await page.keyboard.press('Enter');
 		for (const c of contents) {
 			await page.keyboard.press('Control+Alt+2');
-			await page.evaluate(async (text) => navigator.clipboard.writeText(text), c.subtitle);
-			await page.keyboard.press('Control+V');
-			await page.evaluate(async (text) => navigator.clipboard.writeText(text), c.body);
-			await page.keyboard.press('Control+V');
+			await pasteText(c.subtitle);
+			await pasteText(c.body);
 			await page.keyboard.press('Enter');
 		}
 		await page.keyboard.press('Control+Alt+1');
-		await page.evaluate(async (text) => navigator.clipboard.writeText(text), cta);
-		await page.keyboard.press('Control+V');
+		await pasteText(cta);
 		await page.keyboard.press('Enter');
+
+		const charCount = await page.locator('text=/字数/').first().textContent().catch(() => 'unknown');
+		console.log(`Body char count: ${charCount}`);
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
 		await humanDelay(10000, 10000);
