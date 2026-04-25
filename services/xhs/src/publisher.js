@@ -48,6 +48,14 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		console.log(`SCREENSHOT:${buf.toString('base64')}`);
 	};
 
+	const screenshotWait = async (ms) => {
+		const end = Date.now() + ms;
+		while (Date.now() < end) {
+			await screenshot();
+			await page.waitForTimeout(1000);
+		}
+	};
+
 	console.log('Starting post publish...');
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
@@ -101,9 +109,8 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await screenshot();
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
-		await humanDelay(10000, 10000);
+		await screenshotWait(20000);
 		console.log(`URL after 一键排版: ${page.url()}`);
-		await screenshot();
 		const frameUrls = page.frames().map(f => f.url());
 		console.log(`Frames after 一键排版: ${JSON.stringify(frameUrls)}`);
 		for (const frame of page.frames()) {
