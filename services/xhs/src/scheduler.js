@@ -73,10 +73,6 @@ async function Run(postType) {
 			outcome = 'failed';
 			errorStage = 'auth';
 			errorMsg = err.message;
-
-			if (err.message.includes('Authentication')) {
-				process.exit(1);
-			}
 		}
 
 		let post;
