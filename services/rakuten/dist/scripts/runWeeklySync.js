@@ -6,7 +6,6 @@ const rakutenAPI_1 = require("../services/rakutenAPI");
 const pricing_1 = require("../services/pricing");
 const woocommerceAPI_1 = require("../services/woocommerceAPI");
 const queries_1 = require("../db/queries");
-const categories = (0, queries_1.getCategoryIds)();
 async function runWeeklySync() {
     const log = {
         operation: "weekly_sync",
@@ -16,7 +15,7 @@ async function runWeeklySync() {
         removedStale: 0,
         errors: [],
     };
-    const { productsPerCategory } = await (0, queries_1.getConfig)();
+    const [categories, { productsPerCategory }] = await Promise.all([(0, queries_1.getCategoryIds)(), (0, queries_1.getConfig)(), (0, pricing_1.initPricing)()]);
     console.log("Starting weekly sync...");
     // Step 1: Bump missed_scrapes for all products — upsert will reset to 0 for any product seen this run
     await (0, queries_1.incrementMissedScrapes)();
@@ -98,3 +97,4 @@ async function runWeeklySync() {
         perCategory: Object.fromEntries(byCategory.map((r) => [r.categoryName, { cached: Number(r.total), pushed: Number(r.pushed) }])),
     });
 }
+runWeeklySync().catch(console.error);

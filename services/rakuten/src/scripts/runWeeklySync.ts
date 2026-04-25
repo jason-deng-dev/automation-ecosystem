@@ -122,3 +122,4 @@ export default async function runWeeklySync() {
 	});
 }
 
+runWeeklySync().catch(console.error);
