@@ -115,7 +115,7 @@
     - [x] Catch comment failure — log which comment failed, continue with remaining
     - [x] Add auth pre-flight check for profile/comment page before starting publish flow
     - [x] Fix #login-btn strict mode violation — resolves to 2 elements, use .first()
-    - [x] Fix 写长文 strict mode violation — resolves to 2 elements, use .first()
+    - [x] Fix 写长文 strict mode violation — evolved through 3 iterations: .first() (strict mode) → .creator-tab hasText (pointer intercepted by overlay div) → .creator-tab:not([aria-hidden]) hasText (two creator-tab divs, one aria-hidden)
     - [x] Fix scheduler not stopping on publishPost() returning false — check return value and abort
     - [x] Fix generator crash: "Cannot read properties of undefined (reading 'name')" — cleanName() receiving undefined race when selected race name didn't match races.json due to 【...】 suffix
     - [x] Fix JSON parse crash: added system prompt rule banning all double quotation marks inside JSON string values; use 「」or 《》 as alternatives
@@ -205,6 +205,6 @@
     - Before `generatePost()`, call `getPendingDraft(type)` — if found, use that post, skip generation
     - On generate success + publish fail → call `saveDraft(type, post)`
     - On publish success → if draft was reused, call `markDraftPublished(draft.id)`
-  - [ ] Run migration on VPS: `psql $DATABASE_URL -c "CREATE TABLE IF NOT EXISTS xhs_draft_posts (id SERIAL PRIMARY KEY, post_type VARCHAR(32) NOT NULL, post JSONB NOT NULL, generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), status VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'published')));"`
+  - [x] Run migration on VPS: `psql $DATABASE_URL -c "CREATE TABLE IF NOT EXISTS xhs_draft_posts ..."` — table created, draft save + reuse verified in live run
 
 ---

@@ -107,6 +107,7 @@
 - ~~Live container logs (docker logs -f)~~ — scrapped
 - ~~Poll/SSE home cards~~ — scrapped
 - [x] Dockerfile + CI/CD pipeline (cicd-dashboard.yml)
+- [x] EN/ZH language toggle — cookie-based, applies site-wide via getDict() helper
 - [ ] docker-compose integration
 
 ---

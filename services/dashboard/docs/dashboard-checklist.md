@@ -94,6 +94,12 @@
   - [x] Log panel overflow fixed — overflow:hidden + wordBreak:break-all + min-w-0 on column
   - [x] publisher.js headless:true — was headless:false, crashed in container (no X server)
 
+- [x] EN/ZH language toggle
+  - [x] LangToggle client component — sets lang cookie + reloads; shows 中文/EN depending on current lang
+  - [x] getDict() helper (app/lib/dict.js) — reads lang cookie, falls back to NEXT_PUBLIC_LANG env var, returns { dict, lang }
+  - [x] All pages + layout use getDict() — toggle applies site-wide, not just sidenav
+  - [x] Fix: scraper page crash (lang undefined after getDict refactor) — getDict now returns { dict, lang }, pages destructure
+
 ---
 
 - [ ] Docker & Deploy
