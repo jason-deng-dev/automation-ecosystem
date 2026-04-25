@@ -11,7 +11,7 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const cookieStore = await cookies();
   const lang = cookieStore.get("lang")?.value || process.env.NEXT_PUBLIC_LANG || "en";
-  const dict = await getDict();
+  const { dict } = await getDict();
 
   return (
     <html lang="en" className="h-full">

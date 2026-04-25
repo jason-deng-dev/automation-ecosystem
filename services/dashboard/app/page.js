@@ -5,7 +5,7 @@ import RakutenMetric from "./ui/rakutenMetrics";
 import { getDict } from "./lib/dict";
 
 export default async function Home() {
-	const dict = await getDict();
+	const { dict } = await getDict();
 
 	return (
 		<div className="flex flex-row h-full gap-4">

@@ -5,7 +5,7 @@ import RakutenTriggerButton from '@/app/ui/RakutenTriggerButton';
 import { getDict } from '@/app/lib/dict';
 
 export default async function RakutenPage() {
-	const dict = await getDict();
+	const { dict } = await getDict();
 
 	const [configRes, runLogsRes, importLogsRes] = await Promise.all([
 		rakutenPool.query(`SELECT * FROM config WHERE id = 1`),

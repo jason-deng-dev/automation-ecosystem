@@ -4,7 +4,7 @@ import ScraperTriggerButton from '@/app/ui/ScraperTriggerButton';
 import { getDict } from '@/app/lib/dict';
 
 export default async function ScraperPage() {
-	const dict = await getDict();
+	const { dict, lang } = await getDict();
 
 	const [runHistoryRes, racesRes, lastRunRes] = await Promise.all([
 		ecosystemPool.query(

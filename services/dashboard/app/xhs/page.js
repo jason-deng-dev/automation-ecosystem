@@ -6,7 +6,7 @@ import XhsReAuthPanel from '@/app/ui/XhsReAuthPanel';
 import { getDict } from '@/app/lib/dict';
 
 export default async function XhsPage() {
-	const dict = await getDict();
+	const { dict } = await getDict();
 
 	const [scheduleRes, runLogsRes, archiveRes] = await Promise.all([
 		ecosystemPool.query(`SELECT id, day, time, post_type FROM xhs_schedule ORDER BY day, time`),
