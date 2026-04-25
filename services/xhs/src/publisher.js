@@ -96,6 +96,8 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.getByText('一键排版').click();
 		await humanDelay(10000, 10000);
 		console.log(`URL after 一键排版: ${page.url()}`);
+		await page.screenshot({ path: '/tmp/xhs-after-layout.png', fullPage: true });
+		console.log('Screenshot saved to /tmp/xhs-after-layout.png');
 		const nextCount = await page.locator('text=下一步').count();
 		console.log(`Playwright text=下一步 count: ${nextCount}`);
 		console.log('Clicking 下一步...');
