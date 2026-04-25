@@ -57,11 +57,9 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await humanDelay(5000, 8000);
 		console.log(`URL after 新的创作 click: ${page.url()}`);
 
-		// title — clipboard paste fires real browser paste events, unlike fill() which sets DOM value directly
 		console.log('Filling title...');
-		await page.evaluate(async (text) => navigator.clipboard.writeText(text), title);
 		await page.getByPlaceholder('输入标题').click();
-		await page.keyboard.press('Control+V');
+		await page.keyboard.type(title);
 
 		// content body — dispatch ClipboardEvent directly into ProseMirror (more reliable than
 		// navigator.clipboard + Ctrl+V in headless, where clipboard permissions are unreliable)
