@@ -154,9 +154,9 @@ try {
 }
 emit({ type: 'log', msg: 'xhs.com done.' });
 
-clearInterval(screenshotInterval);
 clearTimeout(timeoutHandle);
 emit({ type: 'log', msg: 'Login successful — auth.json saved.' });
 emit({ type: 'done' });
 await new Promise(r => setTimeout(r, 60000));
+clearInterval(screenshotInterval);
 await browser.close();

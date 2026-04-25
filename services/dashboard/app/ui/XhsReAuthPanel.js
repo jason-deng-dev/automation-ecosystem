@@ -12,14 +12,16 @@ export default function XhsReAuthPanel({ dict, onDone }) {
 	useEffect(() => () => esRef.current?.close(), []);
 
 	async function handleLogin() {
+		esRef.current?.close();
+		await fetch('/api/xhs/login', { method: 'DELETE' });
 		setStatus('starting');
 		setFrame(null);
+		setLogs([]);
+		setQrSrc(null);
 		try {
 			const res = await fetch('/api/xhs/login', { method: 'POST' });
 			if (!res.ok) throw new Error();
 			setStatus('streaming');
-			setLogs([]);
-			setQrSrc(null);
 
 			const es = new EventSource('/api/xhs/login/stream');
 			esRef.current = es;
@@ -31,7 +33,7 @@ export default function XhsReAuthPanel({ dict, onDone }) {
 					if (msg.type === 'qr-src') setQrSrc(msg.data);
 					if (msg.type === 'qr-scanned') setQrSrc(null);
 					if (msg.type === 'log') setLogs(prev => [...prev, msg.msg]);
-					if (msg.type === 'done') { setStatus('done'); es.close(); onDone?.(); }
+					if (msg.type === 'done') { setStatus('done'); onDone?.(); }
 					if (msg.type === 'error') { setStatus('error'); es.close(); }
 				} catch {}
 			};
@@ -77,7 +79,7 @@ export default function XhsReAuthPanel({ dict, onDone }) {
 				{label}
 			</button>
 
-			{status === 'streaming' && (
+			{(status === 'streaming' || status === 'done') && (
 				<div
 					style={{
 						position: 'fixed', inset: 0,
