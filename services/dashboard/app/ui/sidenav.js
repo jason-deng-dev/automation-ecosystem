@@ -1,7 +1,8 @@
 "use client";
 import Link from 'next/link';
+import LangToggle from './LangToggle';
 
-export default function SideNav({ dict }) {
+export default function SideNav({ dict, lang }) {
   const links = [
     { href: '/',        label: dict.nav.home },
     { href: '/xhs',     label: dict.nav.xhs },
@@ -29,6 +30,9 @@ export default function SideNav({ dict }) {
             {label}
           </Link>
         ))}
+      </div>
+      <div className="p-3" style={{borderTop: '1px solid #2A2A2A'}}>
+        <LangToggle lang={lang} />
       </div>
     </nav>
   );

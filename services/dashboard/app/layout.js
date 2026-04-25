@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import SideNav from "@/app/ui/sidenav";
 import en from "./lib/locales/en";
 import zh from "./lib/locales/zh";
@@ -8,14 +9,15 @@ export const metadata = {
   description: "Pipeline monitoring dashboard",
 };
 
-export default function RootLayout({ children }) {
-  const lang = process.env.NEXT_PUBLIC_LANG || "en";
-  const dict = lang === "en" ? en : zh;
+export default async function RootLayout({ children }) {
+  const cookieStore = await cookies();
+  const lang = cookieStore.get("lang")?.value || process.env.NEXT_PUBLIC_LANG || "en";
+  const dict = lang === "zh" ? zh : en;
 
   return (
     <html lang="en" className="h-full">
       <body className="h-full flex flex-row" style={{backgroundColor: '#0A0A0A', color: '#EDEDED'}}>
-        <SideNav dict={dict} />
+        <SideNav dict={dict} lang={lang} />
         <main className="flex-1 p-8 overflow-y-auto">
           {children}
         </main>
