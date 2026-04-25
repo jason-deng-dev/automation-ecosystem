@@ -196,14 +196,15 @@
   - [x] Block font requests to prevent render hangs
   - [ ] End-to-end verified working on VPS
 
-- [ ] Draft post caching — reuse generated posts that failed to publish
-  - [ ] Add `xhs_draft_posts` table — post_type, generated post JSON, generated_at, status ('pending' | 'published')
-  - [ ] `saveDraft(postType, post)` query — INSERT into xhs_draft_posts with status='pending'
-  - [ ] `getPendingDraft(postType)` query — SELECT latest pending draft for this post_type
-  - [ ] `markDraftPublished(id)` query — UPDATE status='published' for given draft id
-  - [ ] Wire into scheduler.js `Run()`:
+- [x] Draft post caching — reuse generated posts that failed to publish
+  - [x] Add `xhs_draft_posts` table — post_type, generated post JSON, generated_at, status ('pending' | 'published')
+  - [x] `saveDraft(postType, post)` query — INSERT into xhs_draft_posts with status='pending'
+  - [x] `getPendingDraft(postType)` query — SELECT latest pending draft for this post_type
+  - [x] `markDraftPublished(id)` query — UPDATE status='published' for given draft id
+  - [x] Wire into scheduler.js `Run()`:
     - Before `generatePost()`, call `getPendingDraft(type)` — if found, use that post, skip generation
     - On generate success + publish fail → call `saveDraft(type, post)`
     - On publish success → if draft was reused, call `markDraftPublished(draft.id)`
+  - [ ] Run migration on VPS: `psql $DATABASE_URL -c "CREATE TABLE IF NOT EXISTS xhs_draft_posts (id SERIAL PRIMARY KEY, post_type VARCHAR(32) NOT NULL, post JSONB NOT NULL, generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), status VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'published')));"`
 
 ---

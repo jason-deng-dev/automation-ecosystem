@@ -1,7 +1,7 @@
 import nodeCron from 'node-cron';
 import { generatePost } from './generator.js';
 import { publishPost, checkAuth } from './publisher.js';
-import { getSchedule, insertRunLog, upsertPipelineState, deleteOldPostHistory } from './db/queries.js';
+import { getSchedule, insertRunLog, upsertPipelineState, deleteOldPostHistory, getPendingDraft, saveDraft, markDraftPublished } from './db/queries.js';
 
 async function startScheduler() {
 	await setupAllDailyCrons();
@@ -76,30 +76,56 @@ async function Run(postType, { skipOffset = false } = {}) {
 		}
 
 		let post;
-		console.log('Starting XHS article generation...');
+		let draft = null;
+
+		// Reuse a pending draft if one exists for this post type — skip generation
 		try {
-			post = await generatePost(type);
-			({ input_tokens, output_tokens } = post);
+			draft = await getPendingDraft(type);
 		} catch (err) {
-			console.error(`Generate post failed: ${err.message}`);
-			outcome = 'failed';
-			errorStage = 'generate';
-			errorMsg = err.message;
-			return;
+			console.error(`Draft lookup failed (will generate fresh): ${err.message}`);
 		}
-		console.log('XHS generation successful');
+
+		if (draft) {
+			post = draft.post;
+			console.log(`Reusing draft post id=${draft.id} from previous failed run — skipping generation`);
+		} else {
+			console.log('Starting XHS article generation...');
+			try {
+				post = await generatePost(type);
+				({ input_tokens, output_tokens } = post);
+			} catch (err) {
+				console.error(`Generate post failed: ${err.message}`);
+				outcome = 'failed';
+				errorStage = 'generate';
+				errorMsg = err.message;
+				return;
+			}
+			console.log('XHS generation successful');
+		}
 
 		try {
 			const publishRes = await publishPost(post, { skipOffset });
 			if (!publishRes) {
 				console.error(`Publish post failed`);
+				if (!draft) {
+					try { await saveDraft(type, post); console.log('Draft saved for next run'); }
+					catch (e) { console.error(`Failed to save draft: ${e.message}`); }
+				}
 				outcome = 'failed';
 				errorStage = 'publish';
 				errorMsg = 'publish returned false';
 				return;
 			}
+			if (draft) {
+				try { await markDraftPublished(draft.id); }
+				catch (e) { console.error(`Failed to mark draft published: ${e.message}`); }
+			}
 		} catch (err) {
 			console.error(`Publish post failed: ${err.message}`);
+			if (!draft) {
+				try { await saveDraft(type, post); console.log('Draft saved for next run'); }
+				catch (e) { console.error(`Failed to save draft: ${e.message}`); }
+			}
 			outcome = 'failed';
 			errorStage = 'publish';
 			errorMsg = err.message;

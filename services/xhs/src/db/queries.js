@@ -73,6 +73,27 @@ export const upsertPipelineState = async (state) => {
 	);
 };
 
+// ── xhs_draft_posts ───────────────────────────────────────────────────────────
+
+export const saveDraft = async (postType, post) => {
+	await pool.query(
+		`INSERT INTO xhs_draft_posts (post_type, post) VALUES ($1, $2)`,
+		[postType, JSON.stringify(post)],
+	);
+};
+
+export const getPendingDraft = async (postType) => {
+	const res = await pool.query(
+		`SELECT id, post FROM xhs_draft_posts WHERE post_type = $1 AND status = 'pending' ORDER BY generated_at DESC LIMIT 1`,
+		[postType],
+	);
+	return res.rows[0] ?? null; // { id, post } or null
+};
+
+export const markDraftPublished = async (id) => {
+	await pool.query(`UPDATE xhs_draft_posts SET status = 'published' WHERE id = $1`, [id]);
+};
+
 // ── xhs_post_archive ─────────────────────────────────────────────────────────
 
 export const insertPostArchive = async ({

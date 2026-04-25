@@ -86,6 +86,15 @@ CREATE TABLE IF NOT EXISTS xhs_post_archive (
 	avg_watch_time   NUMERIC(8,2)
 );
 
+-- XHS draft posts: generated posts that failed to publish — reused on next run of same type
+CREATE TABLE IF NOT EXISTS xhs_draft_posts (
+	id            SERIAL PRIMARY KEY,
+	post_type     VARCHAR(32) NOT NULL,
+	post          JSONB NOT NULL,
+	generated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	status        VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'published'))
+);
+
 -- Pipeline state: replaces xhs/pipeline_state.json
 -- shared with other services; one row per service
 CREATE TABLE IF NOT EXISTS pipeline_state (
