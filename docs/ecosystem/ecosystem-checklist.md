@@ -1,6 +1,6 @@
 **Project:** automation-ecosystem
 
-**Last updated:** April 24 2026
+**Last updated:** April 25 2026
 
 ---
 
@@ -12,7 +12,7 @@
 | Scraper | Deployed — live on Lightsail, docker-compose remaining |
 | Race Hub | Deployed — live at running.moximoxi.net/racehub/, docker-compose remaining |
 | Rakuten | Feature complete — deployed on Lightsail, rate limited, dashboard endpoints done; docker-compose remaining |
-| Dashboard | Home cards done (all 3), detail pages done (all 3) — re-auth flow + SSE + deploy remaining |
+| Dashboard | Home cards + detail pages done — re-auth, live log panels, auth banner all done; docker-compose + deploy remaining |
 | Analytics | Not started — planned FastAPI service, XHS weights endpoint first |
 
 ---
@@ -29,7 +29,9 @@
 - [x] Dockerfile + CI/CD pipeline (cicd-xhs.yml)
 - [x] Deployed — container live on Lightsail, 7 cron jobs registered, awaiting cron fire confirmation
 - [x] Dashboard integration — manual trigger + preview mode (docker exec scripts)
-- [ ] Dashboard re-auth flow — headless QR scan + SSE screenshot stream
+- [x] Dashboard re-auth flow — headless QR scan, two-step login (creator + xhs.com), SSE QR emit
+- [x] Manual trigger live log panel — SSE stream, buffer replay on reload, skips random offset
+- [x] Auth banner on home card clears client-side after successful re-auth
 - [ ] docker-compose integration
 
 ---
@@ -98,9 +100,10 @@
 - [x] XHS detail page — schedule editor (GET/POST /api/xhs/schedule), run history table, post archive viewer
 - [x] Scraper detail page — races table, run history, failed URLs list, manual trigger button
 - [x] Rakuten detail page — pricing config editor, import log table, run log table, manual sync trigger
-- [x] XHS re-auth flow — headless QR scan + SSE screenshot stream
-- [ ] Live container logs — SSE streams of `docker logs -f` for XHS, Scraper, Rakuten; shared LogPanel component
-- [ ] Poll/SSE to keep home cards live
+- [x] XHS re-auth flow — headless QR scan + SSE QR emit; auth banner clears client-side on success
+- [x] Live log panels for all 3 triggers (XHS manual, scraper, Rakuten) — SSE stream, buffer replay on reload, no page scroll jump
+- ~~Live container logs (docker logs -f)~~ — scrapped
+- ~~Poll/SSE home cards~~ — scrapped
 - [x] Dockerfile + CI/CD pipeline (cicd-dashboard.yml)
 - [ ] docker-compose integration
 

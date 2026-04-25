@@ -832,7 +832,7 @@ This was a significant finding. It meant the pipeline as built would get the acc
 
 - **Page dwell time:** Humans spend time on the page before interacting — reading, reviewing, thinking. After navigating to the XHS publish page, the publisher now waits a random 3–8 seconds before touching any fields, simulating natural dwell behaviour.
 
-- **Posting time variance:** The cron fires at a fixed time (21:00 CST) but the actual publish action now includes a randomized ±15–30 minute offset applied inside the publisher — so the real post time varies naturally across days rather than hitting exactly 21:00 every night.
+- **Posting time variance:** The cron fires at a fixed time (21:00 CST) but the actual publish action now includes a randomized ±15–30 minute offset applied inside the publisher — so the real post time varies naturally across days rather than hitting exactly 21:00 every night. Manual triggers from the dashboard pass `skipOffset: true` through `Run()` → `publishPost()` so they post immediately.
 
 - **Hard 1 post/day limit:** The scheduler enforces one post per day and does not expose any mechanism to override this. Batch testing on the live account is what triggered the ban — this must never happen again.
 

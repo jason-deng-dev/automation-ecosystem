@@ -54,20 +54,20 @@ XHS sessions expire periodically (typically every few weeks, or when signed in f
 ### How It Works
 
 1. Operator clicks **"Login to XHS"** button in the dashboard
-2. Server spawns `xhs-login.js` — Playwright launches a headless browser and navigates to the XHS login page
-3. `xhs-login.js` automatically clicks through to the QR code sign-in screen (click sequence is hardcoded — no operator interaction needed to reach it)
-4. Server begins polling `page.screenshot()` every 2 seconds and streaming screenshots to the dashboard via SSE
-5. Dashboard displays the screenshot stream — operator sees the QR code and scans it with their phone
-6. Playwright detects the post-login redirect to XHS home, stops the stream, saves `auth.json` to the shared volume
-7. Dashboard clears the auth alert — all future automated publishing runs use the refreshed `auth.json`
+2. Server spawns `xhs-login.js` — Playwright launches **headless** and navigates to the XHS login page
+3. `xhs-login.js` auto-clicks through to the QR sign-in screen; polls the QR `<img>` element until `naturalWidth > 50` and `src.length > 3000` (data URI loaded)
+4. Server emits `{ type: 'qr-src', data: <dataURI> }` over SSE — dashboard renders the QR directly as an `<img>` tag (no screenshot streaming)
+5. Operator scans QR with phone; Playwright detects the post-login redirect
+6. Two-step login: saves `auth.json` after creator.xiaohongshu.com step, then navigates xhs.com for profile/comment auth
+7. Server emits `{ type: 'done' }` — dashboard hides the QR panel; auth banner clears client-side immediately (no page reload required)
 
 ### Why This Approach
 
-- **Solves bot detection** — it's a real human login producing a real session, not a scripted credential submission
-- **No server access required** — operator never touches SSH, the terminal, or any files
-- **No credentials stored in code** — `auth.json` is a session artifact, not a hardcoded password
-- **Self-service re-auth** — when the session expires, the operator clicks one button and scans a QR code — done in under a minute
-- **Screenshot polling over noVNC** — the only operator action is scanning a QR code; no clicking or typing inside the browser is needed. Navigation to the QR code screen is automated, making screenshot polling fully sufficient. noVNC would require a VNC server + virtual display on the Lightsail instance for no added benefit.
+- **Solves bot detection** — real human login via QR, not credential submission
+- **No server access required** — operator never touches SSH or any files
+- **No credentials stored in code** — `auth.json` is a session artifact
+- **Self-service re-auth** — operator clicks one button, scans QR, done in under a minute
+- **QR src extraction over screenshot streaming** — headless mode is simpler and more reliable than Xvfb + screenshot polling; QR img src is a data URI that loads natively in the browser
 
 ### Session Expiry Detection
 
@@ -78,10 +78,9 @@ The dashboard surfaces session state as a status indicator on the XHS pipeline c
 
 ### Implementation Notes
 
-- Backend: `POST /api/xhs/login` — spawns `xhs-login.js`, begins SSE screenshot stream on `GET /api/xhs/login/stream`
-- Frontend: dashboard opens a screenshot panel, connects to the SSE stream, renders each frame as an `<img>`
-- On successful login detection, server closes the browser, saves `auth.json`, sends a final SSE event to close the panel
-- `auth.json` is never transmitted to the client — it stays on the shared volume
+- Backend: `POST /api/xhs/login` spawns `xhs-login.js`; `GET /api/xhs/login/stream` SSE emits typed messages: `qr-src`, `qr-scanned`, `log`, `done`, `error`
+- Frontend (`XhsReAuthPanel`): connects SSE, renders QR data URI directly; `XhsAuthBanner` wraps it and hides itself on `onDone` callback
+- `auth.json` is never transmitted to the client — stays on the container volume
 
 ---
 
@@ -134,9 +133,9 @@ The home page shows one card per pipeline side by side, full height. Each card s
 - **Errors by type** — count per error stage
 - **Post type distribution** — count per type (Race, Training, Nutrition & Supplement, Wearable)
 - **API tokens (lifetime)** — input + output token totals
-- **Auth banner** — shown only when last run failed at auth stage; includes Login button
-- **Action triggers** (to be added): manual trigger, preview
-- **Re-auth** — no dedicated trigger needed; Login button appears automatically in the auth banner when `authStatus === 'failed'`
+- **Auth banner** — `XhsAuthBanner` client component; shown when last run failed at auth stage; hides itself immediately after successful re-auth (no reload needed)
+- **Manual trigger** — post type selector + "Run Now" button; live log panel with SSE stream and buffer replay on reload; skips random offset
+- **Re-auth button** — inside auth banner on home card; also always visible on XHS detail page
 
 ### 7.2 Race Scraper Pipeline Card 
 
@@ -289,18 +288,24 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 | `POST` | `/api/xhs/schedule` | Update `xhs_schedule` table — XHS scheduler polls for changes and re-registers cron jobs |
 | `GET` | `/api/xhs/run-history` | Query `xhs_run_logs` table — full post run history |
 | `GET` | `/api/xhs/post-archive` | Query `xhs_post_archive` table — published post archive |
-| `POST` | `/api/xhs/trigger` | Spawn manual XHS run — accepts `{ type }` body; runs `run-manualPost.js <type>` via docker exec (non-blocking) |
-| `POST` | `/api/xhs/preview` | Generate post without publishing — runs `run-preview.js <type>` via docker exec, captures stdout, returns parsed post JSON |
-| `GET` | `/api/xhs/logs/stream` | SSE — streams XHS process stdout in real time |
-| `POST` | `/api/xhs/login` | Spawn `xhs-login.js` via docker exec, begin screenshot polling |
-| `GET` | `/api/xhs/login` | SSE — streams screenshots from login browser for QR code display |
+| `GET` | `/api/xhs/trigger` | Returns `{ running, logs[] }` — used for buffer replay on page load |
+| `POST` | `/api/xhs/trigger` | Spawn manual XHS run — accepts `{ postType }` body; `run-manualPost.js <type>` via docker exec, skipOffset: true |
+| `DELETE` | `/api/xhs/trigger` | Kill running manual post process |
+| `GET` | `/api/xhs/trigger/stream` | SSE — streams live log lines from manual post process |
+| `POST` | `/api/xhs/preview` | Generate post without publishing — runs `run-preview.js <type>` via docker exec |
+| `POST` | `/api/xhs/login` | Spawn `xhs-login.js` via docker exec |
+| `DELETE` | `/api/xhs/login` | Kill running re-auth process |
+| `GET` | `/api/xhs/login/stream` | SSE — emits `qr-src`, `qr-scanned`, `log`, `done`, `error` messages |
 
 ### Scraper
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/scraper/run-history` | Query `scraper_run_logs` table — full scrape run history |
+| `GET` | `/api/scraper/trigger` | Returns `{ running, logs[] }` — buffer replay on page load |
 | `POST` | `/api/scraper/trigger` | Spawn manual scraper run via docker exec (non-blocking) |
+| `DELETE` | `/api/scraper/trigger` | Kill running scraper process |
+| `GET` | `/api/scraper/trigger/stream` | SSE — streams live log lines from scraper process |
 
 ### Rakuten
 
@@ -310,7 +315,10 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 | `GET` | `/api/rakuten/import-log` | Query `import_logs` table — per-product WC push attempts |
 | `GET` | `/api/rakuten/config` | Query `config` table — pricing config |
 | `POST` | `/api/rakuten/config` | Call rakuten `POST /api/config` — updates DB row, triggers price reload + re-push |
-| `POST` | `/api/rakuten/sync` | Call rakuten `POST /api/sync` — triggers `runWeeklySync()` on demand |
+| `GET` | `/api/rakuten/sync` | Returns `{ running, logs[] }` — buffer replay on page load |
+| `POST` | `/api/rakuten/sync` | Trigger `runWeeklySync()` via docker exec (replaces HTTP proxy to rakuten service) |
+| `DELETE` | `/api/rakuten/sync` | Kill running sync process |
+| `GET` | `/api/rakuten/sync/stream` | SSE — streams live log lines from rakuten sync process |
 
 ### Shared
 
