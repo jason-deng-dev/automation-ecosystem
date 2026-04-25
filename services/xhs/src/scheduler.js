@@ -87,7 +87,7 @@ async function Run(postType, { skipOffset = false } = {}) {
 
 		if (draft) {
 			post = draft.post;
-			console.log(`Reusing draft post id=${draft.id} from previous failed run — skipping generation`);
+			console.log(`Reusing draft post id=${draft.id} from previous run — skipping generation`);
 		} else {
 			console.log('Starting XHS article generation...');
 			try {
