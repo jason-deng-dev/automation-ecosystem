@@ -79,7 +79,7 @@ export default function XhsReAuthPanel({ dict, onDone }) {
 				{label}
 			</button>
 
-			{(status === 'streaming' || status === 'done') && (
+			{(status === 'streaming' || status === 'done' || status === 'error') && (
 				<div
 					style={{
 						position: 'fixed', inset: 0,
