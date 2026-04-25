@@ -48,8 +48,8 @@ async function publishPost(
 	const page = await context.newPage();
 
 	const screenshot = async () => {
-		const buf = await page.screenshot({ type: "jpeg", quality: 15 });
-		console.log(`SCREENSHOT:${buf.toString("base64")}`);
+		const buf = await page.screenshot({ type: "jpeg", quality: 15, timeout: 5000 }).catch(() => null);
+		if (buf) console.log(`SCREENSHOT:${buf.toString("base64")}`);
 	};
 
 	const screenshotWait = async (ms) => {
@@ -178,9 +178,15 @@ async function publishPost(
 			waitUntil: "commit",
 		});
 		console.log("Profile loaded, waiting for posts...");
-		await screenshot();
-		await humanDelay(15000, 20000);
-		await screenshot();
+		
+		for (let i = 0; i < 10; i++) {
+			console.log(`Waiting and screenshot (attempt ${i + 1})...`);
+			await screenshot();
+			await humanDelay(800, 1500);
+		}
+
+
+
 		await page.waitForSelector("#userPostedFeeds .note-item");
 		console.log("Clicking latest post...");
 		await page.locator("#userPostedFeeds .note-item").first().click();
