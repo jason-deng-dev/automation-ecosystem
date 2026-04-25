@@ -46,13 +46,16 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	console.log('Starting post publish...');
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
+		console.log(`URL after goto: ${page.url()}`);
 		await humanDelay(3000, 8000);
 		console.log('Clicking 写长文 tab...');
 		await page.locator('.creator-tab:not([aria-hidden])', { hasText: '写长文' }).click();
+		console.log(`URL after 写长文 click: ${page.url()}`);
 
 		console.log('Clicking 新的创作...');
 		await page.getByText('新的创作').click();
 		await humanDelay(5000, 8000);
+		console.log(`URL after 新的创作 click: ${page.url()}`);
 
 		// title — clipboard paste fires real browser paste events, unlike fill() which sets DOM value directly
 		console.log('Filling title...');
@@ -92,6 +95,9 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
 		await humanDelay(10000, 10000);
+		console.log(`URL after 一键排版: ${page.url()}`);
+		const btnCount = await page.locator('button.custom-button.submit').count();
+		console.log(`button.custom-button.submit count: ${btnCount}`);
 		console.log('Clicking 下一步...');
 		await page.locator('button.custom-button.submit', { hasText: '下一步' }).click();
 		await humanDelay(10000, 10000);
