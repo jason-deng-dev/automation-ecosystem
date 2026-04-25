@@ -47,15 +47,21 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	try {
 		await page.goto('https://creator.xiaohongshu.com/publish/publish');
 		await humanDelay(3000, 8000);
+		console.log('Clicking 写长文 tab...');
 		await page.locator('.creator-tab:not([aria-hidden])', { hasText: '写长文' }).click();
 
+		console.log('Clicking 新的创作...');
 		await page.getByText('新的创作').click();
+		await humanDelay(1000, 2000);
+
 		// title — clipboard paste fires real browser paste events, unlike fill() which sets DOM value directly
+		console.log('Filling title...');
 		await page.evaluate(async (text) => navigator.clipboard.writeText(text), title);
 		await page.getByPlaceholder('输入标题').click();
 		await page.keyboard.press('Control+V');
 
 		// content body: hook (H1) + each section (H2 subtitle + body) + cta
+		console.log('Filling body...');
 		await page.locator('[data-placeholder="输入文字，内容将自动保存"]').click();
 		await page.keyboard.press('Control+Alt+1');
 		await page.keyboard.type(hook);
@@ -70,10 +76,15 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.keyboard.press('Control+Alt+1');
 		await page.keyboard.type(cta);
 		await page.keyboard.press('Enter');
+		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
+		await humanDelay(1000, 2000);
+		console.log('Clicking 下一步...');
 		await page.getByText('下一步').click();
+		await humanDelay(2000, 3000);
 
 		// description + hashtags
+		console.log('Filling description...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').click();
 		await page.keyboard.type(`${description} `);
 		await page.keyboard.press('Enter');
