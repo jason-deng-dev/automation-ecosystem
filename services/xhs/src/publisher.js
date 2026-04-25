@@ -85,6 +85,8 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await humanDelay(1000, 2000);
 		console.log('Clicking 下一步...');
 		await page.getByText('下一步').click();
+		await humanDelay(2000, 3000);
+		console.log(`After 下一步 — URL: ${page.url()}`);
 		console.log('Waiting for description field...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 60000 });
 
