@@ -38,6 +38,8 @@ export function killRakutenSync() {
 	if (rakutenProc) { rakutenProc.kill(); rakutenProc = null; }
 }
 
+export function getRakutenBuffer() { return [...rakutenBuffer]; }
+
 export async function getRakutenMetrics() {
 	const [totalsRes, categoryRes, lastRunRes, pipelineStateRes] = await Promise.all([
 		rakutenPool.query(

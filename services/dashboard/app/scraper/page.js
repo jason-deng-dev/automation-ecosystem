@@ -35,10 +35,10 @@ export default async function ScraperPage() {
 				<h1 className="text-base font-semibold tracking-wide uppercase" style={{ color: '#EDEDED' }}>
 					{dict.scraperPipeline}
 				</h1>
-				<div className="w-48">
-					<ScraperTriggerButton dict={dict} />
-				</div>
 			</div>
+
+			{/* Trigger — full width so log panel expands properly */}
+			<ScraperTriggerButton dict={dict} />
 
 			{/* Run History */}
 			<div style={{ border: '1px solid #2A2A2A' }}>

@@ -53,6 +53,8 @@ export function killManualPost() {
 	if (manualPostProc) { manualPostProc.kill(); manualPostProc = null; }
 }
 
+export function getManualPostBuffer() { return [...manualPostBuffer]; }
+
 export function runReAuth() {
 	if (reAuthProc) return;
 	eventBuffer = [];

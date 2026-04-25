@@ -38,6 +38,8 @@ export function killScraperTrigger() {
 	if (scraperProc) { scraperProc.kill(); scraperProc = null; }
 }
 
+export function getScraperBuffer() { return [...scraperBuffer]; }
+
 export async function getScraperMetrics() {
 	const [lastRunRes, pipelineStateRes, successRateRes, totalRacesRes, dataFreshnessRes] = await Promise.all([
 		ecosystemPool.query(

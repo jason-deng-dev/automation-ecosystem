@@ -1,6 +1,10 @@
-import { runScraperTrigger, killScraperTrigger } from "@/app/lib/scrapperController";
+import { runScraperTrigger, killScraperTrigger, getScraperProc, getScraperBuffer } from "@/app/lib/scrapperController";
 import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
+
+export async function GET() {
+	return NextResponse.json({ running: !!getScraperProc(), logs: getScraperBuffer() });
+}
 
 export async function POST() {
 	runScraperTrigger();

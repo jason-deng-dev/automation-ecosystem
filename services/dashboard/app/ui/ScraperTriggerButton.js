@@ -1,35 +1,63 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
+function inferStatus(logs) {
+	const last = [...logs].reverse().find(l => l.trim());
+	if (!last) return 'done';
+	if (last.includes('error') || last.includes('Error') || last.includes('failed')) return 'error';
+	return 'done';
+}
+
+function connectStream(url, setLogs, setStatus, esRef, doneKeyword) {
+	const es = new EventSource(url);
+	esRef.current = es;
+	es.onmessage = (e) => {
+		const line = e.data;
+		setLogs(prev => [...prev, line]);
+		if (line.includes(doneKeyword)) { setStatus('done'); es.close(); }
+		if (line.includes('error') || line.includes('Error') || line.includes('failed')) setStatus('error');
+	};
+	es.onerror = () => { setStatus('error'); es.close(); };
+}
+
 export default function ScraperTriggerButton({ dict }) {
-	const [status, setStatus] = useState('idle'); // idle | running | done | error
+	const [status, setStatus] = useState('idle');
 	const [logs, setLogs] = useState([]);
 	const [hovered, setHovered] = useState(false);
 	const esRef = useRef(null);
-	const logsEndRef = useRef(null);
+	const logsContainerRef = useRef(null);
 
-	useEffect(() => () => esRef.current?.close(), []);
-	useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
+	useEffect(() => {
+		fetch('/api/scraper/trigger')
+			.then(r => r.json())
+			.then(({ running, logs: buffered }) => {
+				if (!buffered.length) return;
+				setLogs(buffered);
+				if (running) {
+					setStatus('running');
+					connectStream('/api/scraper/trigger/stream', setLogs, setStatus, esRef, 'Scrape complete');
+				} else {
+					setStatus(inferStatus(buffered));
+				}
+			})
+			.catch(() => {});
+		return () => esRef.current?.close();
+	}, []);
+
+	useEffect(() => {
+		if (logsContainerRef.current) {
+			logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+		}
+	}, [logs]);
 
 	async function handleTrigger() {
 		if (status === 'running') return;
 		setStatus('running');
 		setLogs([]);
-
 		try {
 			const res = await fetch('/api/scraper/trigger', { method: 'POST' });
 			if (!res.ok) throw new Error();
-
-			const es = new EventSource('/api/scraper/trigger/stream');
-			esRef.current = es;
-
-			es.onmessage = (e) => {
-				const line = e.data;
-				setLogs(prev => [...prev, line]);
-				if (line.includes('Scrape complete') || line.includes('done') || line.includes('finished')) setStatus('done');
-				if (line.includes('error') || line.includes('Error') || line.includes('failed')) setStatus('error');
-			};
-			es.onerror = () => { setStatus('error'); es.close(); };
+			connectStream('/api/scraper/trigger/stream', setLogs, setStatus, esRef, 'Scrape complete');
 		} catch {
 			setStatus('error');
 		}
@@ -46,7 +74,7 @@ export default function ScraperTriggerButton({ dict }) {
 	const label = { idle: dict.runScraper, running: dict.triggering, done: dict.triggered, error: dict.triggerFailed }[status];
 
 	return (
-		<div className="flex flex-col gap-2 mt-2">
+		<div className="flex flex-col gap-2">
 			<button
 				onClick={handleTrigger}
 				disabled={status === 'running'}
@@ -71,7 +99,7 @@ export default function ScraperTriggerButton({ dict }) {
 							<button onClick={handleClose} style={{ color: '#555555', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
 						)}
 					</div>
-					<div style={{ height: '200px', overflowY: 'auto', padding: '10px', fontFamily: 'monospace', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+					<div ref={logsContainerRef} style={{ height: '200px', overflowY: 'auto', padding: '10px', fontFamily: 'monospace', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
 						{logs.map((line, i) => (
 							<span key={i} style={{
 								color: line.includes('error') || line.includes('Error') || line.includes('failed') ? '#C8102E'
@@ -79,7 +107,6 @@ export default function ScraperTriggerButton({ dict }) {
 									: '#AAAAAA',
 							}}>{line}</span>
 						))}
-						<div ref={logsEndRef} />
 					</div>
 				</div>
 			)}
