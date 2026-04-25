@@ -48,12 +48,18 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		console.log(`SCREENSHOT:${buf.toString('base64')}`);
 	};
 
-	const screenshotWait = async (ms) => {
-		const end = Date.now() + ms;
+	const waitForImageGeneration = async (timeout = 90000) => {
+		const end = Date.now() + timeout;
 		while (Date.now() < end) {
 			await screenshot();
+			const loading = await page.locator('text=笔记图片生成中').count();
+			if (loading === 0) {
+				console.log('Image generation complete');
+				return;
+			}
 			await page.waitForTimeout(1000);
 		}
+		console.log('Image generation timed out — proceeding anyway');
 	};
 
 	console.log('Starting post publish...');
@@ -109,7 +115,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await screenshot();
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
-		await screenshotWait(20000);
+		await waitForImageGeneration();
 		console.log(`URL after 一键排版: ${page.url()}`);
 		const frameUrls = page.frames().map(f => f.url());
 		console.log(`Frames after 一键排版: ${JSON.stringify(frameUrls)}`);
