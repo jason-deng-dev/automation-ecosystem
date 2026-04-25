@@ -44,7 +44,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	const page = await context.newPage();
 
 	const screenshot = async () => {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 15, clip: { x: 0, y: 0, width: 1280, height: 600 } });
+		const buf = await page.screenshot({ type: 'jpeg', quality: 15 });
 		console.log(`SCREENSHOT:${buf.toString('base64')}`);
 	};
 
@@ -118,10 +118,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 			if (count > 0) console.log(`Found 下一步 in frame: ${frame.url()}`);
 		}
 		console.log('Clicking 下一步...');
-		await page.frameLocator('iframe').locator('text=下一步').first().click().catch(async () => {
-			console.log('frameLocator failed, trying page-level click');
-			await page.locator('text=下一步').first().click();
-		});
+		await page.locator('text=下一步').first().click();
 		await humanDelay(10000, 10000);
 		await screenshot();
 		console.log(`After 下一步 — URL: ${page.url()}`);
