@@ -11,17 +11,21 @@ function humanDelay(min, max) {
 	return new Promise(resolve => setTimeout(resolve, min + Math.random() * (max - min)));
 }
 
-async function publishPost({ title, hook, contents, cta, description, hashtags, comments, post_type, race_name, input_tokens, output_tokens }) {
+async function publishPost({ title, hook, contents, cta, description, hashtags, comments, post_type, race_name, input_tokens, output_tokens }, { skipOffset = false } = {}) {
 	if (!fs.existsSync(AUTH_PATH)) {
 		console.error('auth.json not found — run refresh-auth.bat to log in first');
 		return false;
 	}
 
-	// Random offset to avoid predictable posting time. Cron should be set 30 min early;
-	// publisher delays 0–60 min so the post lands in a ±30 min window around the target time.
-	const offsetMin = Math.round(Math.random() * 60);
-	console.log(`Random post offset: waiting ${offsetMin} min`);
-	await humanDelay(0, 60 * 60 * 1000);
+	if (skipOffset) {
+		console.log('Manual post: skipping random offset, posting immediately');
+	} else {
+		// Random offset to avoid predictable posting time. Cron should be set 30 min early;
+		// publisher delays 0–60 min so the post lands in a ±30 min window around the target time.
+		const offsetMin = Math.round(Math.random() * 60);
+		console.log(`Random post offset: waiting ${offsetMin} min`);
+		await humanDelay(0, 60 * 60 * 1000);
+	}
 
 	const browser = await chromium.launch({ headless: false });
 	const context = await browser.newContext({ storageState: AUTH_PATH });

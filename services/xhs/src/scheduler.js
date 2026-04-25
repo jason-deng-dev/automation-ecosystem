@@ -47,7 +47,7 @@ export async function setupAllDailyCrons() {
 const jobQueue = [];
 let isRunning = false;
 
-async function Run(postType) {
+async function Run(postType, { skipOffset = false } = {}) {
 	let type = postType;
 	let input_tokens = 0;
 	let output_tokens = 0;
@@ -90,7 +90,7 @@ async function Run(postType) {
 		console.log('XHS generation successful');
 
 		try {
-			const publishRes = await publishPost(post);
+			const publishRes = await publishPost(post, { skipOffset });
 			if (!publishRes) {
 				console.error(`Publish post failed`);
 				outcome = 'failed';
