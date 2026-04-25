@@ -17,7 +17,7 @@ function connectStream(url, setLogs, setStatus, esRef, doneKeyword, setScreensho
 	es.onmessage = (e) => {
 		const line = e.data;
 		if (line.startsWith('SCREENSHOT:')) {
-			setScreenshot?.(line.slice('SCREENSHOT:'.length));
+			setScreenshot(line.slice('SCREENSHOT:'.length));
 			return;
 		}
 		setLogs(prev => [...prev, line]);
@@ -32,6 +32,7 @@ export default function XhsTriggerButton({ dict }) {
 	const [status, setStatus] = useState('idle');
 	const [logs, setLogs] = useState([]);
 	const [screenshot, setScreenshot] = useState(null);
+	const [modalOpen, setModalOpen] = useState(false);
 	const [hovered, setHovered] = useState(false);
 	const esRef = useRef(null);
 	const logsContainerRef = useRef(null);
@@ -47,6 +48,7 @@ export default function XhsTriggerButton({ dict }) {
 				if (lastShot) setScreenshot(lastShot.slice('SCREENSHOT:'.length));
 				if (running) {
 					setStatus('running');
+					setModalOpen(true);
 					connectStream('/api/xhs/trigger/stream', setLogs, setStatus, esRef, 'Manual post complete', setScreenshot);
 				} else {
 					setStatus(inferStatus(textLogs));
@@ -66,6 +68,8 @@ export default function XhsTriggerButton({ dict }) {
 		if (status === 'running') return;
 		setStatus('running');
 		setLogs([]);
+		setScreenshot(null);
+		setModalOpen(true);
 		try {
 			const res = await fetch('/api/xhs/trigger', {
 				method: 'POST',
@@ -85,67 +89,113 @@ export default function XhsTriggerButton({ dict }) {
 		setStatus('idle');
 		setLogs([]);
 		setScreenshot(null);
+		setModalOpen(false);
 	}
 
 	const color = { idle: '#EDEDED', running: '#F5A623', done: '#3ECF8E', error: '#C8102E' }[status];
 	const label = { idle: dict.runNow, running: dict.triggering, done: dict.triggered, error: dict.triggerFailed }[status];
 
 	return (
-		<div className="flex flex-col gap-2">
-			<select
-				value={postType}
-				onChange={e => setPostType(e.target.value)}
-				className="w-full text-sm font-medium px-3 py-2 bg-transparent border outline-none"
-				style={{ borderColor: '#2A2A2A', color: '#EDEDED' }}
-			>
-				{POST_TYPES.map(t => (
-					<option key={t} value={t} style={{ backgroundColor: '#111111' }}>{dict.postType[t]}</option>
-				))}
-			</select>
+		<>
+			<div className="flex flex-col gap-2">
+				<select
+					value={postType}
+					onChange={e => setPostType(e.target.value)}
+					className="w-full text-sm font-medium px-3 py-2 bg-transparent border outline-none"
+					style={{ borderColor: '#2A2A2A', color: '#EDEDED' }}
+				>
+					{POST_TYPES.map(t => (
+						<option key={t} value={t} style={{ backgroundColor: '#111111' }}>{dict.postType[t]}</option>
+					))}
+				</select>
 
-			<button
-				onClick={handleTrigger}
-				disabled={status === 'running'}
-				onMouseEnter={() => setHovered(true)}
-				onMouseLeave={() => setHovered(false)}
-				className="w-full text-sm font-medium tracking-wide uppercase px-4 py-2 border transition-colors disabled:opacity-50"
-				style={{
-					borderColor: color, color: color,
-					backgroundColor: hovered && status === 'idle' ? 'rgba(237,237,237,0.08)' : 'transparent',
-				}}
-			>
-				{label}
-			</button>
+				<button
+					onClick={status !== 'idle' ? () => setModalOpen(true) : handleTrigger}
+					onMouseEnter={() => setHovered(true)}
+					onMouseLeave={() => setHovered(false)}
+					className="w-full text-sm font-medium tracking-wide uppercase px-4 py-2 border transition-colors"
+					style={{
+						borderColor: color, color: color,
+						backgroundColor: hovered ? 'rgba(237,237,237,0.08)' : 'transparent',
+					}}
+				>
+					{label}
+				</button>
+			</div>
 
-			{(logs.length > 0 || screenshot) && (
-				<div style={{ border: '1px solid #2A2A2A', backgroundColor: '#0A0A0A', overflow: 'hidden' }}>
-					<div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid #1A1A1A' }}>
-						<span className="text-xs font-medium tracking-wide uppercase" style={{ color }}>
-							{status === 'done' ? '完成' : status === 'error' ? '失败' : '运行中...'}
-						</span>
-						{status !== 'running' && (
-							<button onClick={handleClose} style={{ color: '#555555', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
-						)}
-					</div>
-					{screenshot && (
-						<img
-							src={`data:image/jpeg;base64,${screenshot}`}
-							alt="Browser state"
-							style={{ width: '100%', display: 'block', borderBottom: '1px solid #1A1A1A' }}
-						/>
-					)}
-					<div ref={logsContainerRef} style={{ height: '200px', overflowY: 'auto', overflowX: 'hidden', padding: '10px', fontFamily: 'monospace', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-						{logs.map((line, i) => (
-							<span key={i} style={{
-								wordBreak: 'break-all',
-								color: line.includes('error') || line.includes('Error') || line.includes('failed') ? '#C8102E'
-									: line.includes('successful') || line.includes('complete') ? '#3ECF8E'
-									: '#AAAAAA',
-							}}>{line}</span>
-						))}
+			{modalOpen && (
+				<div style={{
+					position: 'fixed', inset: 0,
+					backgroundColor: 'rgba(0,0,0,0.85)',
+					zIndex: 50,
+					display: 'flex', alignItems: 'center', justifyContent: 'center',
+				}}>
+					<div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', width: '80vw', maxWidth: '1100px' }}>
+
+						{/* Screenshot feed */}
+						<div style={{ position: 'relative', flex: '1' }}>
+							{status !== 'running' && (
+								<button
+									onClick={handleClose}
+									style={{
+										position: 'absolute', top: '8px', right: '8px',
+										color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
+										background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
+										padding: '4px 8px',
+									}}
+								>✕</button>
+							)}
+							{screenshot ? (
+								<img
+									src={`data:image/jpeg;base64,${screenshot}`}
+									alt="Browser state"
+									style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
+								/>
+							) : (
+								<div style={{
+									width: '100%', aspectRatio: '16/9',
+									border: '1px solid #2A2A2A',
+									display: 'flex', alignItems: 'center', justifyContent: 'center',
+									color: '#555555', fontSize: '13px',
+								}}>
+									Waiting for screenshot...
+								</div>
+							)}
+							<p className="text-sm text-center mt-2" style={{ color }}>
+								{status === 'running' ? '运行中...' : status === 'done' ? '完成' : '失败'}
+							</p>
+						</div>
+
+						{/* Logs */}
+						<div style={{
+							width: '300px', flexShrink: 0,
+							border: '1px solid #2A2A2A',
+							backgroundColor: '#0A0A0A',
+							padding: '10px',
+							height: '60vh',
+							overflowY: 'auto',
+							fontFamily: 'monospace',
+							fontSize: '11px',
+							color: '#AAAAAA',
+							display: 'flex',
+							flexDirection: 'column',
+							gap: '3px',
+						}} ref={logsContainerRef}>
+							{logs.length === 0
+								? <span style={{ color: '#444' }}>Waiting for logs...</span>
+								: logs.map((line, i) => (
+									<span key={i} style={{
+										wordBreak: 'break-all',
+										color: line.includes('error') || line.includes('Error') || line.includes('failed') ? '#C8102E'
+											: line.includes('successful') || line.includes('complete') ? '#3ECF8E'
+											: '#AAAAAA',
+									}}>{line}</span>
+								))
+							}
+						</div>
 					</div>
 				</div>
 			)}
-		</div>
+		</>
 	);
 }
