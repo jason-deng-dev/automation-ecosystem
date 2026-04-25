@@ -115,6 +115,7 @@
     - [x] Catch comment failure — log which comment failed, continue with remaining
     - [x] Add auth pre-flight check for profile/comment page before starting publish flow
     - [x] Fix #login-btn strict mode violation — resolves to 2 elements, use .first()
+    - [x] Fix 写长文 strict mode violation — resolves to 2 elements, use .first()
     - [x] Fix scheduler not stopping on publishPost() returning false — check return value and abort
     - [x] Fix generator crash: "Cannot read properties of undefined (reading 'name')" — cleanName() receiving undefined race when selected race name didn't match races.json due to 【...】 suffix
     - [x] Fix JSON parse crash: added system prompt rule banning all double quotation marks inside JSON string values; use 「」or 《》 as alternatives
@@ -195,6 +196,14 @@
   - [x] Block font requests to prevent render hangs
   - [ ] End-to-end verified working on VPS
 
-
+- [ ] Draft post caching — reuse generated posts that failed to publish
+  - [ ] Add `xhs_draft_posts` table — post_type, generated post JSON, generated_at, status ('pending' | 'published')
+  - [ ] `saveDraft(postType, post)` query — INSERT into xhs_draft_posts with status='pending'
+  - [ ] `getPendingDraft(postType)` query — SELECT latest pending draft for this post_type
+  - [ ] `markDraftPublished(id)` query — UPDATE status='published' for given draft id
+  - [ ] Wire into scheduler.js `Run()`:
+    - Before `generatePost()`, call `getPendingDraft(type)` — if found, use that post, skip generation
+    - On generate success + publish fail → call `saveDraft(type, post)`
+    - On publish success → if draft was reused, call `markDraftPublished(draft.id)`
 
 ---

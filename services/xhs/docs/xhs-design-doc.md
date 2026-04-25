@@ -702,6 +702,36 @@ If the week file already exists, the new entry is merged into the existing objec
 
 ---
 
+### 7.6 Draft Post Cache Schema
+
+When a post is generated successfully but publish fails, the post is saved to `xhs_draft_posts`. On the next scheduled run of the same post type, the pipeline checks for a pending draft before calling the Claude API — if one exists, it reuses the draft instead of generating a new post. On successful publish, the draft is marked published and will not be reused.
+
+```sql
+CREATE TABLE xhs_draft_posts (
+  id SERIAL PRIMARY KEY,
+  post_type TEXT NOT NULL,
+  post JSONB NOT NULL,
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'published'))
+);
+```
+
+**Flow in `scheduler.js` `Run()`:**
+
+```
+1. getPendingDraft(type) → if found, skip generatePost() and use draft
+2. generatePost(type) [if no draft]
+3. publishPost(post)
+   → on success: if draft was reused, markDraftPublished(draft.id)
+   → on fail:    if post was freshly generated, saveDraft(type, post)
+```
+
+**Why not retry automatically:** The publish failure is usually a Playwright/selector issue, not a content issue. Regenerating costs tokens and produces a different post unnecessarily. Caching the draft recovers the API cost and surfaces the exact post that was ready to go.
+
+**Only one pending draft per post type** is expected at a time. `getPendingDraft` returns the most recently generated pending draft.
+
+---
+
 ## 8. Implementation Phases
 
 See `docs/xhs-checklist.md` for current build status.
@@ -1011,6 +1041,7 @@ services/xhs/
 | `xhs_run_logs` | XHS writes | Per-run: type, outcome, error stage/msg, token counts |
 | `xhs_post_history` | XHS reads + writes | Race names already posted — dedup tracker, reset monthly |
 | `xhs_post_archive` | XHS writes | One row per published post — analytics source of truth |
+| `xhs_draft_posts` | XHS reads + writes | Generated posts that failed to publish — reused on next run of same type |
 
 **Exception:** `auth.json` stays as a file on the container filesystem — XHS session cookies are a runtime artifact, not configuration data. Never transmitted to clients.
 
