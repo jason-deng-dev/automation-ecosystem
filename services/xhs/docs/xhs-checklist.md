@@ -183,17 +183,16 @@
   - [x] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
   - [x] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
 
-- [x] xhs-login.js — dashboard re-auth flow (requires deploy + dashboard)
+- [ ] xhs-login.js — dashboard re-auth flow (requires deploy + dashboard)
   - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
   - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
-  - [x] Detect successful login via post-login URL redirect
-  - [x] Screenshot stream wired — emit({ type: 'frame' }) every 1s, SSE route forwards to dashboard EventSource
+  - [x] Detect successful login via framenavigated event (non-login URL)
   - [x] Log stream wired — emit({ type: 'log' }) replaces console.log; dashboard shows log panel beside QR view
-  - [ ] Fix headless bot detection — XHS blocks headless Playwright on VPS; screenshots render white, page loads fail
-    - [ ] Install Xvfb in XHS Docker container
-    - [ ] Switch to headless: false + xvfb-run so browser runs in virtual display
-    - [ ] Update xhsController.js spawn command to use xvfb-run
-    - [ ] Update Dockerfile: apt-get install xvfb
+  - [x] Scrapped Xvfb — switched to headless:true + QR src extraction instead of screenshot streaming
+  - [x] Poll QR img element (naturalWidth > 50, src length > 3000) — emit qr-src data URI to dashboard
+  - [x] Two-step login: creator.xiaohongshu.com (publish auth) + xhs.com (profile/comment auth)
+  - [x] Block font requests to prevent render hangs
+  - [ ] End-to-end verified working on VPS
 
 
 

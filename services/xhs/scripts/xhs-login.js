@@ -13,7 +13,8 @@ const browser = await chromium.launch({
 	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
 });
 
-if (!fs.existsSync(AUTH_PATH)) {
+const authContent = fs.existsSync(AUTH_PATH) ? fs.readFileSync(AUTH_PATH, 'utf8').trim() : '';
+if (!authContent) {
 	fs.writeFileSync(AUTH_PATH, '{"cookies":[],"origins":[]}');
 }
 

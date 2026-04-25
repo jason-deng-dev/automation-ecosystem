@@ -28,7 +28,7 @@
   - [x] Scraper card: run state, last run, next scrape, total races, last scraped, data freshness, success rate
   - [x] Rakuten card: catalog size, WooCommerce live count, last activity, error indicator, per-category breakdown
   - [x] Home card triggers — removed, home is monitoring-only; triggers live on detail pages
-  - [ ] Poll or SSE to keep cards live without page refresh
+  - ~~Poll or SSE to keep cards live without page refresh~~ — scrapped
 
 ---
 
@@ -68,20 +68,15 @@
 
 ---
 
-- [ ] Live container logs (all 3 detail pages)
-  - [ ] `GET /api/xhs/logs/stream` — SSE stream of `docker logs -f xhs`; last 50 lines on connect
-  - [ ] `GET /api/scraper/logs/stream` — SSE stream of `docker logs -f scraper`
-  - [ ] `GET /api/rakuten/logs/stream` — SSE stream of `docker logs -f rakuten`
-  - [ ] Shared `LogPanel` client component — EventSource, auto-scroll, colour-coded lines (error/warn/info)
-  - [ ] Wire into XHS, Scraper, Rakuten detail pages
+- ~~Live container logs (all 3 detail pages)~~ — scrapped
 
 ---
 
 - [x] XHS re-auth flow
-  - [x] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec, begin screenshot polling
-  - [x] `GET /api/xhs/login/stream` — SSE stream of `page.screenshot()` every 2s; final event `{ type: 'done' }` on login detect
+  - [x] `POST /api/xhs/login` — spawn `xhs-login.js` via docker exec
+  - [x] `GET /api/xhs/login/stream` — SSE stream; emits `qr-src` (data URI) when QR ready, `qr-scanned` on nav, `done` on success
   - [x] Add `runReAuth()` to `xhsController.js`
-  - [x] Client component: screenshot panel on XHS page, connects to SSE stream, renders each frame as `<img>`, closes on `done`
+  - [x] Client component: renders QR data URI directly (no screenshot streaming); two-step login (creator + xhs.com)
 
 ---
 
