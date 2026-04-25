@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { insertPostArchive } from './db/queries.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const AUTH_PATH = path.join(__dirname, '../../auth.json');
+const AUTH_PATH = path.join(__dirname, '../auth.json');
 
 function humanDelay(min, max) {
 	return new Promise(resolve => setTimeout(resolve, min + Math.random() * (max - min)));
