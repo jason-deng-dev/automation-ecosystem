@@ -18,20 +18,26 @@ export async function GET() {
 			const unsubscribe = subscribeReAuth(enqueue);
 
 			const proc = getReAuthProc();
+			const onExit = () => {
+				if (closed) return;
+				closed = true;
+				unsubscribe();
+				try { controller.close(); } catch {}
+			};
 			if (proc) {
-				proc.on('exit', () => {
-					if (closed) return;
-					closed = true;
-					unsubscribe();
-					try { controller.close(); } catch {}
-				});
+				proc.once('exit', onExit);
 			} else {
 				closed = true;
 				unsubscribe();
 				try { controller.close(); } catch {}
 			}
 
-			return () => { closed = true; unsubscribe(); killReAuth(); };
+			return () => {
+				closed = true;
+				unsubscribe();
+				proc?.off('exit', onExit);
+				killReAuth();
+			};
 		},
 	});
 
