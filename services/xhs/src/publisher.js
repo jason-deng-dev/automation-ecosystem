@@ -44,7 +44,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 	const page = await context.newPage();
 
 	const screenshot = async () => {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 55 });
+		const buf = await page.screenshot({ type: 'jpeg', quality: 15, clip: { x: 0, y: 0, width: 1280, height: 600 } });
 		console.log(`SCREENSHOT:${buf.toString('base64')}`);
 	};
 
