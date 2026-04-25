@@ -60,6 +60,8 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		console.log('Filling title...');
 		await page.getByPlaceholder('输入标题').click();
 		await page.keyboard.type(title);
+		const titleValue = await page.getByPlaceholder('输入标题').inputValue().catch(() => 'N/A');
+		console.log(`Title field value: "${titleValue}"`);
 
 		// content body — dispatch ClipboardEvent directly into ProseMirror (more reliable than
 		// navigator.clipboard + Ctrl+V in headless, where clipboard permissions are unreliable)
@@ -94,12 +96,8 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.getByText('一键排版').click();
 		await humanDelay(10000, 10000);
 		console.log(`URL after 一键排版: ${page.url()}`);
-		const frameUrls = page.frames().map(f => f.url());
-		console.log(`Frames: ${JSON.stringify(frameUrls)}`);
-		const nextEls = await page.evaluate(() =>
-			[...document.querySelectorAll('*')].filter(el => el.children.length === 0 && el.textContent.trim() === '下一步').map(el => `<${el.tagName} class="${el.className}">`)
-		);
-		console.log(`下一步 elements: ${JSON.stringify(nextEls)}`);
+		const nextCount = await page.locator('text=下一步').count();
+		console.log(`Playwright text=下一步 count: ${nextCount}`);
 		console.log('Clicking 下一步...');
 		await page.locator('text=下一步').first().click();
 		await humanDelay(10000, 10000);
