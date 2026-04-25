@@ -27,8 +27,19 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await humanDelay(0, 60 * 60 * 1000);
 	}
 
-	const browser = await chromium.launch({ headless: false });
-	const context = await browser.newContext({ storageState: AUTH_PATH });
+	const browser = await chromium.launch({
+		headless: true,
+		args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+	});
+	const context = await browser.newContext({
+		storageState: AUTH_PATH,
+		userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+	});
+	await context.addInitScript(() => {
+		Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+		Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
+		Object.defineProperty(document, 'hidden', { get: () => false });
+	});
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	const page = await context.newPage();
 
