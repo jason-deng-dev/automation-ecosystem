@@ -1,13 +1,13 @@
+import { runRakutenSync, killRakutenSync } from "@/app/lib/rakutenController";
 import { NextResponse } from 'next/server';
-
 export const runtime = 'nodejs';
 
 export async function POST() {
-	const rakutenUrl = process.env.RAKUTEN_SERVICE_URL;
-	if (!rakutenUrl) return NextResponse.json({ error: 'RAKUTEN_SERVICE_URL not set' }, { status: 500 });
+	runRakutenSync();
+	return NextResponse.json({ ok: true });
+}
 
-	const res = await fetch(`${rakutenUrl}/api/sync`, { method: 'POST' });
-	if (!res.ok) return NextResponse.json({ error: 'Sync failed' }, { status: 502 });
-
+export async function DELETE() {
+	killRakutenSync();
 	return NextResponse.json({ ok: true });
 }

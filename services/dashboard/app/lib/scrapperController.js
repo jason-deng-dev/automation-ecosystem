@@ -1,4 +1,42 @@
 import { ecosystemPool } from "./db/pool.js";
+import { spawn } from 'child_process';
+
+let scraperProc = null;
+let scraperBuffer = [];
+const scraperSubscribers = new Set();
+
+function broadcastScraper(line) {
+	scraperBuffer.push(line);
+	if (scraperBuffer.length > 200) scraperBuffer.shift();
+	for (const sub of scraperSubscribers) sub(line);
+}
+
+export function runScraperTrigger() {
+	if (scraperProc) return;
+	scraperBuffer = [];
+	scraperProc = spawn('docker', ['exec', 'scraper', 'node', 'scripts/run-scraper.js'], {
+		stdio: ['ignore', 'pipe', 'pipe'],
+	});
+	scraperProc.stdout.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcastScraper);
+	});
+	scraperProc.stderr.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcastScraper);
+	});
+	scraperProc.on('exit', (code) => { console.log('[scraper-trigger exit]', code); scraperProc = null; });
+}
+
+export function subscribeScraperTrigger(callback) {
+	scraperSubscribers.add(callback);
+	scraperBuffer.forEach(callback);
+	return () => scraperSubscribers.delete(callback);
+}
+
+export function getScraperProc() { return scraperProc; }
+
+export function killScraperTrigger() {
+	if (scraperProc) { scraperProc.kill(); scraperProc = null; }
+}
 
 export async function getScraperMetrics() {
 	const [lastRunRes, pipelineStateRes, successRateRes, totalRacesRes, dataFreshnessRes] = await Promise.all([

@@ -1,4 +1,42 @@
 import { rakutenPool, ecosystemPool } from './db/pool.js';
+import { spawn } from 'child_process';
+
+let rakutenProc = null;
+let rakutenBuffer = [];
+const rakutenSubscribers = new Set();
+
+function broadcastRakuten(line) {
+	rakutenBuffer.push(line);
+	if (rakutenBuffer.length > 200) rakutenBuffer.shift();
+	for (const sub of rakutenSubscribers) sub(line);
+}
+
+export function runRakutenSync() {
+	if (rakutenProc) return;
+	rakutenBuffer = [];
+	rakutenProc = spawn('docker', ['exec', 'rakuten', 'node', 'dist/scripts/runWeeklySync.js'], {
+		stdio: ['ignore', 'pipe', 'pipe'],
+	});
+	rakutenProc.stdout.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcastRakuten);
+	});
+	rakutenProc.stderr.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcastRakuten);
+	});
+	rakutenProc.on('exit', (code) => { console.log('[rakuten-sync exit]', code); rakutenProc = null; });
+}
+
+export function subscribeRakutenSync(callback) {
+	rakutenSubscribers.add(callback);
+	rakutenBuffer.forEach(callback);
+	return () => rakutenSubscribers.delete(callback);
+}
+
+export function getRakutenProc() { return rakutenProc; }
+
+export function killRakutenSync() {
+	if (rakutenProc) { rakutenProc.kill(); rakutenProc = null; }
+}
 
 export async function getRakutenMetrics() {
 	const [totalsRes, categoryRes, lastRunRes, pipelineStateRes] = await Promise.all([
