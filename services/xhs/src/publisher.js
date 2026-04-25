@@ -52,7 +52,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 
 		console.log('Clicking 新的创作...');
 		await page.getByText('新的创作').click();
-		await humanDelay(1000, 2000);
+		await humanDelay(5000, 8000);
 
 		// title — clipboard paste fires real browser paste events, unlike fill() which sets DOM value directly
 		console.log('Filling title...');
@@ -82,10 +82,10 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.keyboard.press('Enter');
 		console.log('Clicking 一键排版...');
 		await page.getByText('一键排版').click();
-		await humanDelay(1000, 2000);
+		await humanDelay(10000, 10000);
 		console.log('Clicking 下一步...');
 		await page.getByText('下一步').click();
-		await humanDelay(2000, 3000);
+		await humanDelay(10000, 10000);
 		console.log(`After 下一步 — URL: ${page.url()}`);
 		console.log('Waiting for description field...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 60000 });
