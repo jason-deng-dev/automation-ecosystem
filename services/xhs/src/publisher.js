@@ -84,7 +84,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		await page.getByText('一键排版').click();
 		await humanDelay(10000, 10000);
 		console.log('Clicking 下一步...');
-		await page.getByText('下一步').click();
+		await page.locator('button.custom-button.submit', { hasText: '下一步' }).click();
 		await humanDelay(10000, 10000);
 		console.log(`After 下一步 — URL: ${page.url()}`);
 		console.log('Waiting for description field...');
