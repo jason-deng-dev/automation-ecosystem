@@ -84,9 +84,10 @@ try {
 	let xhsQrReady = false;
 	for (let i = 0; i < 20 && !xhsQrReady; i++) {
 		await page.waitForTimeout(1000);
-		const info = await page.locator('img.qrcode-img').evaluate(img => ({
-			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
-		})).catch(() => null);
+		const info = await page.evaluate(() => {
+			const img = document.querySelector('img.qrcode-img');
+			return img ? { w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0 } : null;
+		}).catch(() => null);
 		if (info && info.w > 0 && info.len > 1000) { xhsQrReady = true; }
 		emit({ type: 'log', msg: `xhs QR poll ${i + 1}: ${info?.w}x${info?.h} src=${info?.len}` });
 	}
@@ -95,11 +96,10 @@ try {
 		if (xhsQrSrc) emit({ type: 'qr-src', data: xhsQrSrc });
 		emit({ type: 'log', msg: 'xhs.com QR ready — scan with phone.' });
 	}
-	await page.waitForFunction(
-		() => document.querySelector('#global')?.getAttribute('data-logged') === '1',
-		{ timeout: 5 * 60 * 1000 }
-	);
-	emit({ type: 'qr-scanned' });
+	if (xhsQrReady) {
+		await page.locator('img.qrcode-img').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+		emit({ type: 'qr-scanned' });
+	}
 	// Save again with xhs.com cookies merged in
 	await context.storageState({ path: AUTH_PATH });
 	emit({ type: 'log', msg: 'xhs.com auth merged into auth.json.' });
