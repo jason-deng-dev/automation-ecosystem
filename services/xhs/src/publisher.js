@@ -125,12 +125,13 @@ async function publishPost(
 		await waitForImageGeneration();
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
+			await screenshot();
 			await page
 				.locator("text=下一步")
 				.first()
 				.click()
 				.catch(() => {});
-			const descExists = await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').count();
+			const descExists = await page.evaluate(() => document.querySelectorAll('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').length);
 			if (descExists > 0) {
 				console.log("Description field found — proceeding");
 				break;
