@@ -79,9 +79,8 @@ await firstFrame;
 emit({ type: 'log', msg: 'Starting xhs.com login process...' });
 try {
 	await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 });
-	await page.waitForTimeout(5000);
-	await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
-	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for QR...' });
+	await page.waitForTimeout(3000);
+	emit({ type: 'log', msg: 'Navigated to xhs.com, polling for QR...' });
 	let xhsQrReady = false;
 	for (let i = 0; i < 20 && !xhsQrReady; i++) {
 		await page.waitForTimeout(1000);
@@ -96,7 +95,10 @@ try {
 		if (xhsQrSrc) emit({ type: 'qr-src', data: xhsQrSrc });
 		emit({ type: 'log', msg: 'xhs.com QR ready — scan with phone.' });
 	}
-	await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+	await page.waitForFunction(
+		() => document.querySelector('#global')?.getAttribute('data-logged') === '1',
+		{ timeout: 5 * 60 * 1000 }
+	);
 	emit({ type: 'qr-scanned' });
 	// Save again with xhs.com cookies merged in
 	await context.storageState({ path: AUTH_PATH });
