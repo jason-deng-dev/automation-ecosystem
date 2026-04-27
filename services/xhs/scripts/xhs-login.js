@@ -75,6 +75,37 @@ const timeoutHandle = setTimeout(async () => {
 emit({ type: 'log', msg: 'Starting login process...' });
 await firstFrame;
 
+
+emit({ type: 'log', msg: 'Starting xhs.com login process...' });
+try {
+	await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 });
+	await page.waitForTimeout(5000);
+	await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
+	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for QR...' });
+	let xhsQrReady = false;
+	for (let i = 0; i < 20 && !xhsQrReady; i++) {
+		await page.waitForTimeout(1000);
+		const info = await page.locator('img.qrcode-img').evaluate(img => ({
+			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
+		})).catch(() => null);
+		if (info && info.w > 0 && info.len > 1000) { xhsQrReady = true; }
+		emit({ type: 'log', msg: `xhs QR poll ${i + 1}: ${info?.w}x${info?.h} src=${info?.len}` });
+	}
+	if (xhsQrReady) {
+		const xhsQrSrc = await page.locator('img.qrcode-img').getAttribute('src').catch(() => null);
+		if (xhsQrSrc) emit({ type: 'qr-src', data: xhsQrSrc });
+		emit({ type: 'log', msg: 'xhs.com QR ready — scan with phone.' });
+	}
+	await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+	emit({ type: 'qr-scanned' });
+	// Save again with xhs.com cookies merged in
+	await context.storageState({ path: AUTH_PATH });
+	emit({ type: 'log', msg: 'xhs.com auth merged into auth.json.' });
+} catch (e) {
+	emit({ type: 'log', msg: `xhs.com step skipped — ${e?.message ?? 'timeout'}` });
+}
+emit({ type: 'log', msg: 'xhs.com done.' });
+
 emit({ type: 'log', msg: 'Starting creator login process...' });
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
 try {
@@ -124,35 +155,6 @@ emit({ type: 'log', msg: 'Creator login process done.' });
 await context.storageState({ path: AUTH_PATH });
 emit({ type: 'log', msg: 'Creator auth saved.' });
 
-emit({ type: 'log', msg: 'Starting xhs.com login process...' });
-try {
-	await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 });
-	await page.waitForTimeout(5000);
-	await page.locator('.login-container').waitFor({ state: 'visible', timeout: 15000 });
-	emit({ type: 'log', msg: 'Login container visible on xhs.com, waiting for QR...' });
-	let xhsQrReady = false;
-	for (let i = 0; i < 20 && !xhsQrReady; i++) {
-		await page.waitForTimeout(1000);
-		const info = await page.locator('img.qrcode-img').evaluate(img => ({
-			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
-		})).catch(() => null);
-		if (info && info.w > 0 && info.len > 1000) { xhsQrReady = true; }
-		emit({ type: 'log', msg: `xhs QR poll ${i + 1}: ${info?.w}x${info?.h} src=${info?.len}` });
-	}
-	if (xhsQrReady) {
-		const xhsQrSrc = await page.locator('img.qrcode-img').getAttribute('src').catch(() => null);
-		if (xhsQrSrc) emit({ type: 'qr-src', data: xhsQrSrc });
-		emit({ type: 'log', msg: 'xhs.com QR ready — scan with phone.' });
-	}
-	await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
-	emit({ type: 'qr-scanned' });
-	// Save again with xhs.com cookies merged in
-	await context.storageState({ path: AUTH_PATH });
-	emit({ type: 'log', msg: 'xhs.com auth merged into auth.json.' });
-} catch (e) {
-	emit({ type: 'log', msg: `xhs.com step skipped — ${e?.message ?? 'timeout'}` });
-}
-emit({ type: 'log', msg: 'xhs.com done.' });
 
 clearTimeout(timeoutHandle);
 emit({ type: 'log', msg: 'Login successful — auth.json saved.' });
