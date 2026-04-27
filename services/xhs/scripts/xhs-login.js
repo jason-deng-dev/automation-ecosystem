@@ -30,6 +30,7 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
+const cdpSession = await context.newCDPSession(page);
 await page.route('**/*', route =>
 	route.request().resourceType() === 'font' ? route.abort() : route.continue()
 );
@@ -50,8 +51,8 @@ const screenshotInterval = setInterval(async () => {
 	screenshotInProgress = true;
 	tickCount++;
 	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 8000 });
-		emit({ type: 'frame', data: buf.toString('base64') });
+		const { data } = await cdpSession.send('Page.captureScreenshot', { format: 'jpeg', quality: 60 });
+		emit({ type: 'frame', data });
 		resolveFirstFrame();
 		const info = await page.locator('img.css-1lhmg90').evaluate(img => ({
 			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
