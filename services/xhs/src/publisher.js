@@ -125,7 +125,6 @@ async function publishPost(
 		await waitForImageGeneration();
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
-			await screenshot();
 			await page
 				.locator("text=下一步")
 				.first()
