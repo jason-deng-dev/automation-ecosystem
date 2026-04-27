@@ -123,7 +123,7 @@ async function publishPost(
 		console.log("Clicking 一键排版...");
 		await page.getByText("一键排版").click();
 		await waitForImageGeneration();
-		for (let i = 0; i < 3; i++) {
+		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
 			await page
 				.locator("text=下一步")
@@ -179,7 +179,7 @@ async function publishPost(
 		});
 		console.log("Profile loaded, waiting for posts...");
 		
-		for (let i = 0; i < 10; i++) {
+		for (let i = 0; i < 20; i++) {
 			console.log(`Waiting (attempt ${i + 1}) — URL: ${page.url()}`);
 			await screenshot();
 			await humanDelay(800, 1500);
