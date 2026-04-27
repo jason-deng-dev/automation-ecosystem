@@ -126,7 +126,7 @@ async function publishPost(
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
 			await page
-				.locator("text=下一步")
+				.getByRole('button', { name: '下一步' })
 				.first()
 				.click()
 				.catch(() => {});
