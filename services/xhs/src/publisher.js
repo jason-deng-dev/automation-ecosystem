@@ -32,7 +32,7 @@ async function publishPost(
 
 	const browser = await chromium.launch({
 		headless: true,
-		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-web-fonts"],
 	});
 	const context = await browser.newContext({
 		storageState: AUTH_PATH,
@@ -226,7 +226,7 @@ async function checkAuth() {
 	}
 	const browser = await chromium.launch({
 		headless: true,
-		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-web-fonts"],
 	});
 	const context = await browser.newContext({
 		storageState: AUTH_PATH,
