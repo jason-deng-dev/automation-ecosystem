@@ -10,7 +10,7 @@ const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
 const browser = await chromium.launch({
 	headless: true,
-	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-web-fonts'],
 });
 
 const authContent = fs.existsSync(AUTH_PATH) ? fs.readFileSync(AUTH_PATH, 'utf8').trim() : '';
@@ -50,7 +50,7 @@ const screenshotInterval = setInterval(async () => {
 	screenshotInProgress = true;
 	tickCount++;
 	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 3000 });
+		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 8000 });
 		emit({ type: 'frame', data: buf.toString('base64') });
 		resolveFirstFrame();
 		const info = await page.locator('img.css-1lhmg90').evaluate(img => ({
@@ -79,7 +79,7 @@ await firstFrame;
 emit({ type: 'log', msg: 'Starting xhs.com login process...' });
 try {
 	await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 });
-	await page.waitForTimeout(3000);
+	await page.waitForTimeout(5000);
 	emit({ type: 'log', msg: 'Navigated to xhs.com, polling for QR...' });
 	let xhsQrReady = false;
 	for (let i = 0; i < 20 && !xhsQrReady; i++) {
