@@ -131,6 +131,7 @@ async function publishPost(
 				.first()
 				.click()
 				.catch(() => {});
+			await page.waitForTimeout(1500);
 			const descExists = await page.evaluate(() => document.querySelectorAll('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').length);
 			if (descExists > 0) {
 				console.log("Description field found — proceeding");
