@@ -120,18 +120,27 @@ async function publishPost(
 		await page.keyboard.press("Enter");
 
 		await screenshot();
-		console.log("Clicking 一键排版...");
-		await page.getByText("一键排版").click();
+		for (let i = 0; i < 5; i++) {
+			console.log("Clicking 一键排版...");
+			await page.getByText("一键排版").click();
+			await page.waitForTimeout(3000);
+			await screenshot();
+		}
+
 		await waitForImageGeneration();
+		
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
 			await page
-				.getByRole('button', { name: '下一步' })
+				.getByRole("button", { name: "下一步" })
 				.first()
 				.click()
 				.catch(() => {});
 			await page.waitForTimeout(1500);
-			const descExists = await page.evaluate(() => document.querySelectorAll('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').length);
+			await screenshot();
+			const descExists = await page.evaluate(
+				() => document.querySelectorAll('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').length,
+			);
 			if (descExists > 0) {
 				console.log("Description field found — proceeding");
 				break;
@@ -179,14 +188,12 @@ async function publishPost(
 			waitUntil: "commit",
 		});
 		console.log("Profile loaded, waiting for posts...");
-		
+
 		for (let i = 0; i < 20; i++) {
 			console.log(`Waiting (attempt ${i + 1}) — URL: ${page.url()}`);
 			await screenshot();
 			await humanDelay(800, 1500);
 		}
-
-
 
 		await page.waitForSelector("#userPostedFeeds .note-item");
 		console.log("Clicking latest post...");
