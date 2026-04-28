@@ -94,12 +94,13 @@ const waitForQrLogin = async (label, exitCheck) => {
 emit({ type: 'log', msg: 'Navigating to xhs.com...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 })
 	.catch(e => emit({ type: 'log', msg: `xhs.com goto: ${e.message}` }));
-await page.waitForTimeout(3000);
 emit({ type: 'log', msg: `URL: ${page.url()}` });
 
 // Two login states: /login page (full redirect) or captcha modal on /explore
 const isLoginUrl = page.url().includes('login');
-const hasLoginModal = await page.locator('.captcha-modal-content, .login-container').isVisible().catch(() => false);
+// Only settle-wait for modal case — /login URL is instant to detect
+if (!isLoginUrl) await page.waitForTimeout(3000);
+const hasLoginModal = !isLoginUrl && await page.locator('.captcha-modal-content, .login-container').isVisible().catch(() => false);
 if (isLoginUrl || hasLoginModal) {
 	emit({ type: 'log', msg: `xhs.com login required (url=${isLoginUrl}, modal=${hasLoginModal}) — polling for QR...` });
 	// /login page: exit when URL changes away; modal: exit when QR disappears (return inside waitForQrLogin)
