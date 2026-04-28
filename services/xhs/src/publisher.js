@@ -139,6 +139,8 @@ async function publishPost(
 		}
 
 		await waitForImageGeneration();
+		await humanDelay(8000, 12000);
+
 
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
