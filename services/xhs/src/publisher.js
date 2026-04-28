@@ -47,18 +47,12 @@ async function publishPost(
 	await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 	const page = await context.newPage();
 
-	const screenshot = async () => {
-		const buf = await page.screenshot({ type: "jpeg", quality: 15 });
-		console.log(`SCREENSHOT:${buf.toString("base64")}`);
-	};
-
-	const screenshotWait = async (ms) => {
-		const end = Date.now() + ms;
-		while (Date.now() < end) {
-			await screenshot();
-			await page.waitForTimeout(1000);
-		}
-	};
+	const cdp = await context.newCDPSession(page);
+	await cdp.send("Page.startScreencast", { format: "jpeg", quality: 15, everyNthFrame: 3 });
+	cdp.on("Page.screencastFrame", ({ data, sessionId }) => {
+		process.stdout.write(`SCREENSHOT:${data}\n`);
+		cdp.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
+	});
 
 	const waitForImageGeneration = async () => {
 		await page.waitForTimeout(5000); // let banner appear
@@ -88,7 +82,6 @@ async function publishPost(
 		await page.getByText("新的创作").click();
 		await humanDelay(5000, 8000);
 		console.log(`URL after 新的创作 click: ${page.url()}`);
-		await screenshot();
 
 		console.log("Filling title...");
 		await page.getByPlaceholder("输入标题").click();
@@ -134,11 +127,9 @@ async function publishPost(
 			.textContent()
 			.catch(() => "unknown");
 		console.log(`Body char count: ${charCount}`);
-		await screenshot();
 		console.log("Clicking 一键排版...");
 		await page.getByText("一键排版").click();
 		await waitForImageGeneration();
-		await screenshot();
 		console.log(`URL after 一键排版: ${page.url()}`);
 		const frameUrls = page.frames().map((f) => f.url());
 		console.log(`Frames after 一键排版: ${JSON.stringify(frameUrls)}`);
@@ -149,7 +140,6 @@ async function publishPost(
 		console.log("Clicking 下一步...");
 
 		for (let i = 0; i < 5; ++i) {
-			await screenshot();
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
 			await page
 				.locator("button:has-text('下一步')")
@@ -159,12 +149,9 @@ async function publishPost(
 			await humanDelay(1500, 1500);
 		}
 
-		await screenshot();
-
 		console.log("Waiting for description field...");
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 180000 });
 
-		await screenshot();
 		// description + hashtags
 		console.log("Filling description...");
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').click();

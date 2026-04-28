@@ -40,11 +40,9 @@ export default function XhsTriggerButton({ dict }) {
 	useEffect(() => {
 		fetch('/api/xhs/trigger')
 			.then(r => r.json())
-			.then(({ running, logs: buffered }) => {
-				if (!buffered.length) return;
-				const textLogs = buffered.filter(l => !l.startsWith('SCREENSHOT:'));
-				const lastShot = [...buffered].reverse().find(l => l.startsWith('SCREENSHOT:'));
-				setLogs(textLogs);
+			.then(({ running, logs: buffered, lastScreenshot: lastShot }) => {
+				if (!buffered.length && !running) return;
+				setLogs(buffered);
 				if (lastShot) setScreenshot(lastShot.slice('SCREENSHOT:'.length));
 				if (running) {
 					setStatus('running');

@@ -1,9 +1,9 @@
-import { runManualPost, killManualPost, getManualPostProc, getManualPostBuffer } from "@/app/lib/xhsController";
+import { runManualPost, killManualPost, getManualPostProc, getManualPostBuffer, getLastManualPostScreenshot } from "@/app/lib/xhsController";
 import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 export async function GET() {
-	return NextResponse.json({ running: !!getManualPostProc(), logs: getManualPostBuffer() });
+	return NextResponse.json({ running: !!getManualPostProc(), logs: getManualPostBuffer(), lastScreenshot: getLastManualPostScreenshot() });
 }
 
 export async function POST(request) {

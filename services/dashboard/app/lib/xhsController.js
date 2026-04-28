@@ -13,17 +13,23 @@ function broadcast(line) {
 
 let manualPostProc = null;
 let manualPostBuffer = [];
+let lastManualPostScreenshot = null;
 const manualPostSubscribers = new Set();
 
 function broadcastManualPost(line) {
-	manualPostBuffer.push(line);
-	if (manualPostBuffer.length > 200) manualPostBuffer.shift();
+	if (line.startsWith('SCREENSHOT:')) {
+		lastManualPostScreenshot = line;
+	} else {
+		manualPostBuffer.push(line);
+		if (manualPostBuffer.length > 200) manualPostBuffer.shift();
+	}
 	for (const sub of manualPostSubscribers) sub(line);
 }
 
 export function runManualPost(type) {
 	if (manualPostProc) return;
 	manualPostBuffer = [];
+	lastManualPostScreenshot = null;
 	manualPostProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/run-manualPost.js', type], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
@@ -47,6 +53,7 @@ export function runManualPost(type) {
 export function subscribeManualPost(callback) {
 	manualPostSubscribers.add(callback);
 	manualPostBuffer.forEach(callback);
+	if (lastManualPostScreenshot) callback(lastManualPostScreenshot);
 	return () => manualPostSubscribers.delete(callback);
 }
 
@@ -59,6 +66,7 @@ export function killManualPost() {
 }
 
 export function getManualPostBuffer() { return [...manualPostBuffer]; }
+export function getLastManualPostScreenshot() { return lastManualPostScreenshot; }
 
 export function runReAuth() {
 	if (reAuthProc) return;
