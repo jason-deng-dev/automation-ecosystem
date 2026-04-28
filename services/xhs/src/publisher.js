@@ -177,8 +177,15 @@ async function publishPost(
 		console.log("Navigating to profile page...");
 		await page.waitForTimeout(3000);
 		await page.goto("https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note", { waitUntil: "commit" });
-		await humanDelay(3000, 8000);
-		await page.locator("#userPostedFeeds .note-item").waitFor({ timeout: 30000 });
+		const profileEnd = Date.now() + 120000;
+		let noteVisible = false;
+		while (Date.now() < profileEnd) {
+			console.log(`Profile poll — URL: ${page.url()}`);
+			const count = await page.locator("#userPostedFeeds .note-item").count();
+			if (count > 0) { noteVisible = true; break; }
+			await page.waitForTimeout(3000);
+		}
+		if (!noteVisible) throw new Error("Profile feed note-item not visible after 120s");
 		await page.locator("#userPostedFeeds .note-item").first().click();
 
 		console.log("Posting comments...");
