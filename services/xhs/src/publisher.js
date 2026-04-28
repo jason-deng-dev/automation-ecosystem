@@ -61,8 +61,8 @@ async function publishPost(
 	};
 
 	const waitForImageGeneration = async () => {
-		console.log("Waiting 30s for image generation...");
-		await page.waitForTimeout(30000);
+		console.log("Waiting 60s for image generation...");
+		await page.waitForTimeout(60000);
 		console.log("Image generation wait complete");
 	};
 
@@ -149,7 +149,7 @@ async function publishPost(
 		await screenshot();
 
 		console.log("Waiting for description field...");
-		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 90000 });
+		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 180000 });
 
 		// description + hashtags
 		console.log("Filling description...");
