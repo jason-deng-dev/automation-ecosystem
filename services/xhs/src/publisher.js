@@ -173,10 +173,11 @@ async function publishPost(
 			outputTokens: output_tokens ?? 0,
 			published: true,
 		});
+
+
 		await page.waitForTimeout(3000);
 		await page.goto("https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note");
 		await humanDelay(3000, 8000);
-		await page.waitForSelector("#userPostedFeeds .note-item");
 		await page.locator("#userPostedFeeds .note-item").first().click();
 
 		console.log("Posting comments...");
