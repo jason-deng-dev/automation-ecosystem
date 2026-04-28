@@ -65,6 +65,10 @@ async function publishPost(
 	};
 
 	const waitForImageGeneration = async (timeout = 90000) => {
+		console.log("Waiting for image generation to start...");
+		await page.locator("text=笔记图片生成中").waitFor({ state: "visible", timeout: 15000 }).catch(() => {
+			console.log("Image generation banner never appeared — skipping wait");
+		});
 		const end = Date.now() + timeout;
 		while (Date.now() < end) {
 			await screenshot();
