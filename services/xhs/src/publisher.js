@@ -65,10 +65,6 @@ async function publishPost(
 	};
 
 	const waitForImageGeneration = async (timeout = 90000) => {
-		console.log("Waiting for image generation to start...");
-		await page.locator("text=笔记图片生成中").waitFor({ state: "visible", timeout: 15000 }).catch(() => {
-			console.log("Image generation banner never appeared — skipping wait");
-		});
 		const end = Date.now() + timeout;
 		while (Date.now() < end) {
 			await screenshot();
@@ -128,40 +124,14 @@ async function publishPost(
 		await page.keyboard.press("Enter");
 
 		await screenshot();
-		for (let i = 0; i < 5; i++) {
-			const btnExists = await page.evaluate(
-				() => [...document.querySelectorAll("*")].some((el) => el.textContent.trim() === "一键排版"),
-			);
-			if (!btnExists) {
-				console.log("一键排版 gone — formatting applied");
-				break;
-			}
-			console.log(`Clicking 一键排版 (attempt ${i + 1})...`);
-			await page.getByText("一键排版").click();
-			await page.waitForTimeout(3000);
-			await screenshot();
-		}
-
+		console.log("Clicking 一键排版...");
+		await page.getByText("一键排版").click();
 		await waitForImageGeneration();
-		await humanDelay(8000, 12000);
-
-
-		for (let i = 0; i < 25; i++) {
+		for (let i = 0; i < 3; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
-			await page
-				.getByRole("button", { name: "下一步" })
-				.first()
-				.click()
-				.catch(() => {});
-			await page.waitForTimeout(1500);
-			await screenshot();
-			const descExists = await page.evaluate(
-				() => document.querySelectorAll('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').length,
-			);
-			if (descExists > 0) {
-				console.log("Description field found — proceeding");
-				break;
-			}
+			await page.locator("text=下一步").first().click().catch(() => {});
+			const descExists = await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').count();
+			if (descExists > 0) { console.log("Description field found — proceeding"); break; }
 		}
 
 
