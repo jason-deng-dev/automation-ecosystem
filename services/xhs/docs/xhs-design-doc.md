@@ -263,6 +263,7 @@ XHS / Xiaohongshu (MOXI爱跑步 account)
 |API response parsing|Strip markdown fences then `JSON.parse()`|Structured outputs API (tools + schema)|Prompt-level JSON instruction alone is not reliable — Claude wraps JSON in ` ```json ` fences even when explicitly told not to. Defense-in-depth: the system prompt instructs raw JSON output AND `generator.js` strips any leading ` ```json ` / trailing ` ``` ` with a regex before calling `JSON.parse()`. This makes parsing robust regardless of model behavior: `text.trim().replace(/^\`\`\`json\s*/, '').replace(/\`\`\`\s*$/, '')`.|
 |Dependency injection (generator)|Optional `{ races, postedRaces, client, prompts }` param with `default*` fallbacks|Module-level globals only; factory function|Tests must inject fixture data and a mock client — without this, every test run hits the real API and uses real data. Optional params keep production calls unchanged (no args = defaults) while letting tests override any dependency. Deps are threaded through the full call chain: `generatePost` → `getContextPrompts` → `chooseRace`.|
 |Retries — Anthropic SDK|`maxRetries: 3` configured at client creation; 30s timeout|Manual try/catch retry loop|SDK handles exponential backoff on 429 and 5xx automatically — no manual retry logic needed. 3 retries balances resilience vs latency. Timeout reduced from SDK default (10min) to 30s — responses for this use case are short (< 500 tokens), so 10min is excessive and would stall the pipeline on a hung request.|
+|Auth re-login tool|`pkg`-bundled local executable (`xhs-login-local.js`) + `POST /api/xhs/auth` dashboard endpoint|Headless re-auth from VPS, noVNC, manual `scp`|XHS serves blank pages to headless Chromium on VPS datacenter IPs — login requires a real browser on a residential IP. `pkg` bundles Node + the login script into a double-click executable with no install step. `channel: 'chrome'` uses the user's existing Chrome install — no Chromium download. After scan, script POSTs auth.json to the dashboard endpoint which writes it to the bind-mount path the XHS container reads.|
 
 ---
 
@@ -837,12 +838,7 @@ Post type is passed as a positional argument (`process.argv[2]`) — e.g. `run-m
 
 **Preview mode:** When `--preview` is passed, the pipeline runs the full generation step (Claude API call, context building, race selection) but skips `publishPost()`. The generated post is written to `post_archive/` for operator review. `post_history.json` is not updated.
 
-**Auth refresh for non-technical operator:** When the XHS session expires, the operator re-authenticates via the monitoring dashboard — no terminal access required. See `services/dashboard/docs/dashboard-design-doc.md` §5 for the full flow.
-7. Dashboard clears the auth alert
-
-**Why screenshot polling over noVNC:** noVNC requires a VNC server (e.g. x11vnc) and a virtual display (Xvfb) installed on the Lightsail instance — significant infrastructure overhead for a single use case. Screenshot polling requires nothing beyond Playwright's built-in `page.screenshot()`. The only interactive step in the XHS login flow is scanning the QR code with a phone — the operator never needs to click or type inside the browser. The navigation to the QR code screen is automated, making screenshot polling fully sufficient.
-
-**Xvfb required for headless: false on VPS (updated):** XHS detects `headless: true` Playwright on VPS and serves blank/white pages — the bot detection fingerprint from a headless browser without a real display is too strong. Solution: install Xvfb in the XHS Docker container and run `xhs-login.js` via `xvfb-run` with `headless: false`. This gives Chromium a real virtual display to render into, bypassing headless detection. Screenshot polling still works identically — `page.screenshot()` captures the virtual display. The publishing pipeline (`publisher.js`) is unaffected — it uses saved `auth.json` cookies with no login UI needed, so bot detection on the login page is not a concern there.
+**Auth refresh for non-technical operator:** When the XHS session expires, the operator runs the local login tool (see Section 9.10) — no terminal access required. The tool opens a real browser window on the operator's machine, the operator scans the QR code, and auth.json is automatically uploaded to the VPS dashboard endpoint.
 
 **Why 2 GB RAM minimum:** The pipeline runs three memory-concurrent processes during each publish cycle: Node.js + cron scheduler (~100MB), the Playwright browser instance (~400MB), and Linux + Docker overhead (~200–300MB). A 1GB instance leaves less than 200MB of headroom for Playwright after the OS and Docker claim their share. On a live publish, the kernel OOM killer terminates the browser process mid-run — the post fails silently because the process is killed before it can write to `pipeline.log`. 2GB provides sufficient headroom for all concurrent processes with margin for browser memory spikes during page load.
 
@@ -877,6 +873,29 @@ This was a significant finding. It meant the pipeline as built would get the acc
 **Challenge:** RunJapan lists the same race multiple times under different entry tiers (e.g. "Kasumigaura Marathon 2026【Regular Entry】" and "Kasumigaura Marathon 2026 【Late entry】"). These are the same event with identical content but different registration windows. Exact-name dedup in `post_history.json` fails to catch these — each variant passes the filter as a new race, causing the pipeline to generate near-identical posts about the same event.
 
 **Solution:** Normalize race names before dedup comparison by stripping everything from `【` onward. At selection time in `generator.js`, filter out any candidate race whose normalized name matches a normalized name already in `post_history`. Check runs both directions — candidate is substring of history entry, or history entry is substring of candidate — to catch partial overlaps. Raw `races.json` is kept intact; dedup logic lives entirely at selection time.
+
+---
+
+### 9.10 XHS Login Page Unrenderable in Headless on VPS
+
+**Challenge:** The dashboard re-auth flow originally planned to stream a live video feed (CDP `Page.startScreencast`) from a headless Playwright session running on the VPS so the operator could see and scan the QR code. During implementation, CDP produced 0 frames regardless of wait time, navigation strategy, or browser flags. `page.screenshot()` returned 0 bytes. `document.querySelectorAll('img').length` returned 0 after `domcontentloaded` fired. The XHS login page was serving a structurally empty HTML shell — no DOM content rendered at all.
+
+Root cause: XHS bot detection fingerprints the browser at the network/TLS level based on the origin IP. VPS datacenter IPs are known bot infrastructure. `headless: true` on a datacenter IP receives a blank page instead of the login UI. This is independent of browser flags, `addInitScript` overrides, or `waitUntil` strategy — the server never sends renderable content.
+
+**Why publishing works but login doesn't:** `publisher.js` loads saved `auth.json` cookies into the browser context before any navigation. Requests carry valid session cookies and are treated as authenticated human traffic. The login page has no cookies — every request from it looks like a fresh unauthenticated browser session from a datacenter IP, which is exactly the bot fingerprint XHS blocks.
+
+**Attempted approaches (all failed):**
+- CDP `Page.startScreencast` — 0 frames
+- `page.screenshot()` — 0 bytes
+- `waitUntil: 'commit'` / `domcontentloaded'` / 60s wait — DOM always empty
+- `--disable-web-fonts` flag — blocked page paint
+- Catch-all `page.route()` interceptor — stalled rendering pipeline
+- `--disable-blink-features=AutomationControlled` — no effect on blank-page serving
+- `page.evaluate()` QR DOM extraction — `0 imgs on page` after 110+ seconds of polling
+
+**Solution:** Move the login step off the VPS entirely. A `pkg`-bundled local executable (`xhs-login-local.js`) runs on the operator's machine with `headless: false` and `channel: 'chrome'` (uses existing installed Chrome, no Chromium download). The operator's residential IP receives the normal XHS login page. After the operator scans the QR and login succeeds, the script captures `context.storageState()` and POSTs the auth.json to `POST /api/xhs/auth` on the dashboard. The dashboard writes it to `/home/ubuntu/xhs/auth.json` — the bind-mount path the XHS container reads. Operator UX: double-click executable → browser opens → scan QR → done.
+
+**Why `pkg` over a shell script:** The operator is non-technical and may not have Node.js installed. `pkg` compiles the script + Node runtime into a single platform binary (~50MB). `channel: 'chrome'` avoids bundling Chromium (which `pkg` cannot embed) by reusing the user's existing Chrome installation.
 
 ---
 
@@ -1007,7 +1026,8 @@ services/xhs/
     │   ├── run-reloadSchedule.js           # Dashboard/analytics: reload xhs_schedule from DB, re-register cron jobs
     │   ├── run-testRun.js                  # Dev tool — queue-based 7-day cycle test
     │   ├── test-gen.js                     # Dev tool — single real API call to generate a sample post
-    │   ├── xhs-login.js                    # Auth setup — auto-navigates to QR code, saves auth.json
+    │   ├── xhs-login.js                    # VPS re-auth — QR DOM extraction via page.evaluate(), emits qr-src to dashboard
+    │   ├── xhs-login-local.js              # Local re-auth — headless:false, channel:'chrome', POSTs auth.json to dashboard API
     │   └── xhs-selectors.json              # Playwright selectors for XHS web client
     ├── tests/
     │   ├── fixtures/
