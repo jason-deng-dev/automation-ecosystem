@@ -88,50 +88,29 @@ export default function XhsReAuthPanel({ dict, onDone }) {
 						display: 'flex', alignItems: 'center', justifyContent: 'center',
 					}}
 				>
-					<div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', width: '75vw' }}>
-						<div style={{ position: 'relative', flex: '1' }}>
-							<button
-								onClick={handleClose}
-								style={{
-									position: 'absolute', top: '8px', right: '8px',
-									color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
-									background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
-									padding: '4px 8px',
-								}}
-							>
-								✕
-							</button>
+					<div style={{ position: 'relative', display: 'flex', gap: '16px', alignItems: 'flex-start', width: (qrSrc || frame) ? '75vw' : 'auto', maxWidth: '1100px' }}>
+						<button onClick={handleClose} style={{
+							position: 'absolute', top: '-32px', right: 0,
+							color: '#EDEDED', fontSize: '20px', lineHeight: 1,
+							background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
+						}}>✕</button>
 
-							{qrSrc ? (
-								<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-									<img
-										src={qrSrc}
-										alt="XHS QR code"
-										style={{ width: '240px', height: '240px', imageRendering: 'pixelated', border: '8px solid #fff', display: 'block' }}
-									/>
-									<p style={{ color: '#F5A623', fontSize: '13px', margin: 0 }}>Scan with phone</p>
-								</div>
-							) : frame ? (
-								<img
-									src={`data:image/jpeg;base64,${frame}`}
-									alt="XHS login stream"
-									style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
-								/>
-							) : (
-								<div style={{
-									width: '100%', aspectRatio: '1',
-									border: '1px solid #2A2A2A',
-									display: 'flex', alignItems: 'center', justifyContent: 'center',
-									color: '#555555', fontSize: '13px',
-								}}>
-									{dict.triggering}
-								</div>
-							)}
-
-							<p className="text-sm text-center mt-3" style={{ color: '#F5A623' }}>
-								{dict.streaming}
-							</p>
-						</div>
+						{/* Video / QR — only shown once content arrives */}
+						{(qrSrc || frame) && (
+							<div style={{ flex: '1' }}>
+								{qrSrc ? (
+									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+										<img src={qrSrc} alt="XHS QR code"
+											style={{ width: '240px', height: '240px', imageRendering: 'pixelated', border: '8px solid #fff', display: 'block' }} />
+										<p style={{ color: '#F5A623', fontSize: '13px', margin: 0 }}>Scan with phone</p>
+									</div>
+								) : (
+									<img src={`data:image/jpeg;base64,${frame}`} alt="XHS login stream"
+										style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }} />
+								)}
+								<p className="text-sm text-center mt-3" style={{ color: '#F5A623' }}>{dict.streaming}</p>
+							</div>
+						)}
 
 						<div style={{
 							width: '280px', flexShrink: 0,

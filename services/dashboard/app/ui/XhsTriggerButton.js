@@ -128,39 +128,26 @@ export default function XhsTriggerButton({ dict }) {
 					zIndex: 50,
 					display: 'flex', alignItems: 'center', justifyContent: 'center',
 				}}>
-					<div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', width: '80vw', maxWidth: '1100px' }}>
+					<div style={{ position: 'relative', display: 'flex', gap: '16px', alignItems: 'flex-start', width: screenshot ? '80vw' : 'auto', maxWidth: '1100px' }}>
+						<button onClick={handleClose} style={{
+							position: 'absolute', top: '-32px', right: 0,
+							color: '#EDEDED', fontSize: '20px', lineHeight: 1,
+							background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
+						}}>✕</button>
 
-						{/* Screenshot feed */}
-						<div style={{ position: 'relative', flex: '1' }}>
-							<button
-							onClick={handleClose}
-							style={{
-								position: 'absolute', top: '8px', right: '8px',
-								color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
-								background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
-								padding: '4px 8px',
-							}}
-						>✕</button>
-							{screenshot ? (
+						{/* Screenshot feed — only shown once frames arrive */}
+						{screenshot && (
+							<div style={{ flex: '1' }}>
 								<img
 									src={`data:image/jpeg;base64,${screenshot}`}
 									alt="Browser state"
 									style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
 								/>
-							) : (
-								<div style={{
-									width: '100%', aspectRatio: '16/9',
-									border: '1px solid #2A2A2A',
-									display: 'flex', alignItems: 'center', justifyContent: 'center',
-									color: '#555555', fontSize: '13px',
-								}}>
-									Waiting for screenshot...
-								</div>
-							)}
-							<p className="text-sm text-center mt-2" style={{ color }}>
-								{status === 'running' ? '运行中...' : status === 'done' ? '完成' : '失败'}
-							</p>
-						</div>
+								<p className="text-sm text-center mt-2" style={{ color }}>
+									{status === 'running' ? '运行中...' : status === 'done' ? '完成' : '失败'}
+								</p>
+							</div>
+						)}
 
 						{/* Logs */}
 						<div style={{
