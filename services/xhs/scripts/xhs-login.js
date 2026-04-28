@@ -60,9 +60,12 @@ emit({ type: 'log', msg: 'Starting login process — waiting for video feed...' 
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 }).catch(e => emit({ type: 'log', msg: `goto error: ${e.message}` }));
 emit({ type: 'log', msg: `post-goto URL: ${page.url()}` });
 await page.waitForTimeout(60000);
-const testBuf = await page.screenshot({ type: 'jpeg', quality: 30 }).catch(() => null);
+const pageUrl = await page.url();
+const pageTitle = await page.title().catch(e => `err: ${e.message}`);
+emit({ type: 'log', msg: `after wait — URL: ${pageUrl} | title: ${pageTitle}` });
+const testBuf = await page.screenshot({ type: 'jpeg', quality: 30 }).catch(e => { emit({ type: 'log', msg: `screenshot error: ${e.message}` }); return null; });
 if (testBuf) emit({ type: 'frame', data: testBuf.toString('base64') });
-emit({ type: 'log', msg: `wait done — CDP frames: ${frameCount}, screenshot bytes: ${testBuf?.length ?? 0}` });
+emit({ type: 'log', msg: `CDP frames: ${frameCount}, screenshot bytes: ${testBuf?.length ?? 0}` });
 // emit({ type: 'log', msg: 'Video feed live — starting login...' });
 
 
