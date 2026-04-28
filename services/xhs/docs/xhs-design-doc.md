@@ -899,6 +899,61 @@ Root cause: XHS bot detection fingerprints the browser at the network/TLS level 
 
 ---
 
+#### Local Login Tool — Full Spec
+
+**`scripts/xhs-login-local.js` flow:**
+
+1. Launch Chrome via `chromium.launch({ headless: false, channel: 'chrome' })`
+2. Create context with empty storageState (fresh session — no cookies)
+3. Navigate to `https://www.xiaohongshu.com` — same anti-bot `addInitScript` as `xhs-login.js`
+4. Run the same three-step login flow as `xhs-login.js` (xhs.com → creator → www verify), but browser is visible — operator sees the QR directly in the Chrome window and scans with phone
+5. On completion, call `context.storageState()` → auth object in memory
+6. POST to dashboard upload endpoint (see below)
+7. Log result to console, close browser
+
+The script reads `DASHBOARD_URL` and `XHS_AUTH_SECRET` from a `.env` file co-located with the executable (or hardcoded at `pkg` build time for non-technical distribution).
+
+---
+
+**Dashboard upload endpoint:**
+
+```
+POST /api/xhs/auth
+Header: x-auth-secret: <XHS_AUTH_SECRET>
+Body: { cookies: [...], origins: [...] }   ← raw Playwright storageState object
+```
+
+**Response:**
+```json
+{ "ok": true }           // 200 — written successfully
+{ "error": "forbidden" } // 403 — wrong or missing secret
+{ "error": "invalid" }   // 400 — body not valid storageState shape
+```
+
+**What the endpoint does:**
+1. Reads `x-auth-secret` header — rejects with 403 if missing or wrong
+2. Validates body has `cookies` array and `origins` array — rejects with 400 if malformed
+3. Writes body as JSON to `/home/ubuntu/xhs/auth.json` (the bind-mount path the XHS container reads)
+4. Returns `{ ok: true }`
+
+**Secret:** `XHS_AUTH_SECRET` is a random string (e.g. 32-char hex) stored in:
+- Dashboard `.env` — `XHS_AUTH_SECRET=<value>`
+- The local executable's bundled config or co-located `.env`
+
+The secret prevents anyone who can reach the dashboard from overwriting auth.json. It is not a strong security boundary — the dashboard is operator-only and the endpoint only writes one specific file. A random string is sufficient.
+
+**Auth.json write path:** The dashboard API route writes to the same path used by `docker-compose.yml`'s bind mount:
+
+```yaml
+# docker-compose.yml (XHS service)
+volumes:
+  - /home/ubuntu/xhs/auth.json:/app/auth.json
+```
+
+The dashboard container must also have this path mounted (read-write) so the API route can write to it. Dashboard mounts it as a write target; XHS container mounts it as a read source.
+
+---
+
 ## 10. Testing Strategy
 
 ### 10.1 Philosophy
