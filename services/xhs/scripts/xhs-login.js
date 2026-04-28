@@ -41,7 +41,10 @@ process.on('SIGTERM', async () => {
 
 const cdp = await context.newCDPSession(page);
 await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 60, everyNthFrame: 3 });
+let frameCount = 0;
 cdp.on('Page.screencastFrame', ({ data, sessionId }) => {
+	frameCount++;
+	if (frameCount <= 3) emit({ type: 'log', msg: `CDP frame #${frameCount} received (${data.length} chars)` });
 	emit({ type: 'frame', data });
 	cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {});
 });
