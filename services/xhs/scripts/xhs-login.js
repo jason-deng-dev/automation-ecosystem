@@ -59,9 +59,9 @@ const timeoutHandle = setTimeout(async () => {
 
 
 emit({ type: 'log', msg: 'Starting login process — waiting for video feed...' });
-await page.goto('https://www.xiaohongshu.com', { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(e => emit({ type: 'log', msg: `goto error: ${e.message}` }));
+await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 }).catch(e => emit({ type: 'log', msg: `goto error: ${e.message}` }));
 emit({ type: 'log', msg: `post-goto URL: ${page.url()}` });
-await page.waitForTimeout(30000);
+await page.waitForTimeout(60000);
 emit({ type: 'log', msg: `wait done — total frames emitted: ${frameCount}` });
 // emit({ type: 'log', msg: 'Video feed live — starting login...' });
 
