@@ -128,6 +128,13 @@ async function publishPost(
 		console.log("Clicking 一键排版...");
 		await page.getByText("一键排版").click();
 		await waitForImageGeneration();
+		console.log(`URL after 一键排版: ${page.url()}`);
+		const frameUrls = page.frames().map((f) => f.url());
+		console.log(`Frames after 一键排版: ${JSON.stringify(frameUrls)}`);
+		for (const frame of page.frames()) {
+			const count = await frame.locator("text=下一步").count();
+			if (count > 0) console.log(`Found 下一步 in frame: ${frame.url()}`);
+		}
 		
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
