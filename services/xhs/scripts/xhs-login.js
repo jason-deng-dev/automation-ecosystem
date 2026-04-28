@@ -10,7 +10,7 @@ const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
 const browser = await chromium.launch({
 	headless: true,
-	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-web-fonts'],
+	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
 });
 
 const authContent = fs.existsSync(AUTH_PATH) ? fs.readFileSync(AUTH_PATH, 'utf8').trim() : '';
