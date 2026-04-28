@@ -56,18 +56,10 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		}
 	};
 
-	const waitForImageGeneration = async (timeout = 90000) => {
-		const end = Date.now() + timeout;
-		while (Date.now() < end) {
-			await screenshot();
-			const loading = await page.locator('text=笔记图片生成中').count();
-			if (loading === 0) {
-				console.log('Image generation complete');
-				return;
-			}
-			await page.waitForTimeout(1000);
-		}
-		console.log('Image generation timed out — proceeding anyway');
+	const waitForImageGeneration = async () => {
+		console.log('Waiting 30s for image generation...');
+		await page.waitForTimeout(30000);
+		console.log('Image generation wait complete');
 	};
 
 	console.log('Starting post publish...');
@@ -132,6 +124,9 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 			if (count > 0) console.log(`Found 下一步 in frame: ${frame.url()}`);
 		}
 		console.log('Clicking 下一步...');
+		
+
+
 		await page.locator('text=下一步').first().click().catch(() => {});
 		console.log('Waiting for description field...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 90000 });
