@@ -48,7 +48,11 @@ async function publishPost(
 	const page = await context.newPage();
 
 	const screenshot = async () => {
-		const buf = await page.screenshot({ type: "jpeg", quality: 15, timeout: 5000 }).catch(() => null);
+		await page.waitForLoadState("domcontentloaded").catch(() => {});
+		const buf = await page.screenshot({ type: "jpeg", quality: 15, timeout: 5000 }).catch((err) => {
+			console.log(`SCREENSHOT_FAILED: ${err.message}`);
+			return null;
+		});
 		if (buf) console.log(`SCREENSHOT:${buf.toString("base64")}`);
 	};
 
@@ -153,6 +157,8 @@ async function publishPost(
 				break;
 			}
 		}
+
+		
 		await humanDelay(800, 1000);
 		await screenshot();
 		console.log("Waiting for description field...");
