@@ -121,7 +121,14 @@ async function publishPost(
 
 		await screenshot();
 		for (let i = 0; i < 5; i++) {
-			console.log("Clicking 一键排版...");
+			const btnExists = await page.evaluate(
+				() => [...document.querySelectorAll("*")].some((el) => el.textContent.trim() === "一键排版"),
+			);
+			if (!btnExists) {
+				console.log("一键排版 gone — formatting applied");
+				break;
+			}
+			console.log(`Clicking 一键排版 (attempt ${i + 1})...`);
 			await page.getByText("一键排版").click();
 			await page.waitForTimeout(3000);
 			await screenshot();
