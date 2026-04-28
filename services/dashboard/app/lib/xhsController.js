@@ -74,11 +74,19 @@ export function runReAuth() {
 	reAuthProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/xhs-login.js'], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
+	let reAuthBuf = '';
 	reAuthProc.stdout.on('data', (chunk) => {
-		chunk.toString().split('\n').filter(Boolean).forEach(broadcast);
+		reAuthBuf += chunk.toString();
+		const lines = reAuthBuf.split('\n');
+		reAuthBuf = lines.pop();
+		lines.filter(Boolean).forEach(broadcast);
 	});
 	reAuthProc.stderr.on('data', (d) => console.error('[xhs-login stderr]', d.toString()));
-	reAuthProc.on('exit', (code) => { console.log('[xhs-login exit]', code); reAuthProc = null; });
+	reAuthProc.on('exit', (code) => {
+		console.log('[xhs-login exit]', code);
+		if (reAuthBuf.trim()) broadcast(reAuthBuf.trim());
+		reAuthProc = null;
+	});
 }
 
 export function subscribeReAuth(callback) {
