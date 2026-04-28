@@ -44,29 +44,38 @@ const timeoutHandle = setTimeout(async () => {
 	process.exit(1);
 }, 5 * 60 * 1000);
 
-// Poll DOM for any square QR-sized image. Returns src or null.
+// Poll DOM for QR image. Returns { src } or { src: null, debug } for diagnostics.
 const findQr = () => page.evaluate(() => {
 	const NAMED = ['img.qrcode-img', 'img.css-1lhmg90'];
 	for (const sel of NAMED) {
 		const img = document.querySelector(sel);
-		if (img && img.naturalWidth > 50 && img.src?.length > 500) return img.src;
+		if (img) {
+			const src = img.src || img.getAttribute('data-src') || '';
+			if (src.length > 10) return { src };
+			return { src: null, debug: `${sel} found: w=${img.naturalWidth} srcLen=${src.length}` };
+		}
 	}
 	// Fallback: any visible square img (QR codes are square)
 	for (const img of document.querySelectorAll('img')) {
-		if (img.naturalWidth > 80 && img.naturalWidth === img.naturalHeight && img.src?.length > 500)
-			return img.src;
+		const src = img.src || '';
+		if (img.naturalWidth > 80 && img.naturalWidth === img.naturalHeight && src.length > 50)
+			return { src };
 	}
-	return null;
-}).catch(() => null);
+	const totalImgs = document.querySelectorAll('img').length;
+	return { src: null, debug: `no qr — ${totalImgs} imgs on page` };
+}).catch(() => ({ src: null, debug: 'evaluate error' }));
 
 // Poll for QR, emit qr-src whenever it changes, resolve when page leaves login URL.
 // For creator (no URL change on login), resolves via framenavigated.
 const waitForQrLogin = async (label, exitCheck) => {
 	let lastSrc = null;
+	let pollCount = 0;
 	const end = Date.now() + 5 * 60 * 1000;
 	while (Date.now() < end) {
 		if (exitCheck()) return;
-		const src = await findQr();
+		const { src, debug } = await findQr();
+		pollCount++;
+		if (debug && pollCount % 3 === 1) emit({ type: 'log', msg: `${label} poll ${pollCount}: ${debug}` });
 		if (src && src !== lastSrc) {
 			lastSrc = src;
 			emit({ type: 'qr-src', data: src });
