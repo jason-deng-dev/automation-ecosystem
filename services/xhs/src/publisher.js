@@ -48,7 +48,7 @@ async function publishPost(
 	const page = await context.newPage();
 
 	const screenshot = async () => {
-		await page.waitForLoadState("domcontentloaded").catch(() => {});
+		await page.waitForLoadState("domcontentloaded", { timeout: 2000 }).catch(() => {});
 		const buf = await page.screenshot({ type: "jpeg", quality: 15, timeout: 5000 }).catch((err) => {
 			console.log(`SCREENSHOT_FAILED: ${err.message}`);
 			return null;
@@ -138,8 +138,8 @@ async function publishPost(
 			await screenshot();
 		}
 
-		await humanDelay(9800, 10000);
-		
+		await waitForImageGeneration();
+
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
 			await page
