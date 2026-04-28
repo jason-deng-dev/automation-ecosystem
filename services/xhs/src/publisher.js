@@ -129,6 +129,7 @@ async function publishPost(
 		console.log("Clicking 一键排版...");
 		await page.getByText("一键排版").click();
 		await waitForImageGeneration();
+		await screenshot();
 		console.log(`URL after 一键排版: ${page.url()}`);
 		const frameUrls = page.frames().map((f) => f.url());
 		console.log(`Frames after 一键排版: ${JSON.stringify(frameUrls)}`);
@@ -139,10 +140,13 @@ async function publishPost(
 		console.log("Clicking 下一步...");
 
 		for (let i = 0; i < 5; ++i) {
+			await screenshot();
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
 			await page.locator("text=下一步").first().click().catch(() => {});
 			await humanDelay(1500, 1500);
 		}
+
+		await screenshot();
 
 		console.log("Waiting for description field...");
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 90000 });
