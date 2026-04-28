@@ -139,11 +139,7 @@ async function publishPost(
 		console.log("Clicking 下一步...");
 
 		for (let i = 0; i < 5; ++i) {
-			await page
-				.locator("button.custom-button.submit")
-				.first()
-				.click()
-				.catch(() => {});
+			await page.locator("text=下一步").first().click().catch(() => {});
 			await humanDelay(1500, 1500);
 		}
 
