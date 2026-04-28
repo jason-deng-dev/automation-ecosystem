@@ -138,7 +138,7 @@ async function publishPost(
 			await screenshot();
 		}
 
-		await waitForImageGeneration();
+		await humanDelay(9800, 10000);
 		
 		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
@@ -158,7 +158,7 @@ async function publishPost(
 			}
 		}
 
-		
+
 		await humanDelay(800, 1000);
 		await screenshot();
 		console.log("Waiting for description field...");
