@@ -94,11 +94,14 @@ const waitForQrLogin = async (label, exitCheck) => {
 emit({ type: 'log', msg: 'Navigating to xhs.com...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 })
 	.catch(e => emit({ type: 'log', msg: `xhs.com goto: ${e.message}` }));
+await page.waitForTimeout(3000);
 emit({ type: 'log', msg: `URL: ${page.url()}` });
 
-if (page.url().includes('login')) {
+// XHS always lands on /explore — check for login/security modal instead of URL
+const xhsNeedsLogin = await page.locator('.captcha-modal-content, .login-container').isVisible().catch(() => false);
+if (xhsNeedsLogin) {
 	emit({ type: 'log', msg: 'xhs.com login required — polling for QR...' });
-	await waitForQrLogin('xhs.com', () => !page.url().includes('login'));
+	await waitForQrLogin('xhs.com', () => false); // exits when QR disappears
 	emit({ type: 'qr-scanned' });
 	emit({ type: 'log', msg: `xhs.com login done — URL: ${page.url()}` });
 } else {
