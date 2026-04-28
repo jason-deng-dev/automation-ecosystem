@@ -127,7 +127,7 @@ async function publishPost({ title, hook, contents, cta, description, hashtags, 
 		
 
 
-		await page.locator('text=下一步').first().click().catch(() => {});
+		await page.locator('button.custom-button.submit').first().click().catch(() => {});
 		console.log('Waiting for description field...');
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 90000 });
 
