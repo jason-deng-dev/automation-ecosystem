@@ -10,7 +10,10 @@ const emit = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
 const browser = await chromium.launch({
 	headless: true,
-	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+	args: [
+		'--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
+		'--disable-blink-features=AutomationControlled',
+	],
 });
 
 const authContent = fs.existsSync(AUTH_PATH) ? fs.readFileSync(AUTH_PATH, 'utf8').trim() : '';
@@ -94,6 +97,8 @@ const waitForQrLogin = async (label, exitCheck) => {
 emit({ type: 'log', msg: 'Navigating to xhs.com...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 })
 	.catch(e => emit({ type: 'log', msg: `xhs.com goto: ${e.message}` }));
+// Wait for DOM to populate — commit resolves on first byte before SPA scripts run
+await page.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
 emit({ type: 'log', msg: `URL: ${page.url()}` });
 
 // Two login states: /login page (full redirect) or captcha modal on /explore
