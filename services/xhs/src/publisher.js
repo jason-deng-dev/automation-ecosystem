@@ -152,7 +152,7 @@ async function publishPost(
 		await page.keyboard.press("Enter");
 		for (const hashtag of hashtags) {
 			await page.keyboard.type(`${hashtag}`);
-			await humanDelay(2500, 3500);
+			await humanDelay(5000, 5500);
 			await page.keyboard.press("Enter");
 		}
 		await humanDelay(500, 1500);
