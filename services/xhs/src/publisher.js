@@ -138,19 +138,11 @@ async function publishPost(
 			if (count > 0) console.log(`Found 下一步 in frame: ${frame.url()}`);
 		}
 		console.log("Clicking 下一步...");
-
-		for (let i = 0; i < 5; ++i) {
-			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
-			await page
-				.locator("button:has-text('下一步')")
-				.first()
-				.click()
-				.catch(() => {});
-			await humanDelay(1500, 1500);
-		}
-
-		console.log("Waiting for description field...");
-		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 180000 });
+		await page
+			.locator("button:has-text('下一步')")
+			.first()
+			.click()
+			.catch(() => {});
 
 		// description + hashtags
 		console.log("Filling description...");
