@@ -65,6 +65,7 @@ async function publishPost(
 	};
 
 	const waitForImageGeneration = async (timeout = 90000) => {
+		await page.waitForTimeout(3000); // give banner time to appear after 一键排版 click
 		const end = Date.now() + timeout;
 		while (Date.now() < end) {
 			await screenshot();
@@ -127,9 +128,12 @@ async function publishPost(
 		console.log("Clicking 一键排版...");
 		await page.getByText("一键排版").click();
 		await waitForImageGeneration();
-		for (let i = 0; i < 3; i++) {
+		
+		for (let i = 0; i < 25; i++) {
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
-			await page.locator("text=下一步").first().click().catch(() => {});
+			await page.getByRole("button", { name: "下一步" }).first().click().catch(() => {});
+			await page.waitForTimeout(1500);
+			await screenshot();
 			const descExists = await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').count();
 			if (descExists > 0) { console.log("Description field found — proceeding"); break; }
 		}
