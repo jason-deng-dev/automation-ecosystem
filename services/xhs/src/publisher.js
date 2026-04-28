@@ -174,10 +174,11 @@ async function publishPost(
 			published: true,
 		});
 
-
+		console.log("Navigating to profile page...");
 		await page.waitForTimeout(3000);
-		await page.goto("https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note");
+		await page.goto("https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note", { waitUntil: "commit" });
 		await humanDelay(3000, 8000);
+		await page.locator("#userPostedFeeds .note-item").waitFor({ timeout: 30000 });
 		await page.locator("#userPostedFeeds .note-item").first().click();
 
 		console.log("Posting comments...");
