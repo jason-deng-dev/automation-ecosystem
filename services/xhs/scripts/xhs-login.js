@@ -30,9 +30,7 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
-await page.route('**/*', route =>
-	route.request().resourceType() === 'font' ? route.abort() : route.continue()
-);
+await page.route(/\.(woff2?|ttf|otf|eot)(\?.*)?$/, route => route.abort());
 
 process.on('SIGTERM', async () => {
 	await browser.close();
