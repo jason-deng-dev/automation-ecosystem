@@ -35,7 +35,6 @@ await page.route('**/*', route =>
 );
 
 process.on('SIGTERM', async () => {
-	clearInterval(screenshotInterval);
 	await browser.close();
 	process.exit(0);
 });
@@ -43,29 +42,15 @@ process.on('SIGTERM', async () => {
 let resolveFirstFrame;
 const firstFrame = new Promise(r => { resolveFirstFrame = r; });
 
-let screenshotInProgress = false;
-let tickCount = 0;
-const screenshotInterval = setInterval(async () => {
-	if (screenshotInProgress) return;
-	screenshotInProgress = true;
-	tickCount++;
-	try {
-		const buf = await page.screenshot({ type: 'jpeg', quality: 60, timeout: 8000 });
-		emit({ type: 'frame', data: buf.toString('base64') });
-		resolveFirstFrame();
-		const info = await page.locator('img.css-1lhmg90').evaluate(img => ({
-			w: img.naturalWidth, h: img.naturalHeight, len: img.src?.length ?? 0,
-		})).catch(() => null);
-		if (info) emit({ type: 'log', msg: `tick ${tickCount}: QR ${info.w}x${info.h} src=${info.len}` });
-	} catch (e) {
-		emit({ type: 'log', msg: `screenshot error: ${e?.message}` });
-	} finally {
-		screenshotInProgress = false;
-	}
-}, 1000);
+const cdp = await context.newCDPSession(page);
+await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 60, everyNthFrame: 3 });
+cdp.on('Page.screencastFrame', ({ data, sessionId }) => {
+	emit({ type: 'frame', data });
+	if (resolveFirstFrame) { resolveFirstFrame(); resolveFirstFrame = null; }
+	cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {});
+});
 
 const timeoutHandle = setTimeout(async () => {
-	clearInterval(screenshotInterval);
 	emit({ type: 'error', msg: 'Login timeout after 5 minutes' });
 	await new Promise(r => setTimeout(r, 500));
 	await browser.close();
@@ -162,5 +147,4 @@ clearTimeout(timeoutHandle);
 emit({ type: 'log', msg: 'Login successful — auth.json saved.' });
 emit({ type: 'done' });
 await new Promise(r => setTimeout(r, 60000));
-clearInterval(screenshotInterval);
 await browser.close();
