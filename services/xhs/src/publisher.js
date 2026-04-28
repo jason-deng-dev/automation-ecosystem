@@ -61,9 +61,18 @@ async function publishPost(
 	};
 
 	const waitForImageGeneration = async () => {
-		console.log("Waiting 60s for image generation...");
-		await page.waitForTimeout(60000);
-		console.log("Image generation wait complete");
+		await page.waitForTimeout(5000); // let banner appear
+		const end = Date.now() + 120000;
+		while (Date.now() < end) {
+			const generating = await page.evaluate(() => document.body.innerText.includes("笔记图片生成中"));
+			if (!generating) {
+				console.log("Image generation complete");
+				return;
+			}
+			console.log("Image still generating...");
+			await page.waitForTimeout(3000);
+		}
+		console.log("Image generation timed out — proceeding anyway");
 	};
 
 	console.log("Starting post publish...");
@@ -142,7 +151,11 @@ async function publishPost(
 		for (let i = 0; i < 5; ++i) {
 			await screenshot();
 			console.log(`Clicking 下一步 (attempt ${i + 1})...`);
-			await page.locator("text=下一步").first().click().catch(() => {});
+			await page
+				.locator("button:has-text('下一步')")
+				.first()
+				.click()
+				.catch(() => {});
 			await humanDelay(1500, 1500);
 		}
 
@@ -151,6 +164,7 @@ async function publishPost(
 		console.log("Waiting for description field...");
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').waitFor({ timeout: 180000 });
 
+		await screenshot();
 		// description + hashtags
 		console.log("Filling description...");
 		await page.locator('[data-placeholder="输入正文描述，真诚有价值的分享予人温暖"]').click();
