@@ -142,6 +142,19 @@ emit({ type: 'log', msg: 'Creator login process done.' });
 await context.storageState({ path: AUTH_PATH });
 emit({ type: 'log', msg: 'Creator auth saved.' });
 
+// Verify www.xiaohongshu.com session — publisher navigates here to post comments
+emit({ type: 'log', msg: 'Verifying www.xiaohongshu.com session...' });
+await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note', { waitUntil: 'commit', timeout: 15000 }).catch(() => {});
+await page.waitForTimeout(4000);
+const xhsLoginVisible = await page.locator('.login-container').isVisible().catch(() => true);
+if (xhsLoginVisible) {
+	emit({ type: 'log', msg: 'www.xiaohongshu.com NOT logged in — waiting for login (scan QR or dismiss popup)...' });
+	await page.locator('.login-container').waitFor({ state: 'hidden', timeout: 5 * 60 * 1000 });
+	await context.storageState({ path: AUTH_PATH });
+	emit({ type: 'log', msg: 'www.xiaohongshu.com login confirmed, auth saved.' });
+} else {
+	emit({ type: 'log', msg: 'www.xiaohongshu.com session verified.' });
+}
 
 clearTimeout(timeoutHandle);
 emit({ type: 'log', msg: 'Login successful — auth.json saved.' });
