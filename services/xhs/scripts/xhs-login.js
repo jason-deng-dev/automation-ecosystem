@@ -39,14 +39,10 @@ process.on('SIGTERM', async () => {
 	process.exit(0);
 });
 
-let resolveFirstFrame;
-const firstFrame = new Promise(r => { resolveFirstFrame = r; });
-
 const cdp = await context.newCDPSession(page);
 await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 60, everyNthFrame: 3 });
 cdp.on('Page.screencastFrame', ({ data, sessionId }) => {
 	emit({ type: 'frame', data });
-	if (resolveFirstFrame) { resolveFirstFrame(); resolveFirstFrame = null; }
 	cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {});
 });
 
@@ -57,14 +53,13 @@ const timeoutHandle = setTimeout(async () => {
 	process.exit(1);
 }, 5 * 60 * 1000);
 
-emit({ type: 'log', msg: 'Starting login process...' });
+emit({ type: 'log', msg: 'Starting login process — waiting for video feed...' });
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 }).catch(() => {});
-await Promise.race([firstFrame, new Promise(r => setTimeout(r, 8000))]);
+await page.waitForTimeout(10000);
 emit({ type: 'log', msg: 'Video feed live — starting login...' });
 
 emit({ type: 'log', msg: 'Starting xhs.com login process...' });
 try {
-	await page.waitForTimeout(5000);
 	emit({ type: 'log', msg: 'Navigated to xhs.com, polling for QR...' });
 	let xhsQrReady = false;
 	for (let i = 0; i < 20 && !xhsQrReady; i++) {
