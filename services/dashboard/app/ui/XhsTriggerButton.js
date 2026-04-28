@@ -134,17 +134,15 @@ export default function XhsTriggerButton({ dict }) {
 
 						{/* Screenshot feed */}
 						<div style={{ position: 'relative', flex: '1' }}>
-							{status !== 'running' && (
-								<button
-									onClick={handleClose}
-									style={{
-										position: 'absolute', top: '8px', right: '8px',
-										color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
-										background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
-										padding: '4px 8px',
-									}}
-								>✕</button>
-							)}
+							<button
+							onClick={handleClose}
+							style={{
+								position: 'absolute', top: '8px', right: '8px',
+								color: '#EDEDED', fontSize: '20px', lineHeight: 1, zIndex: 1,
+								background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
+								padding: '4px 8px',
+							}}
+						>✕</button>
 							{screenshot ? (
 								<img
 									src={`data:image/jpeg;base64,${screenshot}`}
