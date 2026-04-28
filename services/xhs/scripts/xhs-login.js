@@ -54,12 +54,9 @@ const timeoutHandle = setTimeout(async () => {
 }, 5 * 60 * 1000);
 
 
-await page.waitForTimeout(30000);
-
-
 
 emit({ type: 'log', msg: 'Starting login process — waiting for video feed...' });
-await page.goto('https://www.xiaohongshu.com');
+await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(10000);
 // emit({ type: 'log', msg: 'Video feed live — starting login...' });
 
