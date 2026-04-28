@@ -97,11 +97,13 @@ await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 1
 await page.waitForTimeout(3000);
 emit({ type: 'log', msg: `URL: ${page.url()}` });
 
-// XHS always lands on /explore — check for login/security modal instead of URL
-const xhsNeedsLogin = await page.locator('.captcha-modal-content, .login-container').isVisible().catch(() => false);
-if (xhsNeedsLogin) {
-	emit({ type: 'log', msg: 'xhs.com login required — polling for QR...' });
-	await waitForQrLogin('xhs.com', () => false); // exits when QR disappears
+// Two login states: /login page (full redirect) or captcha modal on /explore
+const isLoginUrl = page.url().includes('login');
+const hasLoginModal = await page.locator('.captcha-modal-content, .login-container').isVisible().catch(() => false);
+if (isLoginUrl || hasLoginModal) {
+	emit({ type: 'log', msg: `xhs.com login required (url=${isLoginUrl}, modal=${hasLoginModal}) — polling for QR...` });
+	// /login page: exit when URL changes away; modal: exit when QR disappears (return inside waitForQrLogin)
+	await waitForQrLogin('xhs.com', () => isLoginUrl && !page.url().includes('login'));
 	emit({ type: 'qr-scanned' });
 	emit({ type: 'log', msg: `xhs.com login done — URL: ${page.url()}` });
 } else {
