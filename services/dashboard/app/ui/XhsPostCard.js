@@ -74,27 +74,35 @@ export default function XhsPostCard({ post, pending = false }) {
 	const descriptionFull = [post.description, ...(post.hashtags || [])].filter(Boolean).join('\n');
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '16px', backgroundColor: '#0D0D0D' }}>
+		<div style={{ backgroundColor: '#0D0D0D', padding: '16px' }}>
 			{post.race_name && (
-				<div style={{ fontSize: '11px', color: '#555555', marginBottom: '4px' }}>{post.race_name}</div>
+				<div style={{ fontSize: '11px', color: '#555555', marginBottom: '8px' }}>{post.race_name}</div>
 			)}
 
-			<CopyField label="标题 Title" sublabel="→ XHS title field" value={post.title} />
-			<CopyField label="Body" sublabel="→ slide content" value={bodyFull} />
-			<CopyField label="Description / CTA" sublabel="→ caption field (includes hashtags)" value={descriptionFull} />
+			<div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '12px', alignItems: 'start' }}>
 
-			<div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid #2A2A2A' }}>
-				<div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#666666', marginBottom: '8px' }}>
-					Comments — paste immediately after publishing
-				</div>
+				{/* Left — title, description, comments, mark button */}
 				<div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-					{Array.isArray(post.comments) && post.comments.map((comment, i) => (
-						<CopyField key={i} label={`Comment ${i + 1}`} value={comment} />
-					))}
-				</div>
-			</div>
+					<CopyField label="标题 Title" sublabel="→ XHS title field" value={post.title} />
+					<CopyField label="Description / CTA" sublabel="→ caption field (includes hashtags)" value={descriptionFull} />
 
-			{pending && <MarkPostedButton id={post.id} />}
+					<div style={{ marginTop: '4px', paddingTop: '10px', borderTop: '1px solid #2A2A2A' }}>
+						<div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#666666', marginBottom: '6px' }}>
+							Comments — paste immediately after publishing
+						</div>
+						<div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+							{Array.isArray(post.comments) && post.comments.map((comment, i) => (
+								<CopyField key={i} label={`Comment ${i + 1}`} value={comment} />
+							))}
+						</div>
+					</div>
+
+					{pending && <MarkPostedButton id={post.id} />}
+				</div>
+
+				{/* Right — body */}
+				<CopyField label="Body" sublabel="→ slide content" value={bodyFull} />
+			</div>
 		</div>
 	);
 }
