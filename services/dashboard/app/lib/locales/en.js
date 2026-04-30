@@ -120,6 +120,17 @@ export default {
 	hashtags: "Hashtags",
 	comments: "Comments",
 	sections: "Sections",
+	postCardTitle: "标题 Title",
+	postCardTitleSub: "→ XHS title field",
+	postCardBody: "Body",
+	postCardBodySub: "→ slide content",
+	postCardDesc: "Description / CTA",
+	postCardDescSub: "→ caption field (includes hashtags)",
+	postCardComments: "Comments — paste immediately after publishing",
+	postCardComment: "Comment",
+	postCardMarkPosted: "✓ Mark as Posted",
+	postCardSaving: "Saving...",
+	postCardMarked: "Marked",
 
 	// Rakuten detail page
 	runLog: "Run Log",

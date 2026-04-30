@@ -79,7 +79,7 @@ export default async function XhsPage() {
 												<span className="text-sm font-medium truncate" style={{ color: '#EDEDED' }}>{p.title}</span>
 												<span className="chevron ml-auto flex-none" style={{ color: '#444444', fontSize: '10px' }}>▼</span>
 											</summary>
-											<XhsPostCard post={p} pending={true} />
+											<XhsPostCard post={p} pending={true} dict={dict} />
 										</details>
 									);
 								})}
@@ -111,7 +111,7 @@ export default async function XhsPage() {
 												<span className="text-sm font-medium truncate" style={{ color: '#EDEDED' }}>{p.title}</span>
 												<span className="chevron ml-auto flex-none" style={{ color: '#444444', fontSize: '10px' }}>▼</span>
 											</summary>
-											<XhsPostCard post={p} />
+											<XhsPostCard post={p} dict={dict} />
 										</details>
 									))}
 								</div>

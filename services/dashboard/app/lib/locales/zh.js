@@ -106,6 +106,17 @@ export default {
 	hashtags: "标签",
 	comments: "评论",
 	sections: "正文",
+	postCardTitle: "标题",
+	postCardTitleSub: "→ 标题栏",
+	postCardBody: "正文",
+	postCardBodySub: "→ 图文内容",
+	postCardDesc: "描述 / CTA",
+	postCardDescSub: "→ 描述栏（含话题标签）",
+	postCardComments: "评论 — 发布后立即粘贴",
+	postCardComment: "评论",
+	postCardMarkPosted: "✓ 标记为已发布",
+	postCardSaving: "保存中...",
+	postCardMarked: "已标记",
 
 	// Rakuten detail page
 	runLog: "运行日志",

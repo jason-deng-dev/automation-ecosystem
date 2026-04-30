@@ -31,7 +31,7 @@ function CopyField({ label, sublabel, value }) {
 	);
 }
 
-function MarkPostedButton({ id }) {
+function MarkPostedButton({ id, dict }) {
 	const [status, setStatus] = useState('idle');
 	async function handleClick() {
 		setStatus('loading');
@@ -59,12 +59,12 @@ function MarkPostedButton({ id }) {
 				opacity: status === 'loading' ? 0.5 : 1,
 			}}
 		>
-			{status === 'loading' ? 'Saving...' : status === 'done' ? 'Marked' : '✓ Mark as Posted'}
+			{status === 'loading' ? dict.postCardSaving : status === 'done' ? dict.postCardMarked : dict.postCardMarkPosted}
 		</button>
 	);
 }
 
-export default function XhsPostCard({ post, pending = false }) {
+export default function XhsPostCard({ post, pending = false, dict }) {
 	const bodyParts = [
 		post.hook,
 		...(Array.isArray(post.contents) ? post.contents.map(p => p.subtitle ? `${p.subtitle}\n\n${p.body}` : p.body) : []),
@@ -83,25 +83,25 @@ export default function XhsPostCard({ post, pending = false }) {
 
 				{/* Left — title, description, comments, mark button */}
 				<div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-					<CopyField label="标题 Title" sublabel="→ XHS title field" value={post.title} />
-					<CopyField label="Description / CTA" sublabel="→ caption field (includes hashtags)" value={descriptionFull} />
+					<CopyField label={dict.postCardTitle} sublabel={dict.postCardTitleSub} value={post.title} />
+					<CopyField label={dict.postCardDesc} sublabel={dict.postCardDescSub} value={descriptionFull} />
 
 					<div style={{ marginTop: '4px', paddingTop: '10px', borderTop: '1px solid #2A2A2A' }}>
 						<div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#666666', marginBottom: '6px' }}>
-							Comments — paste immediately after publishing
+							{dict.postCardComments}
 						</div>
 						<div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
 							{Array.isArray(post.comments) && post.comments.map((comment, i) => (
-								<CopyField key={i} label={`Comment ${i + 1}`} value={comment} />
+								<CopyField key={i} label={`${dict.postCardComment} ${i + 1}`} value={comment} />
 							))}
 						</div>
 					</div>
 
-					{pending && <MarkPostedButton id={post.id} />}
+					{pending && <MarkPostedButton id={post.id} dict={dict} />}
 				</div>
 
 				{/* Right — body */}
-				<CopyField label="Body" sublabel="→ slide content" value={bodyFull} />
+				<CopyField label={dict.postCardBody} sublabel={dict.postCardBodySub} value={bodyFull} />
 			</div>
 		</div>
 	);
