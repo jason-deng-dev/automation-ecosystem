@@ -2,10 +2,10 @@
 import Link from 'next/link';
 import LangToggle from './LangToggle';
 
-export default function SideNav({ dict, lang }) {
+export default function SideNav({ dict, lang, xhsAlert = false }) {
   const links = [
     { href: '/',        label: dict.nav.home },
-    { href: '/xhs',     label: dict.nav.xhs },
+    { href: '/xhs',     label: dict.nav.xhs,     alert: xhsAlert },
     { href: '/rakuten', label: dict.nav.rakuten },
     { href: '/scraper', label: dict.nav.scraper },
   ];
@@ -18,16 +18,17 @@ export default function SideNav({ dict, lang }) {
         </span>
       </div>
       <div className="flex flex-col gap-2 p-3 flex-1">
-        {links.map(({ href, label }) => (
+        {links.map(({ href, label, alert }) => (
           <Link
             key={href}
             href={href}
-            className="px-3 py-3 text-sm font-medium tracking-wide transition-colors"
+            className="px-3 py-3 text-sm font-medium tracking-wide transition-colors flex items-center justify-between"
             style={{color: '#888888'}}
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#222222'; e.currentTarget.style.color = '#EDEDED'; }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = '#888888'; }}
           >
             {label}
+            {alert && <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#F5A623', flexShrink: 0 }} />}
           </Link>
         ))}
       </div>

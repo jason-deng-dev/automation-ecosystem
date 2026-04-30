@@ -14,13 +14,28 @@ function timeUntil(slot) {
 }
 
 export default async function XhsMetric({ dict }) {
-	const { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, upcomingPost } = await getXhsMetrics();
+	const { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, upcomingPost, pendingCount, overdueCount } = await getXhsMetrics();
 
 	return (
 		<div className="p-8 flex flex-col gap-6 flex-1" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
 			<h2 className="text-base font-semibold tracking-wide uppercase" style={{ color: '#EDEDED' }}>
 				{dict.xhsPipeline}
 			</h2>
+
+			{pendingCount > 0 && (
+				<a href="/xhs" style={{
+					display: 'flex', alignItems: 'center', gap: '8px',
+					padding: '8px 12px', border: '1px solid',
+					borderColor: overdueCount > 0 ? '#C8102E' : '#F5A623',
+					backgroundColor: overdueCount > 0 ? 'rgba(200,16,46,0.06)' : 'rgba(245,166,35,0.06)',
+					textDecoration: 'none',
+				}}>
+					<span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: overdueCount > 0 ? '#C8102E' : '#F5A623', flexShrink: 0 }} />
+					<span style={{ fontSize: '12px', fontWeight: 600, color: overdueCount > 0 ? '#C8102E' : '#F5A623' }}>
+						{pendingCount} pending{overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}
+					</span>
+				</a>
+			)}
 
 			<div className="flex flex-col gap-3">
 				<div className="flex justify-between text-base">

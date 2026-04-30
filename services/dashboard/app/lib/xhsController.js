@@ -55,6 +55,7 @@ export async function getXhsMetrics() {
 		tokenTotalsRes,
 		postTypeDistRes,
 		scheduleRes,
+		pendingRes,
 	] = await Promise.all([
 		ecosystemPool.query(
 			`SELECT published_at, post_type, outcome, error_stage, error_msg
@@ -76,6 +77,9 @@ export async function getXhsMetrics() {
 		),
 		ecosystemPool.query(
 			`SELECT day, time, post_type FROM xhs_schedule ORDER BY day, time`
+		),
+		ecosystemPool.query(
+			`SELECT published_at FROM xhs_post_archive WHERE published = false`
 		),
 	]);
 
@@ -123,5 +127,10 @@ export async function getXhsMetrics() {
 		type: upcomingSlot.post_type,
 	} : null;
 
-	return { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, upcomingPost };
+	const OVERDUE_MS = 4 * 60 * 60 * 1000;
+	const pendingPosts = pendingRes.rows;
+	const pendingCount = pendingPosts.length;
+	const overdueCount = pendingPosts.filter(r => (now - new Date(r.published_at)) > OVERDUE_MS).length;
+
+	return { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, upcomingPost, pendingCount, overdueCount };
 }
