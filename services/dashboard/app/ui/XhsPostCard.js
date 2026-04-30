@@ -4,6 +4,7 @@ import { useState } from 'react';
 function CopyField({ label, sublabel, value, dict }) {
 	const [copied, setCopied] = useState(false);
 	const [hovered, setHovered] = useState(false);
+	const [active, setActive] = useState(false);
 	function handleCopy() {
 		navigator.clipboard.writeText(value);
 		setCopied(true);
@@ -19,12 +20,14 @@ function CopyField({ label, sublabel, value, dict }) {
 				<button
 					onClick={handleCopy}
 					onMouseEnter={() => setHovered(true)}
-					onMouseLeave={() => setHovered(false)}
+					onMouseLeave={() => { setHovered(false); setActive(false); }}
+					onMouseDown={() => setActive(true)}
+					onMouseUp={() => setActive(false)}
 					style={{
 						fontSize: '11px', padding: '2px 10px', border: '1px solid',
 						borderColor: copied ? '#3ECF8E' : '#333333',
 						color: copied ? '#3ECF8E' : hovered ? '#EDEDED' : '#666666',
-						background: hovered && !copied ? 'rgba(237,237,237,0.08)' : 'transparent',
+						background: active ? 'rgba(237,237,237,0.18)' : hovered && !copied ? 'rgba(237,237,237,0.08)' : 'transparent',
 						cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
 						transition: 'color 0.15s, background 0.15s, border-color 0.15s',
 					}}
