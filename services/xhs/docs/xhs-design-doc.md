@@ -33,8 +33,8 @@ Most automated content systems are built on assumptions. This one is built on **
 ### 1.4 Goals
 
 - Generate varied, on-brand Chinese-language XHS posts daily using the Claude API
-- Source live race data from the shared volume (`scraper/races.json`, written by the Scraper container)
-- Auto-publish to XHS with zero human intervention required
+- Source live race data from the `races` table (written by the Scraper container)
+- Present generated content in the dashboard for operator review and one-click copy
 - Funnel every post toward one of four platform destinations
 - Weight content types by proven performance data, not intuition
 
@@ -44,6 +44,29 @@ Most automated content systems are built on assumptions. This one is built on **
 - Multi-platform publishing (XHS only in v1)
 - Real-time analytics on post performance
 - Paid promotion or ad buying
+- Server-side auto-publishing — see §1.6
+
+### 1.6 Publishing Strategy — Semi-Automated (April 2026)
+
+**Original goal:** full auto-publish via Playwright on VPS.
+
+**Why it changed:** XHS bot detection operates at the network/IP level. The VPS (datacenter IP) triggers security verification and account suspension regardless of browser fingerprint mitigations. The MOXI爱跑步 account was suspended in April 2026 after repeated automated login attempts during re-auth flow testing.
+
+**Current approach — semi-automated:**
+
+```
+GENERATE (VPS, automated)  →  DISPLAY (dashboard)  →  PUBLISH (operator, manual via app)
+```
+
+1. Scheduler runs daily as before — generates a complete post via Claude API
+2. Dashboard presents the post with one-click copy per field (title, body, description, hashtags, comments)
+3. Operator opens XHS app, pastes each field, publishes manually
+
+**Why this works:** Content creation was always the bottleneck — not clicking publish. Manual posting takes ~3 minutes. The system still eliminates the 1–2 hours of research and writing per post.
+
+**New account:** A new XHS account will be launched to replace the suspended MOXI爱跑步 account. Content strategy will be calibrated from the 115-post performance dataset from the original account, with a more consistent visual style and tighter post format from day one.
+
+**Publisher.js status:** Kept in the codebase as a reference and potential future use if XHS policy changes, but not part of the active pipeline. The scheduler no longer calls `publishPost()` in production.
 
 ---
 

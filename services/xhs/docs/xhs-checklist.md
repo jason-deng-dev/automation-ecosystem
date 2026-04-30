@@ -185,26 +185,24 @@
   - [x] `scripts/run-preview.js` — reads type from `process.argv[2]`, generates + archives only, skips publish + post_history write
   - [x] Dashboard invokes via `docker exec xhs node scripts/run-manualPost.js <type>` or `run-preview.js <type>`
 
-- [ ] xhs-login.js — dashboard re-auth flow
-  - [x] Discover and document selectors for: "login with QR code" tab, QR code image element, post-login redirect URL
-  - [x] Auto-click through to QR code screen — `.login-box-container img` click switches to QR code mode
-  - [x] Detect successful login via framenavigated event (non-login URL)
-  - [x] Log stream wired — emit({ type: 'log' }) replaces console.log; dashboard shows log panel beside QR view
-  - [x] Scrapped CDP screencast for login — XHS login page never renders in headless on VPS (0 imgs on page, 0 screenshot bytes regardless of wait strategy or browser flags)
-  - [x] Rewrote to DOM QR extraction: findQr() polls img.qrcode-img + img.css-1lhmg90 via page.evaluate(), emits qr-src data URI — works without page rendering
-  - [x] waitForQrLogin() exits when QR disappears (scan signal) — fixes 5-min timeout bug for www-verify step
-  - [x] Three-step login: xhs.com → creator.xiaohongshu.com → www session verification
-  - [x] www session verification added (Step 3) — publisher needs www.xiaohongshu.com cookies to post comments
-  - [x] Login detection: checks URL includes('login') OR .captcha-modal-content/.login-container visible — XHS lands on /explore even when unauthenticated
-  - [x] Block font requests to prevent render hangs
-  - [ ] End-to-end verified working on VPS — BLOCKED: XHS serves empty HTML to headless Chromium on datacenter IP
+- [~] xhs-login.js / local login tool — DEPRIORITIZED
+  - Auth flow work complete but moot under semi-automated strategy — publisher.js not in active pipeline
+  - Kept in codebase for reference; revisit only if auto-publishing is reinstated
 
-- [ ] Local login executable (pkg) — replaces VPS-based re-auth
-  - [x] Write scripts/xhs-login-local.js — headless: false, channel: 'chrome', navigates to xhs.com login, polls for successful auth, POSTs auth.json to dashboard
-  - [x] Add POST /api/xhs/auth endpoint to dashboard — verifies shared secret, writes received auth.json to VPS bind-mount path
-  - [x] Add XHS_AUTH_SECRET to dashboard .env.example
-  - [ ] pkg build: compile xhs-login-local.js + Node runtime into Windows .exe (and Mac binary if needed)
-  - [ ] Test end-to-end: run .exe locally → scan QR → auth.json uploaded → VPS container authenticated
+---
+
+## Semi-Automated Publishing (new direction — April 2026)
+
+> Full auto-publish via Playwright abandoned — XHS suspends accounts on datacenter IPs regardless of mitigations. See design doc §1.6.
+
+- [ ] Dashboard — post display UI
+  - [ ] "Generate" button triggers `run-preview.js` (already exists) and polls until post appears in `xhs_post_archive`
+  - [ ] Display generated post fields: title, hook, each content page (subtitle + body), CTA, description, hashtags
+  - [ ] One-click copy button per field
+  - [ ] Comments displayed separately with copy button each (primary CTA first, community second)
+- [ ] New XHS account setup
+  - [ ] Register new account
+  - [ ] Update account handle/profile URL references in publisher.js and xhs-login.js (www-verify step profile URL)
 
 - [x] Draft post caching — reuse generated posts that failed to publish
   - [x] Add `xhs_draft_posts` table — post_type, generated post JSON, generated_at, status ('pending' | 'published')

@@ -41,38 +41,18 @@ const timeoutHandle = setTimeout(async () => {
 	process.exit(1);
 }, 5 * 60 * 1000);
 
-const findQr = () => page.evaluate(() => {
-	const NAMED = ['img.qrcode-img', 'img.css-1lhmg90'];
-	for (const sel of NAMED) {
-		const img = document.querySelector(sel);
-		if (img) {
-			const src = img.src || img.getAttribute('data-src') || '';
-			return { found: src.length > 10 };
-		}
-	}
-	for (const img of document.querySelectorAll('img')) {
-		if (img.naturalWidth > 80 && img.naturalWidth === img.naturalHeight && (img.src || '').length > 50)
-			return { found: true };
-	}
-	return { found: false };
-}).catch(() => ({ found: false }));
-
-const waitForQrLogin = async (label, exitCheck) => {
-	let qrSeen = false;
+// Poll until isLoggedIn() returns true or timeout. Browser is visible — user scans naturally.
+const waitForLogin = async (label, isLoggedIn) => {
+	log(`${label}: waiting for login...`);
 	const end = Date.now() + 5 * 60 * 1000;
 	while (Date.now() < end) {
-		if (exitCheck()) return;
-		const { found } = await findQr();
-		if (found && !qrSeen) {
-			qrSeen = true;
-			log(`${label}: QR visible — scan with REDNote app`);
-		} else if (!found && qrSeen) {
-			log(`${label}: QR gone — login detected`);
-			await page.waitForTimeout(2000);
+		if (await isLoggedIn()) {
+			log(`${label}: login confirmed`);
 			return;
 		}
 		await page.waitForTimeout(2000);
 	}
+	throw new Error(`${label}: login timeout`);
 };
 
 // ── Step 1: xhs.com ──────────────────────────────────────────────────────────
@@ -80,16 +60,20 @@ log('Navigating to xhs.com...');
 await page.goto('https://www.xiaohongshu.com', { waitUntil: 'commit', timeout: 15000 })
 	.catch(e => log(`xhs.com goto: ${e.message}`));
 await page.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
+await page.waitForTimeout(3000);
 log(`URL: ${page.url()}`);
 
-const isLoginUrl = page.url().includes('login');
-if (!isLoginUrl) await page.waitForTimeout(3000);
-const hasLoginModal = !isLoginUrl && await page.locator('.captcha-modal-content, .login-container').isVisible().catch(() => false);
+const xhsLoginNeeded = page.url().includes('login') ||
+	await page.locator('#app > div:nth-child(1) > div > div.login-container').isVisible().catch(() => false) ||
+	await page.locator('.captcha-modal-content').isVisible().catch(() => false);
 
-if (isLoginUrl || hasLoginModal) {
-	log('xhs.com login required — scan QR in Chrome window');
-	await waitForQrLogin('xhs.com', () => isLoginUrl && !page.url().includes('login'));
-	log(`xhs.com login done — URL: ${page.url()}`);
+if (xhsLoginNeeded) {
+	log('xhs.com login required — scan all QR codes in Chrome window, script will proceed automatically');
+	// Positive signal: login button gone = fully authenticated (past security check AND login)
+	await waitForLogin('xhs.com', async () => {
+		const loginBtnVisible = await page.locator('#login-btn').isVisible().catch(() => true);
+		return !loginBtnVisible;
+	});
 } else {
 	log('xhs.com already logged in.');
 }
@@ -97,29 +81,28 @@ if (isLoginUrl || hasLoginModal) {
 // ── Step 2: creator.xiaohongshu.com ──────────────────────────────────────────
 log('Navigating to creator...');
 await page.goto('https://creator.xiaohongshu.com/publish/publish', { waitUntil: 'commit' });
-try {
-	await page.locator('.login-box-container').waitFor({ state: 'visible', timeout: 15000 });
-	await page.locator('.login-box-container img').click();
+await page.waitForTimeout(3000);
+const creatorLoginNeeded = await page.locator('.login-box-container').isVisible().catch(() => false);
+if (creatorLoginNeeded) {
+	await page.locator('.login-box-container img').click().catch(() => {});
 	log('Creator login required — scan QR in Chrome window');
-	let creatorDone = false;
-	page.once('framenavigated', (frame) => {
-		if (frame === page.mainFrame() && !frame.url().includes('login')) creatorDone = true;
+	await waitForLogin('creator', async () => {
+		return !(await page.locator('.login-box-container').isVisible().catch(() => true));
 	});
-	await waitForQrLogin('creator', () => creatorDone);
-	log(`Creator login done — URL: ${page.url()}`);
-} catch {
-	log('Creator: already logged in or login box not found.');
+} else {
+	log('Creator: already logged in.');
 }
 
 // ── Step 3: verify www session ───────────────────────────────────────────────
 log('Verifying www.xiaohongshu.com session...');
 await page.goto('https://www.xiaohongshu.com/user/profile/68b4ecc6000000001802f0e9?tab=note&subTab=note', { waitUntil: 'commit', timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(4000);
-const wwwLoginVisible = await page.locator('.login-container').isVisible().catch(() => true);
-if (wwwLoginVisible) {
+const wwwLoginNeeded = await page.locator('.login-container').isVisible().catch(() => false);
+if (wwwLoginNeeded) {
 	log('www login required — scan QR in Chrome window');
-	await waitForQrLogin('www-verify', () => !page.url().includes('login'));
-	log('www.xiaohongshu.com login confirmed.');
+	await waitForLogin('www-verify', async () => {
+		return !(await page.locator('.login-container').isVisible().catch(() => true));
+	});
 } else {
 	log('www.xiaohongshu.com session verified.');
 }
