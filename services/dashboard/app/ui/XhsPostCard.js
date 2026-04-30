@@ -5,13 +5,18 @@ function CopyField({ label, sublabel, value, dict }) {
 	const [copied, setCopied] = useState(false);
 	const [hovered, setHovered] = useState(false);
 	const [active, setActive] = useState(false);
+	const [cardHovered, setCardHovered] = useState(false);
 	function handleCopy() {
 		navigator.clipboard.writeText(value);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}
 	return (
-		<div style={{ border: '1px solid #2A2A2A', padding: '10px 14px' }}>
+		<div
+			onMouseEnter={() => setCardHovered(true)}
+			onMouseLeave={() => setCardHovered(false)}
+			style={{ border: `1px solid ${cardHovered ? '#555555' : '#2A2A2A'}`, padding: '10px 14px', transition: 'border-color 0.15s' }}
+		>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
 				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 					<span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#888888' }}>{label}</span>
