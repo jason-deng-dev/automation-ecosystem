@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
 
-function CopyField({ label, sublabel, value }) {
+function CopyField({ label, sublabel, value, dict }) {
 	const [copied, setCopied] = useState(false);
+	const [hovered, setHovered] = useState(false);
 	function handleCopy() {
 		navigator.clipboard.writeText(value);
 		setCopied(true);
@@ -15,13 +16,20 @@ function CopyField({ label, sublabel, value }) {
 					<span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#888888' }}>{label}</span>
 					{sublabel && <span style={{ fontSize: '11px', color: '#444444' }}>{sublabel}</span>}
 				</div>
-				<button onClick={handleCopy} style={{
-					fontSize: '11px', padding: '2px 10px', border: '1px solid',
-					borderColor: copied ? '#3ECF8E' : '#333333',
-					color: copied ? '#3ECF8E' : '#666666',
-					background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-				}}>
-					{copied ? '✓ Copied' : 'Copy'}
+				<button
+					onClick={handleCopy}
+					onMouseEnter={() => setHovered(true)}
+					onMouseLeave={() => setHovered(false)}
+					style={{
+						fontSize: '11px', padding: '2px 10px', border: '1px solid',
+						borderColor: copied ? '#3ECF8E' : '#333333',
+						color: copied ? '#3ECF8E' : hovered ? '#EDEDED' : '#666666',
+						background: hovered && !copied ? 'rgba(237,237,237,0.08)' : 'transparent',
+						cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+						transition: 'color 0.15s, background 0.15s, border-color 0.15s',
+					}}
+				>
+					{copied ? (dict?.postCardCopied ?? '✓ Copied') : (dict?.postCardCopy ?? 'Copy')}
 				</button>
 			</div>
 			<div style={{ fontSize: '13px', color: '#EDEDED', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
@@ -83,8 +91,8 @@ export default function XhsPostCard({ post, pending = false, dict }) {
 
 				{/* Left — title, description, comments, mark button */}
 				<div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-					<CopyField label={dict.postCardTitle} sublabel={dict.postCardTitleSub} value={post.title} />
-					<CopyField label={dict.postCardDesc} sublabel={dict.postCardDescSub} value={descriptionFull} />
+					<CopyField label={dict.postCardTitle} sublabel={dict.postCardTitleSub} value={post.title} dict={dict} />
+					<CopyField label={dict.postCardDesc} sublabel={dict.postCardDescSub} value={descriptionFull} dict={dict} />
 
 					<div style={{ marginTop: '4px', paddingTop: '10px', borderTop: '1px solid #2A2A2A' }}>
 						<div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#666666', marginBottom: '6px' }}>
@@ -92,7 +100,7 @@ export default function XhsPostCard({ post, pending = false, dict }) {
 						</div>
 						<div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
 							{Array.isArray(post.comments) && post.comments.map((comment, i) => (
-								<CopyField key={i} label={`${dict.postCardComment} ${i + 1}`} value={comment} />
+								<CopyField key={i} label={`${dict.postCardComment} ${i + 1}`} value={comment} dict={dict} />
 							))}
 						</div>
 					</div>
@@ -101,7 +109,7 @@ export default function XhsPostCard({ post, pending = false, dict }) {
 				</div>
 
 				{/* Right — body */}
-				<CopyField label={dict.postCardBody} sublabel={dict.postCardBodySub} value={bodyFull} />
+				<CopyField label={dict.postCardBody} sublabel={dict.postCardBodySub} value={bodyFull} dict={dict} />
 			</div>
 		</div>
 	);

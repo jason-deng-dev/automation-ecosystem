@@ -131,6 +131,8 @@ export default {
 	postCardMarkPosted: "✓ Mark as Posted",
 	postCardSaving: "Saving...",
 	postCardMarked: "Marked",
+	postCardCopy: "Copy",
+	postCardCopied: "✓ Copied",
 
 	// Rakuten detail page
 	runLog: "Run Log",

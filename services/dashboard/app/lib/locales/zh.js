@@ -117,6 +117,8 @@ export default {
 	postCardMarkPosted: "✓ 标记为已发布",
 	postCardSaving: "保存中...",
 	postCardMarked: "已标记",
+	postCardCopy: "复制",
+	postCardCopied: "✓ 已复制",
 
 	// Rakuten detail page
 	runLog: "运行日志",
