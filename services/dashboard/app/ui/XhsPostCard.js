@@ -65,6 +65,12 @@ function MarkPostedButton({ id }) {
 }
 
 export default function XhsPostCard({ post, pending = false }) {
+	const bodyParts = [
+		post.hook,
+		...(Array.isArray(post.contents) ? post.contents.map(p => p.subtitle ? `${p.subtitle}\n\n${p.body}` : p.body) : []),
+		post.cta,
+	].filter(Boolean);
+	const bodyFull = bodyParts.join('\n\n');
 	const descriptionFull = [post.description, ...(post.hashtags || [])].filter(Boolean).join('\n');
 
 	return (
@@ -74,19 +80,8 @@ export default function XhsPostCard({ post, pending = false }) {
 			)}
 
 			<CopyField label="标题 Title" sublabel="→ XHS title field" value={post.title} />
-			<CopyField label="Page 1 — Hook" sublabel="→ 第一页" value={post.hook} />
-
-			{Array.isArray(post.contents) && post.contents.map((page, i) => (
-				<CopyField
-					key={i}
-					label={`Page ${i + 2}`}
-					sublabel={page.subtitle ? `→ ${page.subtitle}` : undefined}
-					value={page.subtitle ? `${page.subtitle}\n\n${page.body}` : page.body}
-				/>
-			))}
-
-			<CopyField label="Last Page — CTA" sublabel="→ 最后一页" value={post.cta} />
-			<CopyField label="描述 Description" sublabel="→ caption field (includes hashtags)" value={descriptionFull} />
+			<CopyField label="Body" sublabel="→ slide content" value={bodyFull} />
+			<CopyField label="Description / CTA" sublabel="→ caption field (includes hashtags)" value={descriptionFull} />
 
 			<div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid #2A2A2A' }}>
 				<div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#666666', marginBottom: '8px' }}>
