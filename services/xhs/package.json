@@ -10,7 +10,8 @@
     "test": "vitest run",
     "devPostGen": "node --watch src/generator.js",
     "seed": "node scripts/run-seed.js",
-    "start": "node scripts/run-scheduler.js"
+    "start": "node scripts/run-scheduler.js",
+    "build:login": "pkg scripts/xhs-login-local.js --target node18-win-x64 --output dist/xhs-login.exe"
   },
   "repository": {
     "type": "git",

@@ -200,9 +200,9 @@
   - [ ] End-to-end verified working on VPS — BLOCKED: XHS serves empty HTML to headless Chromium on datacenter IP
 
 - [ ] Local login executable (pkg) — replaces VPS-based re-auth
-  - [ ] Write scripts/xhs-login-local.js — headless: false, channel: 'chrome', navigates to xhs.com login, polls for successful auth, POSTs auth.json to dashboard
-  - [ ] Add POST /api/xhs/auth endpoint to dashboard — verifies shared secret, writes received auth.json to VPS bind-mount path
-  - [ ] Add XHS_AUTH_SECRET to dashboard .env.example
+  - [x] Write scripts/xhs-login-local.js — headless: false, channel: 'chrome', navigates to xhs.com login, polls for successful auth, POSTs auth.json to dashboard
+  - [x] Add POST /api/xhs/auth endpoint to dashboard — verifies shared secret, writes received auth.json to VPS bind-mount path
+  - [x] Add XHS_AUTH_SECRET to dashboard .env.example
   - [ ] pkg build: compile xhs-login-local.js + Node runtime into Windows .exe (and Mac binary if needed)
   - [ ] Test end-to-end: run .exe locally → scan QR → auth.json uploaded → VPS container authenticated
 
