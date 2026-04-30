@@ -66,6 +66,7 @@ export default async function XhsPage() {
 									return (
 										<details key={i} style={{ borderBottom: i < pending.length - 1 ? '1px solid #1A1A1A' : 'none' }}>
 											<summary className="px-6 py-3 cursor-pointer select-none flex items-center gap-4 row-hover list-none">
+												<span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: isOverdue ? '#C8102E' : '#F5A623', flexShrink: 0 }} />
 												<span className="text-xs whitespace-nowrap" style={{ color: '#555555' }}>
 													{new Date(p.published_at).toLocaleString('en-CA', { timeZone: 'Asia/Shanghai', hour12: false })}
 												</span>
@@ -85,6 +86,38 @@ export default async function XhsPage() {
 							</div>
 						</div>
 					)}
+
+					{/* Post Archive */}
+					<div style={{ border: '1px solid #2A2A2A' }}>
+						<details open>
+							<summary className="px-6 py-4 cursor-pointer text-sm font-semibold tracking-wide uppercase select-none flex items-center justify-between" style={{ color: '#EDEDED', borderBottom: '1px solid #2A2A2A' }}>
+								{dict.postArchive} ({archive.length})
+								<span className="chevron" style={{ color: '#555555', fontSize: '11px' }}>▼</span>
+							</summary>
+							{archive.length === 0 ? (
+								<span className="px-6 py-5 block text-base text-text-secondary">—</span>
+							) : (
+								<div className="flex flex-col">
+									{archive.map((p, i) => (
+										<details key={i} style={{ borderBottom: '1px solid #1A1A1A' }}>
+											<summary className="px-6 py-3 cursor-pointer select-none flex items-center gap-4 row-hover list-none">
+												<span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#3ECF8E', flexShrink: 0 }} />
+												<span className="text-xs whitespace-nowrap" style={{ color: '#555555' }}>
+													{new Date(p.published_at).toLocaleString('en-CA', { timeZone: 'Asia/Shanghai', hour12: false })}
+												</span>
+												<span className="text-xs px-2 py-0.5 border" style={{ color: '#888888', borderColor: '#2A2A2A', flexShrink: 0 }}>
+													{dict.postType[p.post_type] ?? p.post_type}
+												</span>
+												<span className="text-sm font-medium truncate" style={{ color: '#EDEDED' }}>{p.title}</span>
+												<span className="chevron ml-auto flex-none" style={{ color: '#444444', fontSize: '10px' }}>▼</span>
+											</summary>
+											<XhsPostCard post={p} />
+										</details>
+									))}
+								</div>
+							)}
+						</details>
+					</div>
 
 					{/* Run History */}
 					<div style={{ border: '1px solid #2A2A2A' }}>
@@ -132,37 +165,6 @@ export default async function XhsPage() {
 										))}
 									</tbody>
 								</table>
-							)}
-						</details>
-					</div>
-
-					{/* Post Archive */}
-					<div style={{ border: '1px solid #2A2A2A' }}>
-						<details open>
-							<summary className="px-6 py-4 cursor-pointer text-sm font-semibold tracking-wide uppercase select-none flex items-center justify-between" style={{ color: '#EDEDED', borderBottom: '1px solid #2A2A2A' }}>
-								{dict.postArchive} ({archive.length})
-								<span className="chevron" style={{ color: '#555555', fontSize: '11px' }}>▼</span>
-							</summary>
-							{archive.length === 0 ? (
-								<span className="px-6 py-5 block text-base text-text-secondary">—</span>
-							) : (
-								<div className="flex flex-col">
-									{archive.map((p, i) => (
-										<details key={i} style={{ borderBottom: '1px solid #1A1A1A' }}>
-											<summary className="px-6 py-3 cursor-pointer select-none flex items-center gap-4 row-hover list-none">
-												<span className="text-xs whitespace-nowrap" style={{ color: '#555555' }}>
-													{new Date(p.published_at).toLocaleString('en-CA', { timeZone: 'Asia/Shanghai', hour12: false })}
-												</span>
-												<span className="text-xs px-2 py-0.5 border" style={{ color: '#888888', borderColor: '#2A2A2A', flexShrink: 0 }}>
-													{dict.postType[p.post_type] ?? p.post_type}
-												</span>
-												<span className="text-sm font-medium truncate" style={{ color: '#EDEDED' }}>{p.title}</span>
-												<span className="chevron ml-auto flex-none" style={{ color: '#444444', fontSize: '10px' }}>▼</span>
-											</summary>
-											<XhsPostCard post={p} />
-										</details>
-									))}
-								</div>
 							)}
 						</details>
 					</div>
