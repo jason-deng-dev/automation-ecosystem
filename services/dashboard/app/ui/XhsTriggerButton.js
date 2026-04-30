@@ -3,53 +3,25 @@ import { useState, useRef, useEffect } from 'react';
 
 const POST_TYPES = ['race', 'training', 'nutritionSupplement', 'wearable'];
 
-function inferStatus(logs) {
-	const last = [...logs].reverse().find(l => l.trim());
-	if (!last) return 'done';
-	if (last.includes('error') || last.includes('Error') || last.includes('failed')) return 'error';
-	return 'done';
-}
-
-function connectStream(url, setLogs, setStatus, esRef, doneKeyword, setScreenshot) {
-	const es = new EventSource(url);
-	esRef.current = es;
-	let settled = false;
-	es.onmessage = (e) => {
-		const line = e.data;
-		if (line.startsWith('SCREENSHOT:')) {
-			setScreenshot(line.slice('SCREENSHOT:'.length));
-			return;
-		}
-		setLogs(prev => [...prev, line]);
-		if (line.includes(doneKeyword)) { settled = true; setStatus('done'); es.close(); }
-		else if (line.includes('error') || line.includes('Error') || line.includes('failed')) { settled = true; setStatus('error'); }
-	};
-	es.onerror = () => { if (!settled) setStatus('error'); es.close(); };
-}
-
 export default function XhsTriggerButton({ dict }) {
 	const [postType, setPostType] = useState('race');
 	const [status, setStatus] = useState('idle');
 	const [logs, setLogs] = useState([]);
-	const [screenshot, setScreenshot] = useState(null);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [hovered, setHovered] = useState(false);
 	const esRef = useRef(null);
-	const logsContainerRef = useRef(null);
+	const logsRef = useRef(null);
 
 	useEffect(() => {
 		fetch('/api/xhs/trigger')
 			.then(r => r.json())
-			.then(({ running, logs: buffered, lastScreenshot: lastShot }) => {
+			.then(({ running, logs: buffered }) => {
 				if (!buffered.length && !running) return;
 				setLogs(buffered);
-				if (lastShot) setScreenshot(lastShot.slice('SCREENSHOT:'.length));
 				if (running) {
 					setStatus('running');
 					setModalOpen(true);
-					connectStream('/api/xhs/trigger/stream', setLogs, setStatus, esRef, 'Manual post complete', setScreenshot);
-				} else {
-					setStatus(inferStatus(textLogs));
+					connect();
 				}
 			})
 			.catch(() => {});
@@ -57,16 +29,25 @@ export default function XhsTriggerButton({ dict }) {
 	}, []);
 
 	useEffect(() => {
-		if (logsContainerRef.current) {
-			logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
-		}
+		if (logsRef.current) logsRef.current.scrollTop = logsRef.current.scrollHeight;
 	}, [logs]);
+
+	function connect() {
+		const es = new EventSource('/api/xhs/trigger/stream');
+		esRef.current = es;
+		es.onmessage = (e) => {
+			const line = e.data;
+			setLogs(prev => [...prev, line]);
+			if (line.includes('Generate complete')) { setStatus('done'); es.close(); }
+			else if (line.includes('error') || line.includes('Error') || line.includes('failed')) setStatus('error');
+		};
+		es.onerror = () => { setStatus(s => s === 'running' ? 'error' : s); es.close(); };
+	}
 
 	async function handleTrigger() {
 		if (status === 'running') return;
 		setStatus('running');
 		setLogs([]);
-		setScreenshot(null);
 		setModalOpen(true);
 		try {
 			const res = await fetch('/api/xhs/trigger', {
@@ -75,7 +56,7 @@ export default function XhsTriggerButton({ dict }) {
 				body: JSON.stringify({ postType }),
 			});
 			if (!res.ok) throw new Error();
-			connectStream('/api/xhs/trigger/stream', setLogs, setStatus, esRef, 'Manual post complete', setScreenshot);
+			connect();
 		} catch {
 			setStatus('error');
 		}
@@ -86,12 +67,16 @@ export default function XhsTriggerButton({ dict }) {
 		fetch('/api/xhs/trigger', { method: 'DELETE' });
 		setStatus('idle');
 		setLogs([]);
-		setScreenshot(null);
 		setModalOpen(false);
 	}
 
 	const color = { idle: '#EDEDED', running: '#F5A623', done: '#3ECF8E', error: '#C8102E' }[status];
-	const label = { idle: dict.runNow, running: dict.triggering, done: dict.triggered, error: dict.triggerFailed }[status];
+	const label = {
+		idle: dict.generatePost,
+		running: dict.generating,
+		done: dict.generateDone,
+		error: dict.generateFailed,
+	}[status];
 
 	return (
 		<>
@@ -128,34 +113,18 @@ export default function XhsTriggerButton({ dict }) {
 					zIndex: 50,
 					display: 'flex', alignItems: 'center', justifyContent: 'center',
 				}}>
-					<div style={{ position: 'relative', display: 'flex', gap: '16px', alignItems: 'flex-start', width: screenshot ? '80vw' : 'auto', maxWidth: '1100px' }}>
+					<div style={{ position: 'relative' }}>
 						<button onClick={handleClose} style={{
 							position: 'absolute', top: '-32px', right: 0,
 							color: '#EDEDED', fontSize: '20px', lineHeight: 1,
 							background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
 						}}>✕</button>
-
-						{/* Screenshot feed — only shown once frames arrive */}
-						{screenshot && (
-							<div style={{ flex: '1' }}>
-								<img
-									src={`data:image/jpeg;base64,${screenshot}`}
-									alt="Browser state"
-									style={{ width: '100%', display: 'block', border: '1px solid #2A2A2A' }}
-								/>
-								<p className="text-sm text-center mt-2" style={{ color }}>
-									{status === 'running' ? '运行中...' : status === 'done' ? '完成' : '失败'}
-								</p>
-							</div>
-						)}
-
-						{/* Logs */}
 						<div style={{
-							width: '300px', flexShrink: 0,
+							width: '360px',
 							border: '1px solid #2A2A2A',
 							backgroundColor: '#0A0A0A',
-							padding: '10px',
-							height: '60vh',
+							padding: '12px',
+							height: '50vh',
 							overflowY: 'auto',
 							fontFamily: 'monospace',
 							fontSize: '11px',
@@ -163,14 +132,14 @@ export default function XhsTriggerButton({ dict }) {
 							display: 'flex',
 							flexDirection: 'column',
 							gap: '3px',
-						}} ref={logsContainerRef}>
+						}} ref={logsRef}>
 							{logs.length === 0
 								? <span style={{ color: '#444' }}>Waiting for logs...</span>
 								: logs.map((line, i) => (
 									<span key={i} style={{
 										wordBreak: 'break-all',
 										color: line.includes('error') || line.includes('Error') || line.includes('failed') ? '#C8102E'
-											: line.includes('successful') || line.includes('complete') ? '#3ECF8E'
+											: line.includes('Generate complete') ? '#3ECF8E'
 											: '#AAAAAA',
 									}}>{line}</span>
 								))

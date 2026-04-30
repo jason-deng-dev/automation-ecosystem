@@ -1,8 +1,8 @@
-import { subscribeManualPost, getManualPostProc, getManualPostBuffer } from "@/app/lib/xhsController";
+import { subscribeGenerate, getGenerateProc, getGenerateBuffer } from "@/app/lib/xhsController";
 export const runtime = 'nodejs';
 
 export async function GET() {
-	if (!getManualPostProc() && !getManualPostBuffer().length) return new Response('No manual post process running', { status: 404 });
+	if (!getGenerateProc() && !getGenerateBuffer().length) return new Response('No generate process running', { status: 404 });
 
 	const encoder = new TextEncoder();
 	const stream = new ReadableStream({
@@ -15,14 +15,14 @@ export async function GET() {
 				catch { closed = true; }
 			};
 
-			const unsubscribe = subscribeManualPost(enqueue);
+			const unsubscribe = subscribeGenerate(enqueue);
 
 			const keepalive = setInterval(() => {
 				if (closed) return;
 				try { controller.enqueue(encoder.encode(': ping\n\n')); } catch { closed = true; }
 			}, 15000);
 
-			const proc = getManualPostProc();
+			const proc = getGenerateProc();
 			const onExit = () => {
 				if (closed) return;
 				closed = true;

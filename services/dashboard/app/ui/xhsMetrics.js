@@ -1,5 +1,4 @@
 import { getXhsMetrics } from '../lib/xhsController';
-import XhsAuthBanner from './XhsAuthBanner';
 
 function timeUntil(slot) {
 	const now = new Date();
@@ -15,7 +14,7 @@ function timeUntil(slot) {
 }
 
 export default async function XhsMetric({ dict }) {
-	const { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, authStatus, upcomingPost } = await getXhsMetrics();
+	const { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, upcomingPost } = await getXhsMetrics();
 
 	return (
 		<div className="p-8 flex flex-col gap-6 flex-1" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
@@ -32,8 +31,7 @@ export default async function XhsMetric({ dict }) {
 						{dict.pipelineStateValue[pipelineState] ?? pipelineState}
 					</span>
 				</div>
-				<XhsAuthBanner dict={dict} initialVisible={authStatus === 'failed'} />
-				<div className="flex justify-between text-base">
+<div className="flex justify-between text-base">
 					<span className="text-text-secondary">{dict.lastRun}</span>
 					<span className="font-medium">
 						{lastRun

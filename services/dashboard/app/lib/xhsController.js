@@ -1,107 +1,50 @@
 import { ecosystemPool } from './db/pool.js';
 import { spawn } from 'child_process';
 
-let reAuthProc = null;
-let eventBuffer = [];
-const subscribers = new Set();
+let generateProc = null;
+let generateBuffer = [];
+const generateSubscribers = new Set();
 
-function broadcast(line) {
-	eventBuffer.push(line);
-	if (eventBuffer.length > 200) eventBuffer.shift();
-	for (const sub of subscribers) sub(line);
+function broadcastGenerate(line) {
+	generateBuffer.push(line);
+	if (generateBuffer.length > 200) generateBuffer.shift();
+	for (const sub of generateSubscribers) sub(line);
 }
 
-let manualPostProc = null;
-let manualPostBuffer = [];
-let lastManualPostScreenshot = null;
-const manualPostSubscribers = new Set();
-
-function broadcastManualPost(line) {
-	if (line.startsWith('SCREENSHOT:')) {
-		lastManualPostScreenshot = line;
-	} else {
-		manualPostBuffer.push(line);
-		if (manualPostBuffer.length > 200) manualPostBuffer.shift();
-	}
-	for (const sub of manualPostSubscribers) sub(line);
-}
-
-export function runManualPost(type) {
-	if (manualPostProc) return;
-	manualPostBuffer = [];
-	lastManualPostScreenshot = null;
-	manualPostProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/run-manualPost.js', type], {
+export function runGenerate(type) {
+	if (generateProc) return;
+	generateBuffer = [];
+	generateProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/run-preview.js', type], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
-	let stdoutBuf = '';
-	manualPostProc.stdout.on('data', (chunk) => {
-		stdoutBuf += chunk.toString();
-		const lines = stdoutBuf.split('\n');
-		stdoutBuf = lines.pop();
-		lines.filter(Boolean).forEach(broadcastManualPost);
+	let buf = '';
+	generateProc.stdout.on('data', (chunk) => {
+		buf += chunk.toString();
+		const lines = buf.split('\n');
+		buf = lines.pop();
+		lines.filter(Boolean).forEach(broadcastGenerate);
 	});
-	manualPostProc.stderr.on('data', (chunk) => {
-		chunk.toString().split('\n').filter(Boolean).forEach(broadcastManualPost);
+	generateProc.stderr.on('data', (chunk) => {
+		chunk.toString().split('\n').filter(Boolean).forEach(broadcastGenerate);
 	});
-	manualPostProc.on('exit', (code) => {
-		console.log('[manual-post exit]', code);
-		if (stdoutBuf.trim()) broadcastManualPost(stdoutBuf.trim());
-		manualPostProc = null;
-	});
-}
-
-export function subscribeManualPost(callback) {
-	manualPostSubscribers.add(callback);
-	manualPostBuffer.forEach(callback);
-	if (lastManualPostScreenshot) callback(lastManualPostScreenshot);
-	return () => manualPostSubscribers.delete(callback);
-}
-
-export function getManualPostProc() {
-	return manualPostProc;
-}
-
-export function killManualPost() {
-	if (manualPostProc) { manualPostProc.kill(); manualPostProc = null; }
-}
-
-export function getManualPostBuffer() { return [...manualPostBuffer]; }
-export function getLastManualPostScreenshot() { return lastManualPostScreenshot; }
-
-export function runReAuth() {
-	if (reAuthProc) return;
-	eventBuffer = [];
-	reAuthProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/xhs-login.js'], {
-		stdio: ['ignore', 'pipe', 'pipe'],
-	});
-	let reAuthBuf = '';
-	reAuthProc.stdout.on('data', (chunk) => {
-		reAuthBuf += chunk.toString();
-		const lines = reAuthBuf.split('\n');
-		reAuthBuf = lines.pop();
-		lines.filter(Boolean).forEach(broadcast);
-	});
-	reAuthProc.stderr.on('data', (d) => console.error('[xhs-login stderr]', d.toString()));
-	reAuthProc.on('exit', (code) => {
-		console.log('[xhs-login exit]', code);
-		if (reAuthBuf.trim()) broadcast(reAuthBuf.trim());
-		reAuthProc = null;
+	generateProc.on('exit', (code) => {
+		console.log('[generate exit]', code);
+		if (buf.trim()) broadcastGenerate(buf.trim());
+		generateProc = null;
 	});
 }
 
-export function subscribeReAuth(callback) {
-	subscribers.add(callback);
-	eventBuffer.forEach(callback);
-	return () => subscribers.delete(callback);
+export function subscribeGenerate(callback) {
+	generateSubscribers.add(callback);
+	generateBuffer.forEach(callback);
+	return () => generateSubscribers.delete(callback);
 }
 
-export function getReAuthProc() {
-	return reAuthProc;
+export function getGenerateProc() { return generateProc; }
+export function killGenerate() {
+	if (generateProc) { generateProc.kill(); generateProc = null; }
 }
-
-export function killReAuth() {
-	if (reAuthProc) { reAuthProc.kill(); reAuthProc = null; }
-}
+export function getGenerateBuffer() { return [...generateBuffer]; }
 
 export async function getXhsMetrics() {
 	const [
@@ -165,8 +108,6 @@ export async function getXhsMetrics() {
 		postTypeDistRes.rows.map(r => [r.post_type, Number(r.count)])
 	);
 
-	const authStatus = lastRun?.errorStage === 'auth' ? 'failed' : 'ok';
-
 	const slots = scheduleRes.rows;
 	const now = new Date();
 	const currentDay = now.getDay();
@@ -182,5 +123,5 @@ export async function getXhsMetrics() {
 		type: upcomingSlot.post_type,
 	} : null;
 
-	return { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, authStatus, upcomingPost };
+	return { lastRun, pipelineState, successRate, errorCountByType, tokenTotals, postTypeDistribution, upcomingPost };
 }

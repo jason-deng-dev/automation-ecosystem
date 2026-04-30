@@ -20,4 +20,5 @@ await insertPostArchive({
 	published: false,
 });
 
+console.log('Generate complete');
 console.log(JSON.stringify(post));

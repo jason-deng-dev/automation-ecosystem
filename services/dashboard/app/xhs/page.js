@@ -2,50 +2,89 @@ export const dynamic = 'force-dynamic';
 import { ecosystemPool } from '@/app/lib/db/pool';
 import XhsTriggerButton from '@/app/ui/XhsTriggerButton';
 import XhsScheduleEditor from '@/app/ui/XhsScheduleEditor';
-import XhsReAuthPanel from '@/app/ui/XhsReAuthPanel';
+import XhsPostCard from '@/app/ui/XhsPostCard';
 import { getDict } from '@/app/lib/dict';
 
 export default async function XhsPage() {
 	const { dict } = await getDict();
 
-	const [scheduleRes, runLogsRes, archiveRes] = await Promise.all([
+	const [scheduleRes, runLogsRes, pendingRes, archiveRes] = await Promise.all([
 		ecosystemPool.query(`SELECT id, day, time, post_type FROM xhs_schedule ORDER BY day, time`),
 		ecosystemPool.query(
 			`SELECT published_at, post_type, outcome, error_stage, error_msg, input_tokens, output_tokens
 			 FROM xhs_run_logs ORDER BY published_at DESC LIMIT 30`
 		),
 		ecosystemPool.query(
-			`SELECT id, published_at, post_type, race_name, title, hook, contents, cta, hashtags
+			`SELECT id, published_at, post_type, race_name, title, hook, contents, cta, description, hashtags, comments
+			 FROM xhs_post_archive WHERE published = false ORDER BY published_at DESC`
+		),
+		ecosystemPool.query(
+			`SELECT id, published_at, post_type, race_name, title, hook, contents, cta, description, hashtags, comments
 			 FROM xhs_post_archive WHERE published = true ORDER BY published_at DESC LIMIT 30`
 		),
 	]);
 
 	const slots = scheduleRes.rows;
 	const runs = runLogsRes.rows;
+	const pending = pendingRes.rows;
 	const archive = archiveRes.rows;
+
+	const now = new Date();
+	const OVERDUE_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 	return (
 		<div className="p-8 flex flex-col gap-8">
 
-			{/* Header */}
 			<div className="flex items-center justify-between">
 				<h1 className="text-base font-semibold tracking-wide uppercase" style={{ color: '#EDEDED' }}>
 					{dict.xhsPipeline}
 				</h1>
 			</div>
 
-			{/* Body: 1/3 controls | 2/3 logs */}
 			<div className="grid gap-8 items-start" style={{ gridTemplateColumns: '1fr 2fr' }}>
 
 				{/* Left — controls */}
 				<div className="flex flex-col gap-6 min-w-0">
-					<XhsReAuthPanel dict={dict} />
 					<XhsTriggerButton dict={dict} />
 					<XhsScheduleEditor slots={slots} dict={dict} />
 				</div>
 
-				{/* Right — logs */}
+				{/* Right — content */}
 				<div className="flex flex-col gap-8 min-w-0">
+
+					{/* Pending Posts */}
+					{pending.length > 0 && (
+						<div style={{ border: '1px solid #C8102E' }}>
+							<div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #C8102E', backgroundColor: 'rgba(200,16,46,0.06)' }}>
+								<span className="text-sm font-semibold tracking-wide uppercase" style={{ color: '#C8102E' }}>
+									Pending — Not Yet Posted ({pending.length})
+								</span>
+							</div>
+							<div className="flex flex-col">
+								{pending.map((p, i) => {
+									const isOverdue = (now - new Date(p.published_at)) > OVERDUE_MS;
+									return (
+										<details key={i} style={{ borderBottom: i < pending.length - 1 ? '1px solid #1A1A1A' : 'none' }}>
+											<summary className="px-6 py-3 cursor-pointer select-none flex items-center gap-4 row-hover list-none">
+												<span className="text-xs whitespace-nowrap" style={{ color: '#555555' }}>
+													{new Date(p.published_at).toLocaleString('en-CA', { timeZone: 'Asia/Shanghai', hour12: false })}
+												</span>
+												{isOverdue && (
+													<span className="text-xs px-2 py-0.5 border" style={{ color: '#C8102E', borderColor: '#C8102E' }}>overdue</span>
+												)}
+												<span className="text-xs px-2 py-0.5 border" style={{ color: '#888888', borderColor: '#2A2A2A', flexShrink: 0 }}>
+													{dict.postType[p.post_type] ?? p.post_type}
+												</span>
+												<span className="text-sm font-medium truncate" style={{ color: '#EDEDED' }}>{p.title}</span>
+												<span className="chevron ml-auto flex-none" style={{ color: '#444444', fontSize: '10px' }}>▼</span>
+											</summary>
+											<XhsPostCard post={p} pending={true} />
+										</details>
+									);
+								})}
+							</div>
+						</div>
+					)}
 
 					{/* Run History */}
 					<div style={{ border: '1px solid #2A2A2A' }}>
@@ -120,28 +159,7 @@ export default async function XhsPage() {
 												<span className="text-sm font-medium truncate" style={{ color: '#EDEDED' }}>{p.title}</span>
 												<span className="chevron ml-auto flex-none" style={{ color: '#444444', fontSize: '10px' }}>▼</span>
 											</summary>
-											<div className="px-6 pb-5 pt-3 flex flex-col gap-3" style={{ backgroundColor: '#0D0D0D' }}>
-												{p.race_name && (
-													<div className="text-xs" style={{ color: '#555555' }}>{p.race_name}</div>
-												)}
-												<div className="text-sm" style={{ color: '#EDEDED' }}>{p.hook}</div>
-												{Array.isArray(p.contents) && p.contents.map((s, j) => (
-													<div key={j} className="flex flex-col gap-1">
-														{s.subtitle && <div className="text-xs font-medium tracking-wide" style={{ color: '#888888' }}>{s.subtitle}</div>}
-														<div className="text-sm" style={{ color: '#EDEDED' }}>{s.body}</div>
-													</div>
-												))}
-												{p.cta && (
-												<div className="text-sm font-medium" style={{ color: '#F5A623' }}>{p.cta}</div>
-											)}
-											{p.hashtags?.length > 0 && (
-													<div className="flex flex-wrap gap-1 pt-1">
-														{p.hashtags.map((tag, j) => (
-															<span key={j} className="text-xs" style={{ color: '#C8102E' }}>{tag}</span>
-														))}
-													</div>
-												)}
-											</div>
+											<XhsPostCard post={p} />
 										</details>
 									))}
 								</div>
