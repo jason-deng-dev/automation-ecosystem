@@ -195,24 +195,46 @@
 
 > Full auto-publish via Playwright abandoned — XHS suspends accounts on datacenter IPs regardless of mitigations. See design doc §1.6.
 
-- [ ] Dashboard — post display UI
-  - [ ] "Generate" button triggers `run-preview.js` (already exists) and polls until post appears in `xhs_post_archive`
-  - [ ] Display generated post fields: title, hook, each content page (subtitle + body), CTA, description, hashtags
-  - [ ] One-click copy button per field
-  - [ ] Comments displayed separately with copy button each (primary CTA first, community second)
+- [x] Dashboard — post display UI
+  - [x] "Generate Post" button triggers `run-preview.js`, streams logs to modal
+  - [x] Two-column post card: title + description + comments (left), body/slide content (right)
+  - [x] One-click copy button per field
+  - [x] Comments section with copy button per comment
+  - [x] Pending posts section (published=false) — red border, overdue badge (>4h)
+  - [x] Archive section (published=true) — green dot per row
+  - [x] Status dot color coding on rows (orange=pending, red=overdue, green=posted)
+  - [x] "Mark as Posted" button on pending posts → sets published=true, reloads
+  - [x] Sections ordered: Pending → Archive → Run History
+  - [x] All post card labels localized via dict (EN + ZH)
+  - [x] Home page XHS metrics card shows pending/overdue warning banner
+  - [x] Sidebar dot on XHS nav item when pending posts exist
+
+- [ ] Scheduler rework — remove auto-publish, generate-only
+  - [ ] Remove `checkAuth()` call from `Run()` — auth no longer part of pipeline
+  - [ ] Remove `publishPost()` call from `Run()`
+  - [ ] Remove draft reuse logic (`getPendingDraft`, `saveDraft`, `markDraftPublished`) from `Run()`
+  - [ ] After `generatePost()`, call `insertPostArchive()` with `published=false` (match `run-preview.js` logic)
+  - [ ] Log success/fail in `xhs_run_logs` as before
+  - [ ] Update `error_stage` comment in `xhs_run_logs` — remove `'auth'` as valid value
+
+- [ ] DB schema cleanup
+  - [ ] Fix `xhs_post_archive.published DEFAULT TRUE` → `DEFAULT FALSE`
+  - [ ] Drop `xhs_draft_posts` table (obsolete — draft reuse was for auto-publish retry, no longer needed)
+  - [ ] Remove `saveDraft`, `getPendingDraft`, `markDraftPublished` from `queries.js`
+  - [ ] Add migration SQL file `002_semi_auto_pivot.sql`
+  - [ ] Rename `published_at` → `generated_at` in `xhs_post_archive` (semantic: this is when VPS generated it, not when operator posted)
+  - [ ] Add `posted_at TIMESTAMPTZ` column to `xhs_post_archive` — set by mark-posted API, NULL until operator marks
+
+- [ ] Generator variety / dedup
+  - [ ] Investigate why training posts repeat same title — check if `xhs_post_history` only tracks race posts (non-race types have no dedup)
+  - [ ] Add dedup/variety mechanism for non-race post types (training, nutrition, wearable)
+
 - [ ] New XHS account setup
   - [ ] Register new account
-  - [ ] Update account handle/profile URL references in publisher.js and xhs-login.js (www-verify step profile URL)
+  - [ ] Update account handle/profile URL references in publisher.js and xhs-login.js
 
-- [x] Draft post caching — reuse generated posts that failed to publish
-  - [x] Add `xhs_draft_posts` table — post_type, generated post JSON, generated_at, status ('pending' | 'published')
-  - [x] `saveDraft(postType, post)` query — INSERT into xhs_draft_posts with status='pending'
-  - [x] `getPendingDraft(postType)` query — SELECT latest pending draft for this post_type
-  - [x] `markDraftPublished(id)` query — UPDATE status='published' for given draft id
-  - [x] Wire into scheduler.js `Run()`:
-    - Before `generatePost()`, call `getPendingDraft(type)` — if found, use that post, skip generation
-    - On generate success + publish fail → call `saveDraft(type, post)`
-    - On publish success → if draft was reused, call `markDraftPublished(draft.id)`
-  - [x] Run migration on VPS: `psql $DATABASE_URL -c "CREATE TABLE IF NOT EXISTS xhs_draft_posts ..."` — table created, draft save + reuse verified in live run
+- [~] Draft post caching — OBSOLETE under semi-automated strategy
+  - Was used to retry failed auto-publishes; no auto-publish means no retry needed
+  - `xhs_draft_posts` table + queries to be dropped in DB schema cleanup above
 
 ---
