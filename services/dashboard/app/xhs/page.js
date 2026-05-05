@@ -57,7 +57,7 @@ export default async function XhsPage() {
 						<div style={{ border: '1px solid #C8102E' }}>
 							<div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #C8102E', backgroundColor: 'rgba(200,16,46,0.06)' }}>
 								<span className="text-sm font-semibold tracking-wide uppercase" style={{ color: '#C8102E' }}>
-									Pending — Not Yet Posted ({pending.length})
+									{dict.pendingSection} ({pending.length})
 								</span>
 							</div>
 							<div className="flex flex-col">

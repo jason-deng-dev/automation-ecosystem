@@ -1,7 +1,6 @@
 import nodeCron from 'node-cron';
 import { generatePost } from './generator.js';
-import { publishPost, checkAuth } from './publisher.js';
-import { getSchedule, insertRunLog, upsertPipelineState, deleteOldPostHistory, getPendingDraft, saveDraft, markDraftPublished } from './db/queries.js';
+import { getSchedule, insertRunLog, upsertPipelineState, deleteOldPostHistory, insertPostArchive } from './db/queries.js';
 
 async function startScheduler() {
 	await setupAllDailyCrons();
@@ -54,80 +53,44 @@ async function Run(postType, { skipOffset = false } = {}) {
 	let outcome = 'success';
 	let errorStage = null;
 	let errorMsg = null;
+	let post = null;
 
 	await upsertPipelineState('running');
 
 	try {
-		console.log('Starting Authentication check...');
+		console.log('Starting XHS article generation...');
 		try {
-			const authRes = await checkAuth();
-			if (!authRes) {
-				console.error(`XHS authentication failed`);
-				outcome = 'failed';
-				errorStage = 'auth';
-				errorMsg = 'XHS authentication failed';
-				return;
-			}
+			post = await generatePost(type);
+			({ input_tokens, output_tokens } = post);
 		} catch (err) {
-			console.error(`Auth check failed: ${err.message}`);
+			console.error(`Generate post failed: ${err.message}`);
 			outcome = 'failed';
-			errorStage = 'auth';
+			errorStage = 'generate';
 			errorMsg = err.message;
+			return;
 		}
-
-		let post;
-		let draft = null;
-
-		// Reuse a pending draft if one exists for this post type — skip generation
-		try {
-			draft = await getPendingDraft(type);
-		} catch (err) {
-			console.error(`Draft lookup failed (will generate fresh): ${err.message}`);
-		}
-
-		if (draft) {
-			post = draft.post;
-			console.log(`Reusing draft post id=${draft.id} from previous run — skipping generation`);
-		} else {
-			console.log('Starting XHS article generation...');
-			try {
-				post = await generatePost(type);
-				({ input_tokens, output_tokens } = post);
-			} catch (err) {
-				console.error(`Generate post failed: ${err.message}`);
-				outcome = 'failed';
-				errorStage = 'generate';
-				errorMsg = err.message;
-				return;
-			}
-			console.log('XHS generation successful');
-		}
+		console.log('XHS generation successful');
 
 		try {
-			const publishRes = await publishPost(post, { skipOffset });
-			if (!publishRes) {
-				console.error(`Publish post failed`);
-				if (!draft) {
-					try { await saveDraft(type, post); console.log('Draft saved for next run'); }
-					catch (e) { console.error(`Failed to save draft: ${e.message}`); }
-				}
-				outcome = 'failed';
-				errorStage = 'publish';
-				errorMsg = 'publish returned false';
-				return;
-			}
-			if (draft) {
-				try { await markDraftPublished(draft.id); }
-				catch (e) { console.error(`Failed to mark draft published: ${e.message}`); }
-			}
+			await insertPostArchive({
+				postType: post.post_type,
+				raceName: post.race_name,
+				title: post.title,
+				hook: post.hook,
+				contents: post.contents,
+				cta: post.cta,
+				description: post.description,
+				hashtags: post.hashtags,
+				comments: post.comments,
+				inputTokens: post.input_tokens,
+				outputTokens: post.output_tokens,
+				published: false,
+			});
+			console.log('Post archived (pending operator publish)');
 		} catch (err) {
-			console.error(`Publish post failed: ${err.message}`);
-			if (!draft) {
-				try { await saveDraft(type, post); console.log('Draft saved for next run'); }
-				catch (e) { console.error(`Failed to save draft: ${e.message}`); }
-			}
+			console.error(`Archive insert failed: ${err.message}`);
 			outcome = 'failed';
-			errorStage = 'publish';
+			errorStage = 'archive';
 			errorMsg = err.message;
 			return;
 		}

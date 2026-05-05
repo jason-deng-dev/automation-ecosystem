@@ -34,13 +34,6 @@ export default {
 		idle: "待机",
 	},
 
-	// Auth banner
-	authFailed: "登录失效 — 需要重新认证",
-	login: "登录小红书",
-	streaming: "等待扫码...",
-	loginDone: "登录成功",
-	loginFailed: "登录失败 — 请重试",
-
 	// Post type labels
 	postType: {
 		race: "赛事",
@@ -51,10 +44,12 @@ export default {
 
 	// Error stage labels
 	errorStage: {
-		auth: "认证",
 		generate: "生成",
-		publish: "发布",
+		archive: "存档",
 	},
+
+	// XHS pending section
+	pendingSection: "待发布",
 
 	// Day names
 	days: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
@@ -96,7 +91,6 @@ export default {
 	postArchive: "发布存档",
 	postTitle: "标题",
 	tokens: "用量",
-	runNow: "立即发布",
 	generatePost: "生成帖子",
 	generating: "生成中...",
 	generateDone: "已生成",

@@ -6,8 +6,18 @@ function CopyField({ label, sublabel, value, dict }) {
 	const [hovered, setHovered] = useState(false);
 	const [active, setActive] = useState(false);
 	const [cardHovered, setCardHovered] = useState(false);
-	function handleCopy() {
-		navigator.clipboard.writeText(value);
+	async function handleCopy() {
+		try {
+			await navigator.clipboard.writeText(value);
+		} catch {
+			const el = document.createElement('textarea');
+			el.value = value;
+			el.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+			document.body.appendChild(el);
+			el.select();
+			document.execCommand('copy');
+			document.body.removeChild(el);
+		}
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}

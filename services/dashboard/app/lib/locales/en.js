@@ -34,13 +34,6 @@ export default {
 		idle: "idle",
 	},
 
-	// Auth banner
-	authFailed: "Auth failed — re-authentication required",
-	login: "Login to XHS",
-	streaming: "Waiting for QR scan...",
-	loginDone: "Login successful",
-	loginFailed: "Login failed — try again",
-
 	// Post type labels
 	postType: {
 		race: "Race",
@@ -51,10 +44,12 @@ export default {
 
 	// Error stage labels
 	errorStage: {
-		auth: "Authentication",
 		generate: "Generate",
-		publish: "Publishing",
+		archive: "Archive",
 	},
+
+	// XHS pending section
+	pendingSection: "Pending — Not Yet Posted",
 
 	// Day names
 	days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -110,7 +105,6 @@ export default {
 	postArchive: "Post Archive",
 	postTitle: "Title",
 	tokens: "Tokens",
-	runNow: "Run Now",
 	generatePost: "Generate Post",
 	generating: "Generating...",
 	generateDone: "Generated",

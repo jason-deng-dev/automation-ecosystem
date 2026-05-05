@@ -209,13 +209,13 @@
   - [x] Home page XHS metrics card shows pending/overdue warning banner
   - [x] Sidebar dot on XHS nav item when pending posts exist
 
-- [ ] Scheduler rework — remove auto-publish, generate-only
-  - [ ] Remove `checkAuth()` call from `Run()` — auth no longer part of pipeline
-  - [ ] Remove `publishPost()` call from `Run()`
-  - [ ] Remove draft reuse logic (`getPendingDraft`, `saveDraft`, `markDraftPublished`) from `Run()`
-  - [ ] After `generatePost()`, call `insertPostArchive()` with `published=false` (match `run-preview.js` logic)
-  - [ ] Log success/fail in `xhs_run_logs` as before
-  - [ ] Update `error_stage` comment in `xhs_run_logs` — remove `'auth'` as valid value
+- [x] Scheduler rework — remove auto-publish, generate-only
+  - [x] Remove `checkAuth()` call from `Run()` — auth no longer part of pipeline
+  - [x] Remove `publishPost()` call from `Run()`
+  - [x] Remove draft reuse logic (`getPendingDraft`, `saveDraft`, `markDraftPublished`) from `Run()`
+  - [x] After `generatePost()`, call `insertPostArchive()` with `published=false` (match `run-preview.js` logic)
+  - [x] Log success/fail in `xhs_run_logs` as before
+  - [x] Update `error_stage` comment in `xhs_run_logs` — remove `'auth'` as valid value
 
 - [ ] DB schema cleanup
   - [ ] Fix `xhs_post_archive.published DEFAULT TRUE` → `DEFAULT FALSE`
