@@ -46,6 +46,8 @@ export default {
 	errorStage: {
 		generate: "生成",
 		archive: "存档",
+		auth: "认证",
+		publish: "发布",
 	},
 
 	// XHS pending section

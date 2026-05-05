@@ -46,6 +46,8 @@ export default {
 	errorStage: {
 		generate: "Generate",
 		archive: "Archive",
+		auth: "Authentication",
+		publish: "Publishing",
 	},
 
 	// XHS pending section

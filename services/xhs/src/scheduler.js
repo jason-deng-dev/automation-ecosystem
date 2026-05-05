@@ -58,18 +58,18 @@ async function Run(postType, { skipOffset = false } = {}) {
 	await upsertPipelineState('running');
 
 	try {
-		console.log('Starting XHS article generation...');
+		console.log('正在生成小红书文章...');
 		try {
 			post = await generatePost(type);
 			({ input_tokens, output_tokens } = post);
 		} catch (err) {
-			console.error(`Generate post failed: ${err.message}`);
+			console.error(`文章生成失败: ${err.message}`);
 			outcome = 'failed';
 			errorStage = 'generate';
-			errorMsg = err.message;
+			errorMsg = `生成失败: ${err.message}`;
 			return;
 		}
-		console.log('XHS generation successful');
+		console.log('文章生成成功');
 
 		try {
 			await insertPostArchive({
@@ -86,12 +86,12 @@ async function Run(postType, { skipOffset = false } = {}) {
 				outputTokens: post.output_tokens,
 				published: false,
 			});
-			console.log('Post archived (pending operator publish)');
+			console.log('文章已归档，等待发布');
 		} catch (err) {
-			console.error(`Archive insert failed: ${err.message}`);
+			console.error(`归档写入失败: ${err.message}`);
 			outcome = 'failed';
 			errorStage = 'archive';
-			errorMsg = err.message;
+			errorMsg = `归档失败: ${err.message}`;
 			return;
 		}
 	} finally {
