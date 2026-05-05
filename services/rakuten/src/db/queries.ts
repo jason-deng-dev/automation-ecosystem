@@ -256,7 +256,7 @@ export const getProductsByCategory = async (category: string) => {
 export const deleteStaleProducts = async () => {
 	const res = await pool.query(`
 		DELETE FROM products 
-		WHERE missed_scrapes >= 3
+		WHERE missed_scrapes >= 15
 		`);
 	return res.rowCount;
 };
@@ -297,7 +297,7 @@ export const getAllPushedProducts = async () => {
 
 export const getStaleProductsWithWcId = async () => {
 	const res = await pool.query(
-		`SELECT id, wc_product_id FROM products WHERE missed_scrapes >= 3 AND wc_product_id IS NOT NULL`,
+		`SELECT id, wc_product_id FROM products WHERE missed_scrapes >= 15 AND wc_product_id IS NOT NULL`,
 	);
 	return res.rows as { id: number; wc_product_id: number }[];
 };
