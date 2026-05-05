@@ -219,15 +219,17 @@
 
 - [ ] DB schema cleanup
   - [ ] Fix `xhs_post_archive.published DEFAULT TRUE` → `DEFAULT FALSE`
-  - [ ] Drop `xhs_draft_posts` table (obsolete — draft reuse was for auto-publish retry, no longer needed)
-  - [ ] Remove `saveDraft`, `getPendingDraft`, `markDraftPublished` from `queries.js`
+  - [ ] Drop `xhs_draft_posts` table (rows cleared; table still exists — drop in migration)
+  - [x] Remove `saveDraft`, `getPendingDraft`, `markDraftPublished` from `queries.js`
   - [ ] Add migration SQL file `002_semi_auto_pivot.sql`
   - [ ] Rename `published_at` → `generated_at` in `xhs_post_archive` (semantic: this is when VPS generated it, not when operator posted)
   - [ ] Add `posted_at TIMESTAMPTZ` column to `xhs_post_archive` — set by mark-posted API, NULL until operator marks
 
-- [ ] Generator variety / dedup
-  - [ ] Investigate why training posts repeat same title — check if `xhs_post_history` only tracks race posts (non-race types have no dedup)
-  - [ ] Add dedup/variety mechanism for non-race post types (training, nutrition, wearable)
+- [x] Race dedup window — changed from calendar-month reset to 7-day rolling window (matches weekly post schedule)
+
+- [ ] Generator variety / dedup — non-race post types
+  - [ ] Investigate why training posts repeat same title — `xhs_post_history` only tracks race posts, no dedup for training/nutrition/wearable
+  - [ ] Add dedup/variety mechanism for non-race post types
 
 - [ ] New XHS account setup
   - [ ] Register new account
