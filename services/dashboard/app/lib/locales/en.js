@@ -50,6 +50,8 @@ export default {
 
 	// XHS pending section
 	pendingSection: "Pending — Not Yet Posted",
+	pending: "pending",
+	overdue: "overdue",
 
 	// Day names
 	days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],

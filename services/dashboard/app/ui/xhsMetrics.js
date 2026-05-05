@@ -32,7 +32,7 @@ export default async function XhsMetric({ dict }) {
 				}}>
 					<span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: overdueCount > 0 ? '#C8102E' : '#F5A623', flexShrink: 0 }} />
 					<span style={{ fontSize: '12px', fontWeight: 600, color: overdueCount > 0 ? '#C8102E' : '#F5A623' }}>
-						{pendingCount} pending{overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}
+						{pendingCount} {dict.pending}{overdueCount > 0 ? ` · ${overdueCount} ${dict.overdue}` : ''}
 					</span>
 				</a>
 			)}

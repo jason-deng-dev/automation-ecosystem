@@ -50,6 +50,8 @@ export default {
 
 	// XHS pending section
 	pendingSection: "待发布",
+	pending: "待发布",
+	overdue: "已逾期",
 
 	// Day names
 	days: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
