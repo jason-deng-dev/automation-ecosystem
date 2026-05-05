@@ -23,25 +23,21 @@ export const getRaces = async () => {
 // ── xhs_post_history ──────────────────────────────────────────────────────────
 
 export const getPostedRaces = async () => {
-	const month = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
 	const res = await pool.query(
-		`SELECT race_name FROM xhs_post_history WHERE month = $1`,
-		[month],
+		`SELECT race_name FROM xhs_post_history WHERE posted_at > NOW() - INTERVAL '7 days'`,
 	);
 	return res.rows.map((r) => r.race_name);
 };
 
 export const insertPostedRace = async (raceName) => {
-	const month = new Date().toISOString().slice(0, 7);
 	await pool.query(
-		`INSERT INTO xhs_post_history (race_name, month) VALUES ($1, $2)`,
-		[raceName, month],
+		`INSERT INTO xhs_post_history (race_name) VALUES ($1)`,
+		[raceName],
 	);
 };
 
 export const deleteOldPostHistory = async () => {
-	const month = new Date().toISOString().slice(0, 7);
-	await pool.query(`DELETE FROM xhs_post_history WHERE month != $1`, [month]);
+	await pool.query(`DELETE FROM xhs_post_history WHERE posted_at < NOW() - INTERVAL '7 days'`);
 };
 
 // ── xhs_schedule ─────────────────────────────────────────────────────────────
