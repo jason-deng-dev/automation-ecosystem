@@ -84,9 +84,8 @@
 - [x] Rate limiting — express-rate-limit + Redis, 100 req/15min on POST /api/request-product
 - [x] Dashboard endpoints — POST /api/sync (manual trigger), POST /api/config (already done)
 - [x] Dockerfile + deploy to Lightsail — container live, CD pipeline active (cicd-rakuten.yml)
-- [ ] CSS for `.product-specs` table on WordPress (2-col, bordered, `th` background)
 - [ ] Handoff document — markup config, shipping rate, exchange rate update, pipeline ops, AWS/Stripe MFA transfer
-- [ ] Size/color preference capture — WooCommerce Product Add-Ons (size dropdown + color text field)
+- [x] Size/color preference capture — note field on product page + cart (blur + Update Cart save, category-scoped)
 - [ ] docker-compose integration
 
 ---

@@ -23,10 +23,45 @@ Work through each section below. Check off each item as it's done.
 - [ ] Anthropic API account transferred
 - [ ] Rakuten API account transferred
 - [ ] DeepL account transferred
-- [ ] OpenAI account transferred
+- [ ] Google Translate API key transferred (TranslatePress)
+- [ ] WooCommerce REST API credentials handed over
 - [ ] Docker Hub access granted
-- [ ] Database backup taken and saved
+- [ ] PostgreSQL credentials handed over
+- [ ] XHS auth secret handed over
+- [ ] Database backup taken and saved (both databases)
 - [ ] Final verification run
+
+---
+
+## Credential Inventory
+
+Every secret the automation system depends on. Use this as the checklist when collecting credentials for handoff.
+
+| Credential | Used by | Where to find it | Env var name |
+|---|---|---|---|
+| Anthropic API key | XHS generator, Rakuten genre classifier | console.anthropic.com → API Keys | `ANTHROPIC_API_KEY` |
+| DeepL API key | Scraper (race translation), Rakuten (product names) | deepl.com/pro → Account → API keys | `DEEPL_API_KEY` |
+| Rakuten App ID | Rakuten pipeline | webservice.rakuten.co.jp → Applications | `RAKUTEN_APP_ID` |
+| Rakuten Access Key | Rakuten pipeline | webservice.rakuten.co.jp → Applications | `RAKUTEN_ACCESS_KEY` |
+| WooCommerce Consumer Key | Rakuten → WooCommerce push | WordPress admin → WooCommerce → Settings → Advanced → REST API | `WP_WOOCOMMERCE_CONSUMER_KEY` |
+| WooCommerce Consumer Secret | Rakuten → WooCommerce push | Same as above | `WP_WOOCOMMERCE_CONSUMER_SECRET` |
+| PostgreSQL credentials | All services | Set on VPS at install time — ask developer | `DATABASE_URL` (both DBs) |
+| XHS Auth Secret | XHS ↔ Dashboard SSE auth | Current `.env` on VPS | `XHS_AUTH_SECRET` |
+| Google Translate API key | TranslatePress (WP plugin, JA→ZH) | console.cloud.google.com → Credentials | WordPress admin → TranslatePress → Settings |
+| AWS root / IAM credentials | Lightsail VPS | AWS console | N/A — console login |
+| SSH private key | VPS access | `~/.ssh/automation-ecosystem.pem` | N/A |
+| Docker Hub credentials | GitHub Actions CD pipeline | hub.docker.com → Account Settings → Security | GitHub secrets: `DOCKER_USERNAME`, `DOCKER_PASSWORD` |
+| GitHub Actions secrets | CD pipeline | GitHub repo → Settings → Secrets | See Section 2 |
+| Stripe login | Payments | dashboard.stripe.com | N/A — console login |
+| WordPress admin | Site management | running.moximoxi.net/wp-admin | N/A — console login |
+| XHS creator account | Content publishing | creator.xiaohongshu.com | N/A — phone + password |
+| Domain registrar login | DNS / renewal | Wherever moximoxi.net is registered | N/A — console login |
+
+**To retrieve any env var from the live server:**
+```bash
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+cat /home/ubuntu/automation-ecosystem/services/<service>/.env
+```
 
 ---
 
@@ -94,10 +129,15 @@ The server (`13.192.170.85`) runs on AWS Lightsail under your AWS account.
 **Option B — Transfer root account (only if operator will own the AWS account entirely)**
 
 1. Change the root account email to the operator's email: AWS → Account → Email address
-2. In person: transfer the MFA authenticator app
-   - Open your authenticator app
-   - Show the operator the TOTP seed or let them scan a new QR code
-   - AWS → root sign-in → Security credentials → MFA → Manage → assign a new virtual MFA device
+2. **Transfer MFA (do this in person):**
+   - Open Google Authenticator on your phone → ⋮ → **Transfer accounts** → **Export accounts** → select the AWS root entry → a QR code appears
+   - Operator scans it with Google Authenticator on their phone
+   - **Add their device to AWS first — do not remove yours yet:**
+     - AWS → root sign-in → Account → Security credentials → MFA → **Manage** → Assign MFA device
+     - Select "Authenticator app" → let operator scan the QR code shown
+     - Enter two consecutive codes from their phone to confirm
+   - Confirm the operator can log in using their MFA code
+   - Only then: deactivate your old MFA device from the same page
 3. Change the root account password to something the operator sets themselves
 
 ---
@@ -120,7 +160,7 @@ Host lightsail
   IdentityFile ~/.ssh/automation-ecosystem.pem
 ```
 
-Test: `ssh lightsail`
+Test: `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85`
 
 **Option B — Create a new key pair for the operator**
 
@@ -131,13 +171,13 @@ Test: `ssh lightsail`
 2. They send you their public key (`automation-ecosystem-operator.pub`)
 3. You add it to the server:
    ```bash
-   ssh lightsail
+   ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
    echo "PASTE_THEIR_PUBLIC_KEY_HERE" >> ~/.ssh/authorized_keys
    ```
 4. They confirm they can SSH in with their key
 5. After confirming, remove your own key from `~/.ssh/authorized_keys` on the server:
    ```bash
-   ssh lightsail
+   ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
    nano ~/.ssh/authorized_keys
    # Delete the line containing your public key, save
    ```
@@ -182,11 +222,14 @@ Once the operator is set up as admin, they can manage the account. Remove yourse
 1. Stripe → Settings → Team → find your name → **Remove**
 2. If you're the only admin and can't remove yourself: add the operator first, confirm they can log in and see everything, then remove yourself
 
-**Note:** If your personal phone is the MFA device for the root Stripe account:
-1. Stripe → Settings → Security → Two-step authentication
-2. Add their phone number or authenticator app as a new MFA method first
-3. Confirm they can log in
-4. Remove your MFA device
+**Transfer MFA from your phone (do this in person):**
+1. Open Google Authenticator on your phone → ⋮ → **Transfer accounts** → **Export accounts** → select the Stripe entry → QR code appears
+2. Operator scans it with Google Authenticator on their phone — both phones now show the same codes
+3. Stripe → Settings → **Security** → Two-step authentication → **Add authentication method**
+4. Operator scans Stripe's setup QR code with their Authenticator app
+5. Stripe will ask for two consecutive codes from their phone to confirm — enter them
+6. **Confirm they can log out and back in using their MFA before touching yours**
+7. Then remove your MFA device from Stripe → Settings → Security
 
 ---
 
@@ -266,22 +309,112 @@ Used by: Scraper (Japanese→Chinese race descriptions)
 
 ---
 
-### OpenAI
+### Google Translate API (TranslatePress)
 
-Used by: RAG / embeddings pipeline
+Used by: TranslatePress WordPress plugin — auto-translates new product content JA→ZH on the WooCommerce store.
 
-1. Go to platform.openai.com → Settings → **Team** → Invite
-2. Enter operator's email, set role to **Owner**
-3. They accept and set up their own login
+This key lives in WordPress admin settings, not in any `.env` file.
 
-Billing: Settings → Billing → update payment method.
+1. Go to console.cloud.google.com → Credentials
+2. Find the API key used for the Cloud Translation API
+3. Transfer the Google Cloud project or add the operator as an Owner: IAM → Add → enter their Google account email → Role: Owner
+4. Or: generate a new API key from their own Google Cloud project, restrict it to Cloud Translation API, and update it in WordPress:
+   - WordPress admin → TranslatePress → Settings → Google Translate API key
 
 **Hand the operator:**
-- The API key used in `.env` — or generate a new one from their account after they join and update the VPS `.env`
+- Google Cloud account access (or new API key)
+- Confirm the key is restricted to Translation API only
 
 ---
 
-## 10. Docker Hub
+### WooCommerce REST API
+
+Used by: Rakuten pipeline — pushes products into WooCommerce.
+
+1. Log into WordPress admin → WooCommerce → Settings → Advanced → **REST API**
+2. You'll see the existing Consumer Key and Secret (key is shown on creation only — if you don't have the secret saved, generate a new pair)
+3. To generate a new pair:
+   - Click **Add Key**
+   - Description: e.g. "Rakuten pipeline"
+   - User: your admin user
+   - Permissions: **Read/Write**
+   - Click **Generate API Key**
+   - Copy the Consumer Key and Consumer Secret immediately (only shown once)
+4. Update these values on the VPS: `services/rakuten/.env` → `WP_WOOCOMMERCE_CONSUMER_KEY` and `WP_WOOCOMMERCE_CONSUMER_SECRET`
+5. Restart the Rakuten container: `docker-compose restart rakuten`
+
+**Hand the operator:**
+- Consumer Key and Consumer Secret
+- Or: walk through generating a new pair in their presence
+
+---
+
+### OpenAI
+
+Not currently used — planned for a future analytics/embeddings pipeline that has not been built. No API key is active in production `.env` files. Skip this for now.
+
+---
+
+## 10. PostgreSQL Database Credentials
+
+PostgreSQL runs as a Docker container on the VPS. All services connect using a shared database user.
+
+**Credentials to hand over:**
+- PostgreSQL user: `goodsoft`
+- Password: [stored in VPS `.env` files — retrieve with `cat /home/ubuntu/automation-ecosystem/services/xhs/.env`]
+- `ecosystemdb` — XHS, Scraper, Race Hub
+- `rakutendb` — Rakuten pipeline
+
+**To verify the operator can connect:**
+```bash
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+psql -U goodsoft -d ecosystemdb -h localhost
+psql -U goodsoft -d rakutendb -h localhost
+```
+
+**If they need to change the password:**
+```bash
+psql -U goodsoft -d ecosystemdb -h localhost -c "ALTER USER goodsoft WITH PASSWORD 'new_password';"
+```
+Then update `DATABASE_URL` in every `.env` file on the VPS and restart all containers.
+
+---
+
+## 11. Redis
+
+Used by: Rakuten rate limiting (`express-rate-limit` + Redis). Redis runs as a Docker container on the VPS.
+
+No external account required — Redis runs locally. No credentials to hand over separately.
+
+**To verify it's running:**
+```bash
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+docker-compose ps redis
+```
+
+If it's not running, `docker-compose up -d redis` starts it.
+
+---
+
+## 12. XHS Auth Secret
+
+`XHS_AUTH_SECRET` is a shared secret used to authenticate the SSE connection between the Dashboard and the XHS container. It must match in both services.
+
+**Where it lives:**
+- `services/xhs/.env` → `XHS_AUTH_SECRET`
+- `services/dashboard/.env` → `XHS_AUTH_SECRET`
+
+**To retrieve:**
+```bash
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+grep XHS_AUTH_SECRET /home/ubuntu/automation-ecosystem/services/xhs/.env
+```
+
+Hand this value to the operator so they can update both `.env` files if they ever need to rotate it.
+
+---
+
+## 13. Docker Hub
 
 Used by: GitHub Actions CD pipeline — Docker images are built and pushed here, then pulled to the server on deploy.
 
@@ -292,38 +425,42 @@ Used by: GitHub Actions CD pipeline — Docker images are built and pushed here,
 
 ---
 
-## 11. Database Backup
+## 14. Database Backup
 
-Before you leave, take a full PostgreSQL dump. This preserves all race data, post history, product catalogue, and run logs.
+Before you leave, take a full PostgreSQL dump of both databases. This preserves all race data, post history, XHS archive, product catalogue, and run logs.
 
 **On the VPS:**
 
 ```bash
-ssh lightsail
-pg_dump -U goodsoft rakutendb > ~/rakutendb-handoff-backup-$(date +%Y%m%d).sql
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+DATE=$(date +%Y%m%d)
+pg_dump -U goodsoft ecosystemdb > ~/ecosystemdb-handoff-backup-$DATE.sql
+pg_dump -U goodsoft rakutendb  > ~/rakutendb-handoff-backup-$DATE.sql
 ```
 
 **Download to your local machine:**
 
 ```bash
-scp lightsail:~/rakutendb-handoff-backup-*.sql ~/Desktop/
+scp -i ~/.ssh/automation-ecosystem.pem "ubuntu@13.192.170.85:~/ecosystemdb-handoff-backup-*.sql" ~/Desktop/
+scp -i ~/.ssh/automation-ecosystem.pem "ubuntu@13.192.170.85:~/rakutendb-handoff-backup-*.sql" ~/Desktop/
 ```
 
-**Save this file** somewhere the operator can access it — USB drive, Google Drive, or a shared folder. Label it clearly with the date.
+**Save both files** somewhere the operator can access — USB drive, Google Drive, or a shared folder. Label them clearly with the date.
 
 **To restore if needed** (operator runs this on the VPS after a disaster):
 
 ```bash
-psql -U goodsoft rakutendb < rakutendb-handoff-backup-YYYYMMDD.sql
+psql -U goodsoft ecosystemdb < ecosystemdb-handoff-backup-YYYYMMDD.sql
+psql -U goodsoft rakutendb   < rakutendb-handoff-backup-YYYYMMDD.sql
 ```
 
 ---
 
-## 12. Final Verification
+## 15. Final Verification
 
 Before you hand over and leave, confirm everything works end-to-end.
 
-1. **Operator can SSH into the server:** `ssh lightsail` from their machine
+1. **Operator can SSH into the server:** `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85` from their machine
 2. **Operator can open the dashboard** at `http://13.192.170.85:3002` and see all services green
 3. **Operator can log into AWS Lightsail** and see the instance
 4. **Operator can log into Stripe** and see the account balance and payouts

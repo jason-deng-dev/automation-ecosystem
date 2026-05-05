@@ -1,54 +1,31 @@
+**English** | [中文](README.zh.md)
+
 # automation-ecosystem
 
 Automation infrastructure for [running.moximoxi.net](https://running.moximoxi.net) — a Japanese marathon platform for Chinese runners.
 
-Three manual operations were bottlenecking the platform: daily content creation for Xiaohongshu, keeping race listings current, and sourcing and listing products from Rakuten. This repo contains the automated systems that replace that work, plus a monitoring dashboard to operate them without touching a terminal.
-
-All five services run on a single AWS Lightsail VPS managed by one `docker-compose.yml`, communicating through a shared Docker volume.
+Five Docker services on a single AWS Lightsail VPS, coordinated through two PostgreSQL databases. A monitoring dashboard covers all operator controls without touching a terminal.
 
 ---
 
 ## Services
 
-| Service | What it does |
-|---|---|
-| **xhs** | Daily content pipeline — Claude generates on-brand XHS posts, Playwright auto-publishes to the MOXI爱跑步 account |
-| **scraper** | Weekly cron — scrapes RunJapan for upcoming marathon data, writes `races.json` to shared volume |
-| **race-hub** | Persistent Express server (:3001) — serves `races.json` to the WordPress race hub page via REST API |
-| **rakuten** | Product ingestion — fetches from Rakuten API, prices with configurable margins, pushes to WooCommerce |
-| **dashboard** | Operator-facing monitoring UI (Express :3000 + React SPA) — pipeline health, logs, config, manual triggers |
+| Service | Port | What it does |
+|---|---|---|
+| **xhs** | — | Claude-powered content pipeline — generates XHS posts, Playwright publishes to MOXI爱跑步 account |
+| **scraper** | — | Weekly cron — scrapes RunJapan, DeepL-translates, writes to `ecosystemdb.races` |
+| **race-hub** | 3001 | Express API — serves races from PostgreSQL to the WordPress race hub page |
+| **rakuten** | 3002 | Product ingestion — Rakuten API → pricing → WooCommerce push; weekly auto-sync cron |
+| **dashboard** | 3000 | Operator monitoring UI (Next.js) — logs, config editors, manual triggers, re-auth |
 
 ---
 
-## Architecture
+## Databases
 
-![Ecosystem Architecture](docs/diagram/ecosystem/image.png)
-
-```
-┌──────────────────────────────── AWS Lightsail VPS ──────────────────────────────────────┐
-│                                                                                         │
-│  [scraper]        [race-hub]        [xhs]              [rakuten]                        │
-│  cron weekly      Express :3001     scheduler.js        cron: fetch pipeline            │
-│  writes           reads             generator.js        PostgreSQL                      │
-│  races.json       races.json        publisher.js        Express :3002 (internal)        │
-│       │                │                 │                    │                         │
-│       ▼                ▼                 ▼                    ▼                         │
-│  ┌──────────────────── shared volume ───────────────────────────────┐                   │
-│  │  scraper/races.json   xhs/run_log.json    rakuten/run_log.json   │                   │
-│  │  scraper/run_log.json xhs/post_archive/   rakuten/config.json    │                   │
-│  │  scraper/config.json  xhs/config.json     ...                    │                   │
-│  └────────────────────────────┬─────────────────────────────────────┘                   │
-│                               │ reads all                                               │
-│                     ┌─────────▼──────────────┐                                          │
-│                     │      [dashboard]       │                                          │
-│                     │  Express :3000 + React │                                          │
-│                     └─────────┬──────────────┘                                          │
-└───────────────────────────────┼─────────────────────────────────────────────────────────┘
-            │                   │                        │
-          HTTPS               HTTPS                    HTTPS
-      GET /api/races        (operator)            WooCommerce API
-   [WordPress race hub]  [operator browser]     [running.moximoxi.net]
-```
+| Database | Used by |
+|---|---|
+| `ecosystemdb` | XHS, Scraper, Race Hub, Dashboard |
+| `rakutendb` | Rakuten, Dashboard |
 
 ---
 
@@ -59,51 +36,41 @@ automation-ecosystem/
     ├── services/
     │   ├── xhs/            # XHS content pipeline
     │   │   └── docs/       #   xhs-design-doc.md, xhs-checklist.md
-    │   ├── scraper/        # RunJapan scraper (cron only)
+    │   ├── scraper/        # RunJapan scraper
     │   │   └── docs/       #   scraper-design-doc.md, scraper-checklist.md
-    │   ├── race-hub/       # Race data API (Express :3001)
+    │   ├── race-hub/       # Race data API
     │   │   └── docs/       #   race-hub-design-doc.md
     │   ├── rakuten/        # Rakuten product aggregator
     │   │   └── docs/       #   rakuten-design-doc.md, rakuten-checklist.md
     │   └── dashboard/      # Operator monitoring dashboard
     │       └── docs/       #   dashboard-design-doc.md
     └── docs/
-        └── architecture.md # Ecosystem-wide overview
+        ├── ecosystem/      # ecosystem-checklist.md, architecture.md
+        └── handoff/        # handoff-runbook.md — operator + AI agent reference
 ```
 
-Each service has its own `package.json`. Install dependencies per service:
+Each service has its own `package.json`:
 
 ```bash
-cd services/xhs && npm install
-cd services/scraper && npm install
-# etc.
+cd services/<service> && npm install
 ```
 
 ---
 
 ## Docs
 
-- [Ecosystem architecture](docs/architecture.md) — how all five services fit together
-- [XHS pipeline](services/xhs/docs/xhs-design-doc.md) — content generation, scheduling, publishing
-- [Scraper](services/scraper/docs/scraper-design-doc.md) — RunJapan scraping, data schema, failure handling
-- [Race Hub](services/race-hub/docs/race-hub-design-doc.md) — Express API, React SPA, WordPress plugin
-- [Rakuten](services/rakuten/docs/rakuten-design-doc.md) — product ingestion, pricing, WooCommerce sync
-- [Dashboard](services/dashboard/docs/dashboard-design-doc.md) — monitoring UI, operator controls
-
----
-
-## Bilingual Deployment
-
-The platform targets Chinese runners — the live deployment renders entirely in Chinese. The same codebase and deployment serves English via `?lang=en` for portfolio purposes.
-
-- **Scraper** uses the DeepL API to translate race descriptions and notices into Simplified Chinese (`description_zh`, `notice_zh[]`) and writes both languages into `races.json`
-- **Race Hub** serves `_zh` fields when `?lang=zh` is requested, strips them otherwise
-- **Race Hub SPA** reads `?lang` from the page URL, loads the matching locale file (`locales/zh.js` or `locales/en.js`), and falls back to English if a Chinese field is null
-
-No separate deployment, no duplicate data files — language is a URL param.
+| Doc | What it covers |
+|---|---|
+| [Handoff runbook](docs/handoff/handoff-runbook.md) | Full system reference — architecture, dashboard features, failure guides, Claude Code debugging prompts |
+| [Ecosystem checklist](docs/ecosystem/ecosystem-checklist.md) | Build progress across all services |
+| [XHS design doc](services/xhs/docs/xhs-design-doc.md) | Content generation, scheduling, publishing |
+| [Scraper design doc](services/scraper/docs/scraper-design-doc.md) | RunJapan scraping, DB schema, failure handling |
+| [Race Hub design doc](services/race-hub/docs/race-hub-design-doc.md) | Express API, React SPA, WordPress plugin |
+| [Rakuten design doc](services/rakuten/docs/rakuten-design-doc.md) | Product ingestion, pricing formula, WooCommerce sync |
+| [Dashboard design doc](services/dashboard/docs/dashboard-design-doc.md) | UI features, API routes, SSE log panels |
 
 ---
 
 ## Status
 
-In development. See each service's `<service>-checklist.md` for current progress.
+All five services deployed and live on Lightsail. See [ecosystem-checklist.md](docs/ecosystem/ecosystem-checklist.md) for current progress per service.
