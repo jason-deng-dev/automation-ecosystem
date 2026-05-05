@@ -102,15 +102,11 @@
 
 ---
 
-- [ ] Docker & Deploy
+- [x] Docker & Deploy
   - [x] Write Dockerfile
   - [x] Write CI/CD workflow (cicd-dashboard.yml) — build job gates deploy; Docker socket mounted for docker exec
-  - [ ] Add to docker-compose.yml
-  - [ ] Verify all docker exec commands work inside container network
-  - [ ] Configure PM2 + NGINX on Lightsail
-  - [ ] Provision AWS Lightsail instance (Linux, $10/mo — 2 GB RAM, 2 vCPUs, 60 GB SSD, 3 TB transfer)
-  - [ ] Install Docker + Docker Compose on Lightsail
-  - [ ] Clone repo, create .env with production keys, transfer auth.json
-  - [ ] Set `NEXT_PUBLIC_LANG=zh` in production `.env` (local dev defaults to `en`)
-  - [ ] Run docker-compose up, verify all containers start and cron fires correctly
-  - [ ] Hand off — document: docker-compose up to start, "Login to XHS" button when session expires
+  - [x] Add to docker-compose.yml / PM2 + NGINX on Lightsail (port 3002)
+  - [x] Verify all docker exec commands work inside container network
+  - [x] Clone repo, create .env with production keys
+  - [x] Set `NEXT_PUBLIC_LANG=zh` in production `.env`
+  - [x] Verify all containers start and dashboard is live
