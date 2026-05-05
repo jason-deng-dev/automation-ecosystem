@@ -22,7 +22,7 @@ db-tunnel
 | OS | Ubuntu 24.04 LTS |
 | Network type | Dual-stack |
 | Default user | `ubuntu` |
-| Public IPv4 | `13.192.170.85` |
+| Public IPv4 | `<SERVER_IP>` |
 | Private IPv4 | `172.26.11.67` |
 | Public IPv6 | `2406:da14:1f2c:800:2b18:e0f3:2ddf:8883` |
 | SSH key file | `~/.ssh/automation-ecosystem.pem` |
@@ -163,7 +163,7 @@ DATABASE_URL=postgresql://goodsoft:1234@localhost:5433/rakutendb
 ## 5. SSH Access
 
 ```bash
-ssh ubuntu@13.192.170.85
+ssh ubuntu@<SERVER_IP>
 ```
 
 Key pair generated via Lightsail console and downloaded as `automation-ecosystem.pem`.
@@ -177,7 +177,7 @@ chmod 400 ~/.ssh/automation-ecosystem.pem
 
 ```
 Host lightsail
-  HostName 13.192.170.85
+  HostName <SERVER_IP>
   User ubuntu
   IdentityFile ~/.ssh/automation-ecosystem.pem
 ```
@@ -212,7 +212,7 @@ Open (or create) `~/.ssh/config` and add:
 
 ```
 Host lightsail
-  HostName 13.192.170.85
+  HostName <SERVER_IP>
   User ubuntu
   IdentityFile ~/.ssh/automation-ecosystem.pem
 ```
@@ -274,7 +274,7 @@ services:
 On first deploy, manually `scp` the `.env` files up:
 
 ```bash
-scp services/rakuten/.env ubuntu@13.192.170.85:~/automation-ecosystem/services/rakuten/.env
+scp services/rakuten/.env ubuntu@<SERVER_IP>:~/automation-ecosystem/services/rakuten/.env
 ```
 
 ---

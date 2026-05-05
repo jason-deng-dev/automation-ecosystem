@@ -59,7 +59,7 @@ Every secret the automation system depends on. Use this as the checklist when co
 
 **To retrieve any env var from the live server:**
 ```bash
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 cat /home/ubuntu/automation-ecosystem/services/<service>/.env
 ```
 
@@ -98,7 +98,7 @@ Go to: GitHub → repo → Settings → Secrets and variables → Actions
 
 | Secret | What it is | Action required |
 |---|---|---|
-| `LIGHTSAIL_HOST` | `13.192.170.85` | Verify it's still there — no change needed |
+| `LIGHTSAIL_HOST` | `<SERVER_IP>` | Verify it's still there — no change needed |
 | `LIGHTSAIL_USER` | `ubuntu` | Verify — no change needed |
 | `LIGHTSAIL_SSH_KEY` | Contents of `automation-ecosystem.pem` | Update if new operator uses a different key pair (see Section 4) |
 | `DOCKER_USERNAME` | Docker Hub username | Update to new operator's Docker Hub username |
@@ -114,7 +114,7 @@ Go to: GitHub → repo → Settings → Secrets and variables → Actions
 
 ## 3. AWS Lightsail Access
 
-The server (`13.192.170.85`) runs on AWS Lightsail under your AWS account.
+The server (`<SERVER_IP>`) runs on AWS Lightsail under your AWS account.
 
 **Option A — Add the new operator as an IAM user (recommended)**
 
@@ -155,12 +155,12 @@ The VPS uses key-based SSH auth. The original key pair is `automation-ecosystem.
 
 ```
 Host lightsail
-  HostName 13.192.170.85
+  HostName <SERVER_IP>
   User ubuntu
   IdentityFile ~/.ssh/automation-ecosystem.pem
 ```
 
-Test: `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85`
+Test: `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>`
 
 **Option B — Create a new key pair for the operator**
 
@@ -171,13 +171,13 @@ Test: `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85`
 2. They send you their public key (`automation-ecosystem-operator.pub`)
 3. You add it to the server:
    ```bash
-   ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+   ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
    echo "PASTE_THEIR_PUBLIC_KEY_HERE" >> ~/.ssh/authorized_keys
    ```
 4. They confirm they can SSH in with their key
 5. After confirming, remove your own key from `~/.ssh/authorized_keys` on the server:
    ```bash
-   ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+   ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
    nano ~/.ssh/authorized_keys
    # Delete the line containing your public key, save
    ```
@@ -367,7 +367,7 @@ PostgreSQL runs as a Docker container on the VPS. All services connect using a s
 
 **To verify the operator can connect:**
 ```bash
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 psql -U goodsoft -d ecosystemdb -h localhost
 psql -U goodsoft -d rakutendb -h localhost
 ```
@@ -388,7 +388,7 @@ No external account required — Redis runs locally. No credentials to hand over
 
 **To verify it's running:**
 ```bash
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 docker-compose ps redis
 ```
 
@@ -406,7 +406,7 @@ If it's not running, `docker-compose up -d redis` starts it.
 
 **To retrieve:**
 ```bash
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 grep XHS_AUTH_SECRET /home/ubuntu/automation-ecosystem/services/xhs/.env
 ```
 
@@ -432,7 +432,7 @@ Before you leave, take a full PostgreSQL dump of both databases. This preserves 
 **On the VPS:**
 
 ```bash
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 DATE=$(date +%Y%m%d)
 pg_dump -U goodsoft ecosystemdb > ~/ecosystemdb-handoff-backup-$DATE.sql
 pg_dump -U goodsoft rakutendb  > ~/rakutendb-handoff-backup-$DATE.sql
@@ -441,8 +441,8 @@ pg_dump -U goodsoft rakutendb  > ~/rakutendb-handoff-backup-$DATE.sql
 **Download to your local machine:**
 
 ```bash
-scp -i ~/.ssh/automation-ecosystem.pem "ubuntu@13.192.170.85:~/ecosystemdb-handoff-backup-*.sql" ~/Desktop/
-scp -i ~/.ssh/automation-ecosystem.pem "ubuntu@13.192.170.85:~/rakutendb-handoff-backup-*.sql" ~/Desktop/
+scp -i ~/.ssh/automation-ecosystem.pem "ubuntu@<SERVER_IP>:~/ecosystemdb-handoff-backup-*.sql" ~/Desktop/
+scp -i ~/.ssh/automation-ecosystem.pem "ubuntu@<SERVER_IP>:~/rakutendb-handoff-backup-*.sql" ~/Desktop/
 ```
 
 **Save both files** somewhere the operator can access — USB drive, Google Drive, or a shared folder. Label them clearly with the date.
@@ -460,8 +460,8 @@ psql -U goodsoft rakutendb   < rakutendb-handoff-backup-YYYYMMDD.sql
 
 Before you hand over and leave, confirm everything works end-to-end.
 
-1. **Operator can SSH into the server:** `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85` from their machine
-2. **Operator can open the dashboard** at `http://13.192.170.85:3002` and see all services green
+1. **Operator can SSH into the server:** `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>` from their machine
+2. **Operator can open the dashboard** at `http://<SERVER_IP>:3002` and see all services green
 3. **Operator can log into AWS Lightsail** and see the instance
 4. **Operator can log into Stripe** and see the account balance and payouts
 5. **Operator can log into WordPress** at `/wp-admin`

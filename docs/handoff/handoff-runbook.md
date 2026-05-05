@@ -4,7 +4,7 @@
 
 **Platform:** running.moximoxi.net automation ecosystem  
 **Last updated:** May 2026  
-**Server:** AWS Lightsail — `13.192.170.85` (user: `ubuntu`)  
+**Server:** AWS Lightsail — `<SERVER_IP>` (user: `ubuntu`)  
 **Repo path on server:** `/home/ubuntu/automation-ecosystem`
 
 ---
@@ -140,7 +140,7 @@ Everything runs on a single rented server ($10/month, AWS Lightsail) as Docker c
 
 ### Every Morning
 
-1. **Open the dashboard** at `http://13.192.170.85:3002`
+1. **Open the dashboard** at `http://<SERVER_IP>:3002`
 2. **Check the home page** — three pipeline cards. All should show a green status and a recent run timestamp.
    - XHS card: look for any **red/orange warning banner** (means a post is waiting to be published or overdue)
    - Scraper card: last run should be within the past 7 days
@@ -194,7 +194,7 @@ If all three look like the table above, everything is working.
 
 ### 1.1 What This System Is
 
-Five Docker containers running on a single AWS Lightsail instance (`13.192.170.85`). Together they power:
+Five Docker containers running on a single AWS Lightsail instance (`<SERVER_IP>`). Together they power:
 
 1. **Content pipeline** — daily Claude-generated XHS posts for the XHS account (see note below on account status)
 2. **Race data pipeline** — weekly scrape of RunJapan → PostgreSQL → WordPress Race Hub
@@ -209,11 +209,11 @@ All services share a single PostgreSQL instance. Two databases: `ecosystemdb` (X
 
 | Item | Value |
 |---|---|
-| Server | AWS Lightsail, `13.192.170.85`, user `ubuntu` |
+| Server | AWS Lightsail, `<SERVER_IP>`, user `ubuntu` |
 | OS | Ubuntu, Docker + docker-compose |
 | Repo path | `/home/ubuntu/automation-ecosystem` |
 | SSH key | `~/.ssh/automation-ecosystem.pem` |
-| SSH command | `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85` |
+| SSH command | `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>` |
 | Container management | `docker-compose up/down/restart/logs` from repo root |
 | CD pipeline | GitHub Actions (`.github/workflows/`) — push to `main` triggers build + deploy |
 | PostgreSQL | Port 5432, TCP — use `psql -U goodsoft -d ecosystemdb -h localhost` |
@@ -423,7 +423,7 @@ The `CLAUDE.md` files are the most important entry point — they tell Claude Co
 >
 > 👤 **Operator:** You don't need to read this section. To learn how to use the dashboard, see [Daily Routine](#daily-routine) and [Part 3 — XHS Pipeline](#part-3--xhs-pipeline).
 
-The dashboard at `http://13.192.170.85:3002` is the operator's primary interface. Full feature inventory:
+The dashboard at `http://<SERVER_IP>:3002` is the operator's primary interface. Full feature inventory:
 
 ---
 
@@ -595,7 +595,7 @@ Schedule stored in `xhs_schedule` table (`day` 0–6, `time` HH:MM, `post_type`)
 
 **Fix:**
 1. Get new key from the relevant provider
-2. SSH into server: `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85`
+2. SSH into server: `ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>`
 3. Edit the service's `.env`: `nano /home/ubuntu/automation-ecosystem/services/<service>/.env`
 4. Replace the old key value
 5. Restart the container: `docker-compose restart <service>`
@@ -945,7 +945,7 @@ Claude Code is an AI coding assistant that runs in the terminal. When launched f
 
 **Option A — on the server directly:**
 ```bash
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 cd /home/ubuntu/automation-ecosystem
 claude  # starts Claude Code CLI
 ```
@@ -1031,7 +1031,7 @@ to understand the current schema. Question: [your question about DB structure].
 ### 10.5 Applying a Fix Directly on the Server (Emergency)
 
 ```bash
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 cd /home/ubuntu/automation-ecosystem
 nano services/<service>/src/<file>   # make the change
 docker-compose restart <service>
@@ -1098,7 +1098,7 @@ These are the recurring costs to keep the platform running. All are billed to th
 
 ```bash
 # SSH in
-ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@13.192.170.85
+ssh -i ~/.ssh/automation-ecosystem.pem ubuntu@<SERVER_IP>
 
 # Check all containers
 docker-compose ps
@@ -1133,7 +1133,7 @@ psql -U goodsoft -d rakutendb -h localhost
 
 | URL | What |
 |---|---|
-| `http://13.192.170.85:3002` | Dashboard |
+| `http://<SERVER_IP>:3002` | Dashboard |
 | `https://running.moximoxi.net` | WordPress store |
 | `https://running.moximoxi.net/wp-admin` | WordPress admin |
 | `https://running.moximoxi.net/racehub/` | Race Hub page |
