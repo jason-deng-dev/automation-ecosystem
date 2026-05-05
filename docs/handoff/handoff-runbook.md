@@ -935,6 +935,18 @@ The Rakuten dashboard has a product request endpoint — if a customer asks for 
 
 ---
 
+### 9.6 Removing Off-Topic Products
+
+The Rakuten pipeline pulls from broad running-related categories, but occasionally an irrelevant product slips through (e.g. frozen food, household goods, non-running apparel). If you spot something that clearly doesn't belong:
+
+1. Go to **running.moximoxi.net/wp-admin/edit.php?post_type=product**
+2. Use the search box at the top right to search for part of the product name
+3. Hover over the product → click **Trash**
+
+Check the product list quickly once a week as part of the weekly routine — most bad imports are obvious (food items, unrelated clothing, electronics).
+
+---
+
 ## Part 10 — Making Code Changes with Claude Code
 
 ### 10.1 What Claude Code Is

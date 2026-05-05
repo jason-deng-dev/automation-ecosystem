@@ -851,6 +851,18 @@ WordPress 后台 → [running.moximoxi.net/wp-admin](https://running.moximoxi.ne
 
 ---
 
+### 9.6 下架无关商品
+
+乐天流水线从跑步相关品类中抓取商品，但偶尔会混入不相关的产品（如冷冻食品、家居用品、非跑步服装）。发现明显不合适的商品时：
+
+1. 进入 **running.moximoxi.net/wp-admin/edit.php?post_type=product**
+2. 右上角搜索框输入商品名称的部分关键词
+3. 鼠标悬停在商品上 → 点击**移至回收站**
+
+建议每周例行检查一次商品列表——大多数误入商品一眼就能认出（食品、无关服装、电子产品等）。
+
+---
+
 ## 第十部分 — 使用 Claude Code 修复代码
 
 ### 10.1 什么是 Claude Code
