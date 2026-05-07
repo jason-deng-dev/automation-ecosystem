@@ -94,7 +94,7 @@ All five containers run on a single AWS Lightsail VPS, managed by one `docker-co
 |---|---|---|
 | **Scraper** | Cron-only process. Runs weekly, scrapes RunJapan, writes race data to `races` table in PostgreSQL. No HTTP server. | RunJapan (scrape) |
 | **Race Hub** | Persistent Express server (:3001). Always up. Reads from `races` table in PostgreSQL, serves it to WordPress via `GET /api/races`. Public-facing. | — |
-| **XHS** | Daily automation pipeline. Scheduler triggers generator (Claude API) → publisher (Playwright → XHS). Reads race data from PostgreSQL, writes logs and post archive to PostgreSQL. Schedule config read from `xhs_schedule` table; `auth.json` stays as a file (session cookies). | Claude API, XHS web |
+| **XHS** | Daily automation pipeline. Scheduler triggers generator (Claude API) → stores post in `xhs_post_archive` (published=false). Dashboard presents post for operator to copy-paste and publish manually via XHS app. `publisher.js` and `auth.json` kept in codebase for reference but not in active pipeline — see `services/xhs/docs/xhs-design-doc.md §1.6`. | Claude API |
 | **Rakuten** | Product ingestion pipeline. Fetches from Rakuten API, normalises, prices, stores permanently in PostgreSQL, pushes to WooCommerce. Internal Express :3000 for dashboard commands. All config and logs in PostgreSQL. | Rakuten API, WooCommerce REST API |
 | **Dashboard** | Operator-facing monitoring UI. Next.js :3000 (App Router + API routes, served via PM2 + NGINX). Reads all pipeline state from PostgreSQL. Updates config via API endpoints that write to DB. Calls Rakuten :3000 for commands (manual sync, config update). | — |
 

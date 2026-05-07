@@ -854,7 +854,6 @@ XHS enforces a **300-character limit per comment**. This is enforced in the prom
 |---|---|
 | Manual post | `docker exec xhs node scripts/run-manualPost.js <type>` |
 | Preview (generate only) | `docker exec xhs node scripts/run-preview.js <type>` |
-| Re-auth | `docker exec xhs node scripts/xhs-login.js` |
 | Reload schedule | `docker exec xhs node scripts/run-reloadSchedule.js` |
 
 Post type is passed as a positional argument (`process.argv[2]`) — e.g. `run-manualPost.js race`.
@@ -1269,8 +1268,7 @@ The pipeline is designed to be handed off after May 2026 and continue running wi
 - Fix: Update the model constant in `generator.js` to the current recommended model; run `test-gen.js` to verify output quality before deploying
 
 **XHS session expiry**
-- Symptom: Publisher fails to authenticate
-- Fix: Re-run `node scripts/xhs-login.js` to refresh `auth.json`
+- Not relevant under semi-automated strategy — publisher.js is not in the active pipeline. If auto-publishing is reinstated, use `xhs-login-local.js` (operator's machine) to refresh `auth.json` — the VPS headless `xhs-login.js` does not work on datacenter IPs. See §9.10.
 
 **Environment consistency**
 - Playwright browser binaries are environment-sensitive and a common source of silent failures on new machines. The Docker + docker-compose deployment (see Section 5) ensures binaries behave identically across environments. For any new deployment, use Docker rather than running directly on the host.

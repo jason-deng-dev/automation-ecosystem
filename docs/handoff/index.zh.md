@@ -22,4 +22,3 @@
 | [社区](https://running.moximoxi.net/community) | 小红书跑者社区 |
 | [控制台](http://13.192.170.85:3002) | 自动化系统操作入口 |
 | [Stripe](https://dashboard.stripe.com/login) | 收款与退款管理 |
-| [账户信息表格](https://docs.google.com/spreadsheets/d/1ihayNrfXwjtnGVHsufTAkF5cz2ucEd2HAFDl87tT6zg/edit?usp=sharing) | 所有账号密码 |

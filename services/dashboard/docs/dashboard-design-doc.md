@@ -49,38 +49,7 @@ A unified monitoring dashboard gives a single place to check the health of all t
 
 ## 5. XHS Session Management
 
-XHS sessions expire periodically (typically every few weeks, or when signed in from another browser/device). Rather than requiring the operator to SSH into the server and run a script, the dashboard exposes a browser-based re-authentication flow.
-
-### How It Works
-
-1. Operator clicks **"Login to XHS"** button in the dashboard
-2. Server spawns `xhs-login.js` — Playwright launches **headless** and navigates to the XHS login page
-3. `xhs-login.js` auto-clicks through to the QR sign-in screen; polls the QR `<img>` element until `naturalWidth > 50` and `src.length > 3000` (data URI loaded)
-4. Server emits `{ type: 'qr-src', data: <dataURI> }` over SSE — dashboard renders the QR directly as an `<img>` tag (no screenshot streaming)
-5. Operator scans QR with phone; Playwright detects the post-login redirect
-6. Two-step login: saves `auth.json` after creator.xiaohongshu.com step, then navigates xhs.com for profile/comment auth
-7. Server emits `{ type: 'done' }` — dashboard hides the QR panel; auth banner clears client-side immediately (no page reload required)
-
-### Why This Approach
-
-- **Solves bot detection** — real human login via QR, not credential submission
-- **No server access required** — operator never touches SSH or any files
-- **No credentials stored in code** — `auth.json` is a session artifact
-- **Self-service re-auth** — operator clicks one button, scans QR, done in under a minute
-- **QR src extraction over screenshot streaming** — headless mode is simpler and more reliable than Xvfb + screenshot polling; QR img src is a data URI that loads natively in the browser
-
-### Session Expiry Detection
-
-The dashboard surfaces session state as a status indicator on the XHS pipeline card:
-- **Session active** — last successful publish timestamp + estimated expiry (30 days from last login)
-- **Session expiring soon** — warning at <7 days remaining
-- **Session expired / publish failed** — error state with the Login button prominently shown
-
-### Implementation Notes
-
-- Backend: `POST /api/xhs/login` spawns `xhs-login.js`; `GET /api/xhs/login/stream` SSE emits typed messages: `qr-src`, `qr-scanned`, `log`, `done`, `error`
-- Frontend (`XhsReAuthPanel`): connects SSE, renders QR data URI directly; `XhsAuthBanner` wraps it and hides itself on `onDone` callback
-- `auth.json` is never transmitted to the client — stays on the container volume
+> **Deprioritized** — Auto-publishing via Playwright was abandoned in April 2026. XHS serves blank pages to headless Chromium on VPS datacenter IPs, making dashboard-integrated QR re-auth impossible. Under the current semi-automated strategy, `auth.json` and re-auth are not part of the active pipeline. See `services/xhs/docs/xhs-design-doc.md §1.6` and `§9.10` for full context.
 
 ---
 
@@ -133,9 +102,7 @@ The home page shows one card per pipeline side by side, full height. Each card s
 - **Errors by type** — count per error stage
 - **Post type distribution** — count per type (Race, Training, Nutrition & Supplement, Wearable)
 - **API tokens (lifetime)** — input + output token totals
-- **Auth banner** — `XhsAuthBanner` client component; shown when last run failed at auth stage; hides itself immediately after successful re-auth (no reload needed)
 - **Manual trigger** — post type selector + "Run Now" button; live log panel with SSE stream and buffer replay on reload; skips random offset
-- **Re-auth button** — inside auth banner on home card; also always visible on XHS detail page
 
 ### 7.2 Race Scraper Pipeline Card 
 
@@ -293,9 +260,6 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 | `DELETE` | `/api/xhs/trigger` | Kill running manual post process |
 | `GET` | `/api/xhs/trigger/stream` | SSE — streams live log lines from manual post process |
 | `POST` | `/api/xhs/preview` | Generate post without publishing — runs `run-preview.js <type>` via docker exec |
-| `POST` | `/api/xhs/login` | Spawn `xhs-login.js` via docker exec |
-| `DELETE` | `/api/xhs/login` | Kill running re-auth process |
-| `GET` | `/api/xhs/login/stream` | SSE — emits `qr-src`, `qr-scanned`, `log`, `done`, `error` messages |
 
 ### Scraper
 
@@ -381,6 +345,5 @@ All endpoints are implemented as Next.js Route Handlers in `app/api/`. They read
 - **Deployment:** Same AWS Lightsail instance as all three pipelines — Next.js runs as a Node.js process via PM2 (`pm2 start npm --name dashboard -- start`), proxied by NGINX on port 3002
 - **Translation tracking:** Removed — translation is handled by TranslatePress on the WordPress side, not tracked in the dashboard
 - **Language switching:** No runtime toggle — UI language is controlled by `NEXT_PUBLIC_LANG` env var. Set to `zh` in production `.env`, defaults to `en` locally. Components import from `en.js` or `zh.js` vocab files and read from the right one at render time. No React context or client components needed.
-- **XHS login browser streaming: screenshot polling, not noVNC** — noVNC requires a VNC server (x11vnc) and virtual display (Xvfb) on the Lightsail instance — significant infrastructure overhead for a single use case. Screenshot polling via `page.screenshot()` every 2 seconds is sufficient because the only operator action is scanning a QR code with their phone. The navigation to the QR code screen is automated in `xhs-login.js` (click sequence is hardcoded), so the QR code is already showing by the time the first screenshot reaches the dashboard. Operator never needs to click or type inside the browser.
 - **State/config storage: PostgreSQL, not shared volume** — all pipeline state, run logs, post history, config, and race data are stored in a shared PostgreSQL instance. Dashboard reads from DB directly. Config updates go through API endpoints that write to DB rows. Eliminates shared volume as an inter-container communication layer. Exception: `xhs/auth.json` stays as a file (session cookies are a runtime artifact, not config data). See `docs/architecture.md §5`.
 
