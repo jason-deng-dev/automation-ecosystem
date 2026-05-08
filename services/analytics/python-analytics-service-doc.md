@@ -6,7 +6,30 @@
 
 **Date:** April 2026
 
-**Status:** Planned (in-scope — implement after core pipelines deployed)
+**Status:** In progress (May 2026)
+
+## Revised Scope (May 2026)
+
+**In scope — v1 (complete):**
+- `POST /analyze/xhs` — operator uploads Excel export, service backfills archive, scores post types, returns best performer + weights + top posts
+
+**In scope — v2 (building):**
+- **C++ scoring engine via pybind11** — `compute_scores()`, `normalize_weights()`, `cosine_similarity()` compiled as `.so`, called from `scoring.py` (interface already isolated for drop-in)
+- **Multithreaded Monte Carlo engine (std::async)** — N=10,000 bootstrap simulations of rotation weight combinations; scores each against historical performance to find optimal allocation + confidence intervals
+- **EWMA volatility** — exponentially weighted moving average on per-type performance time series; weights recent posts more heavily than older ones
+- **OLS-fitted generative model** — linear regression fit over post features (type, season, recency) to predict composite score; informs Monte Carlo prior
+- **Markowitz cross-validation** — mean-variance optimization over post type "portfolio"; maximizes expected score per unit of variance (consistency), not just raw mean
+- **`POST /tune/xhs`** — sends top 3 posts per type + current prompt to Claude API; Claude returns updated prompt; archives old prompt; rollback if next month's score drops
+- **asyncio.gather()** — `/analyze/xhs` runs DB backfill, scoring, and Monte Carlo concurrently; target latency reduction from ~360ms → ~120ms
+
+**Deferred:**
+- `/embed/xhs` RAG pipeline — activate after archive exceeds ~500 generated posts
+- Auto-scheduled calibration — manual trigger only
+
+**Already done:**
+- Schema migration applied to VPS (`xhs_post_archive` has all performance columns)
+- 115 historical posts backfilled via `backfill_historical.py` (keyword-classified, performance metrics from Excel)
+- `POST /analyze/xhs` v1 — numpy scoring, returns weights + top posts
 
 ---
 
