@@ -7,16 +7,15 @@ export async function POST(request) {
 	try {
 		const formData = await request.formData();
 		const file = formData.get('file');
-		if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
 
 		const upstream = new FormData();
-		upstream.append('file', file, file.name);
+		if (file) upstream.append('file', file, file.name);
 
 		let res;
 		try {
 			res = await fetch(`${ANALYTICS_URL}/analyze/xhs`, {
 				method: 'POST',
-				body: upstream,
+				body: file ? upstream : undefined,
 			});
 		} catch (err) {
 			return NextResponse.json({ error: `Analytics service unreachable: ${err.message}` }, { status: 502 });

@@ -46,11 +46,10 @@ export default function XhsAnalyticsPanel({ dict }) {
 
 	async function handleCalibrate() {
 		const file = fileRef.current?.files?.[0];
-		if (!file) { setError(dict.analyticsSelectFile); return; }
 		setLoading(true); setError(null); setResult(null);
 		try {
 			const fd = new FormData();
-			fd.append('file', file);
+			if (file) fd.append('file', file);
 			const res  = await fetch('/api/analytics/calibrate', { method: 'POST', body: fd });
 			let data;
 			try {
@@ -110,7 +109,9 @@ export default function XhsAnalyticsPanel({ dict }) {
 					<>
 						{/* Summary */}
 						<div className="text-sm" style={{ color: '#888888' }}>
-							{result.ingested?.updated} {dict.analyticsSummaryMatched} ·{' '}
+							{result.ingested?.updated > 0 && (
+								<>{result.ingested.updated} {dict.analyticsSummaryMatched} · </>
+							)}
 							<span style={{ color: '#EDEDED', fontWeight: 600 }}>{topTypeLabel}</span>{' '}
 							{dict.analyticsSummaryBest}
 						</div>

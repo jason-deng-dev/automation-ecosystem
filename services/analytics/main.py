@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
+from typing import Optional
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
 logging.basicConfig(level=logging.INFO)
@@ -49,78 +50,85 @@ def _safe_float(val):
 
 
 @app.post("/analyze/xhs")
-async def analyze_xhs(file: UploadFile = File(...)):
-    if not file.filename.endswith((".xlsx", ".xls")):
-        raise HTTPException(status_code=400, detail="File must be .xlsx or .xls")
+async def analyze_xhs(file: Optional[UploadFile] = File(default=None)):
+    ingested = {"updated": 0, "skipped_unknown": 0}
 
-    contents = await file.read()
-    try:
-        df = pd.read_excel(io.BytesIO(contents), header=1)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse Excel: {e}")
+    if file is not None:
+        if not file.filename.endswith((".xlsx", ".xls")):
+            raise HTTPException(status_code=400, detail="File must be .xlsx or .xls")
 
-    log.info("Excel columns found: %s", list(df.columns))
+        contents = await file.read()
+        try:
+            df = pd.read_excel(io.BytesIO(contents), header=1)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to parse Excel: {e}")
 
-    df = df.rename(columns={
-        "笔记标题":   "title",
-        "首次发布时间": "published_at",
-        "曝光":      "impressions",
-        "观看量":     "views",
-        "封面点击率":  "ctr",
-        "点赞":      "likes",
-        "评论":      "comments_count",
-        "收藏":      "saves",
-        "涨粉":      "followers_gained",
-        "分享":      "shares",
-        "人均观看时长": "avg_watch_time",
-    })
+        log.info("Excel columns found: %s", list(df.columns))
 
-    required = {"title", "views", "saves", "ctr"}
-    missing = required - set(df.columns)
-    if missing:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Missing expected columns after rename: {missing}. Got: {list(df.columns)}"
-        )
+        df = df.rename(columns={
+            "笔记标题":   "title",
+            "首次发布时间": "published_at",
+            "曝光":      "impressions",
+            "观看量":     "views",
+            "封面点击率":  "ctr",
+            "点赞":      "likes",
+            "评论":      "comments_count",
+            "收藏":      "saves",
+            "涨粉":      "followers_gained",
+            "分享":      "shares",
+            "人均观看时长": "avg_watch_time",
+        })
 
-    # DB backfill
-    conn = _get_db()
-    cur  = conn.cursor()
-    updated = skipped = 0
+        required = {"title", "views", "saves", "ctr"}
+        missing = required - set(df.columns)
+        if missing:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Missing expected columns after rename: {missing}. Got: {list(df.columns)}"
+            )
 
-    for _, row in df.iterrows():
-        title = str(row.get("title", "")).strip()
-        if not title or title == "nan":
-            continue
-        cur.execute("SELECT id FROM xhs_post_archive WHERE title = %s", (title,))
-        if cur.fetchone():
-            cur.execute("""
-                UPDATE xhs_post_archive
-                SET impressions=%s, views=%s, ctr=%s, likes=%s, comments_count=%s,
-                    saves=%s, shares=%s, followers_gained=%s, avg_watch_time=%s
-                WHERE title=%s
-            """, (
-                _safe_int(row["impressions"]), _safe_int(row["views"]),
-                _safe_float(row["ctr"]),       _safe_int(row["likes"]),
-                _safe_int(row["comments_count"]), _safe_int(row["saves"]),
-                _safe_int(row["shares"]),      _safe_int(row["followers_gained"]),
-                _safe_float(row["avg_watch_time"]), title,
-            ))
-            updated += 1
-        else:
-            skipped += 1
+        conn = _get_db()
+        cur  = conn.cursor()
+        updated = skipped = 0
 
-    conn.commit()
+        for _, row in df.iterrows():
+            title = str(row.get("title", "")).strip()
+            if not title or title == "nan":
+                continue
+            cur.execute("SELECT id FROM xhs_post_archive WHERE title = %s", (title,))
+            if cur.fetchone():
+                cur.execute("""
+                    UPDATE xhs_post_archive
+                    SET impressions=%s, views=%s, ctr=%s, likes=%s, comments_count=%s,
+                        saves=%s, shares=%s, followers_gained=%s, avg_watch_time=%s
+                    WHERE title=%s
+                """, (
+                    _safe_int(row["impressions"]), _safe_int(row["views"]),
+                    _safe_float(row["ctr"]),       _safe_int(row["likes"]),
+                    _safe_int(row["comments_count"]), _safe_int(row["saves"]),
+                    _safe_int(row["shares"]),      _safe_int(row["followers_gained"]),
+                    _safe_float(row["avg_watch_time"]), title,
+                ))
+                updated += 1
+            else:
+                skipped += 1
 
-    cur.execute("""
+        conn.commit()
+        cur.close()
+        conn.close()
+        ingested = {"updated": updated, "skipped_unknown": skipped}
+
+    conn2 = _get_db()
+    cur2  = conn2.cursor()
+    cur2.execute("""
         SELECT post_type, title, views, saves, ctr, published_at
         FROM xhs_post_archive
         WHERE views IS NOT NULL AND saves IS NOT NULL AND ctr IS NOT NULL
         ORDER BY published_at ASC
     """)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+    rows = cur2.fetchall()
+    cur2.close()
+    conn2.close()
 
     if not rows:
         raise HTTPException(status_code=422, detail="No posts with performance data found")
@@ -249,7 +257,7 @@ async def analyze_xhs(file: UploadFile = File(...)):
     }
 
     return {
-        "ingested":        {"updated": updated, "skipped_unknown": skipped},
+        "ingested":        ingested,
         "ranked_types":    [{"post_type": pt, "weight": w} for pt, w in ranked],
         "content_weights": content_weights,
         "top_posts":       top_posts,
