@@ -1,8 +1,6 @@
 import io
-import json
 import os
-from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -10,30 +8,18 @@ import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from pydantic import BaseModel
 
-import anthropic as _anthropic
-
-from scoring import METRIC_WEIGHTS, compute_scores, ewma_scores, normalize_weights
+from scoring import METRIC_WEIGHTS, compute_scores, ewma_scores, monte_carlo_optimize, normalize_weights
 
 load_dotenv()
 
-DATABASE_URL           = os.getenv("DATABASE_URL")
-ANTHROPIC_API_KEY      = os.getenv("ANTHROPIC_API_KEY")
-XHS_PROMPTS_PATH       = os.getenv("XHS_PROMPTS_PATH", "../xhs/config/prompts.json")
-XHS_PROMPT_ARCHIVE_DIR = os.getenv("XHS_PROMPT_ARCHIVE_DIR", "../xhs/config/prompt_archive")
-
+DATABASE_URL          = os.getenv("DATABASE_URL")
 UNDERSAMPLE_THRESHOLD = 15
 UNDERSAMPLE_BOOST     = 1.3
 
-PROMPT_KEY_MAP = {
-    "race_guide":           "raceGuide",
-    "training":             "training",
-    "nutrition_supplement": "nutritionSupplement",
-    "wearables":            "wearables",
-}
+# Ordered — integer index used in Monte Carlo type grouping
+POST_TYPES = ["race_guide", "training", "nutrition_supplement", "wearables", "health_recovery"]
 
-_executor = ThreadPoolExecutor()
 app = FastAPI()
 
 
@@ -76,7 +62,7 @@ async def analyze_xhs(file: UploadFile = File(...)):
         "人均观看时长": "avg_watch_time",
     })
 
-    # DB backfill + fetch
+    # DB backfill
     conn = _get_db()
     cur  = conn.cursor()
     updated = skipped = 0
@@ -118,8 +104,10 @@ async def analyze_xhs(file: UploadFile = File(...)):
     if not rows:
         raise HTTPException(status_code=422, detail="No posts with performance data found")
 
-    # Build metric matrix — scale saves/CTR to views magnitude
-    post_types, titles_list, metric_rows, pub_times = [], [], [], []
+    # Build metric matrix (scale saves/CTR to views magnitude)
+    type_index_map = {t: i for i, t in enumerate(POST_TYPES)}
+    post_types, titles_list, metric_rows, type_idx_list, pub_times = [], [], [], [], []
+
     for post_type, title, views, saves, ctr, published_at in rows:
         metric_rows.append([
             float(views or 0),
@@ -128,36 +116,64 @@ async def analyze_xhs(file: UploadFile = File(...)):
         ])
         post_types.append(post_type)
         titles_list.append(title)
+        type_idx_list.append(type_index_map.get(post_type, -1))
         pub_times.append(published_at)
 
-    metric_matrix = np.array(metric_rows, dtype=np.float64)
-    raw_scores    = compute_scores(metric_matrix)
+    metric_matrix  = np.array(metric_rows, dtype=np.float64)
+    type_idx_array = np.array(type_idx_list, dtype=np.int32)
+    raw_scores     = compute_scores(metric_matrix)
 
-    # EWMA per type — weight recent posts more heavily, take last value as type score
+    # EWMA per type — smooth scores so recent posts count more; take last value as type score
     type_series: dict[str, list[tuple[float, datetime]]] = {}
     for i, pt in enumerate(post_types):
         type_series.setdefault(pt, []).append((float(raw_scores[i]), pub_times[i]))
 
-    type_scores: dict[str, float] = {}
+    ewma_per_post = np.zeros(len(post_types), dtype=np.float64)
     for pt, series in type_series.items():
         series.sort(key=lambda x: x[1] or datetime.min)
-        arr = np.array([s for s, _ in series])
-        type_scores[pt] = float(ewma_scores(arr)[-1])
+        indices = [i for i, p in enumerate(post_types) if p == pt]
+        scores_arr = np.array([s for s, _ in series])
+        smoothed   = ewma_scores(scores_arr)
+        for k, i in enumerate(indices):
+            ewma_per_post[i] = smoothed[k]
 
-    # Undersampling correction — boost high-signal low-count types
-    median_score = float(np.median(list(type_scores.values())))
+    # Undersampling correction — boost EWMA scores for high-signal low-count types
+    type_ewma_final: dict[str, float] = {}
+    for pt, series in type_series.items():
+        last_ewma = float(ewma_per_post[[i for i, p in enumerate(post_types) if p == pt][-1]])
+        type_ewma_final[pt] = last_ewma
+
+    median_ewma = float(np.median(list(type_ewma_final.values())))
     flags: list[str] = []
-    for pt in list(type_scores):
-        count = len(type_series[pt])
-        if count < UNDERSAMPLE_THRESHOLD and type_scores[pt] > median_score:
-            type_scores[pt] *= UNDERSAMPLE_BOOST
-            flags.append(f"{pt} has only {count} posts but strong performance — weight boosted to encourage more posts of this type")
 
-    # Normalize to weights and rank
-    content_weights = normalize_weights(type_scores)
+    for i, pt in enumerate(post_types):
+        count = len(type_series[pt])
+        if count < UNDERSAMPLE_THRESHOLD and type_ewma_final[pt] > median_ewma:
+            ewma_per_post[i] *= UNDERSAMPLE_BOOST
+
+    # Flag boosted types
+    for pt, series in type_series.items():
+        count = len(series)
+        if count < UNDERSAMPLE_THRESHOLD and type_ewma_final[pt] > median_ewma:
+            flags.append(
+                f"{pt} has only {count} posts but strong performance — weight boosted to encourage more posts of this type"
+            )
+
+    # Monte Carlo: bootstrap over EWMA-smoothed (+ undersampling-corrected) post scores
+    # 10k simulations, 4 threads — returns optimal weight per type
+    valid = type_idx_array >= 0
+    mc = monte_carlo_optimize(
+        ewma_per_post[valid],
+        type_idx_array[valid],
+        len(POST_TYPES),
+        n_simulations=10000,
+    )
+
+    mc_means = mc["means"]
+    content_weights = {POST_TYPES[i]: round(mc_means[i], 3) for i in range(len(POST_TYPES))}
     ranked = sorted(content_weights.items(), key=lambda x: x[1], reverse=True)
 
-    # Top 3 posts per type by composite score
+    # Top 3 posts per type by raw composite score
     score_data: dict[str, list] = {}
     for i, pt in enumerate(post_types):
         score_data.setdefault(pt, []).append({
@@ -173,77 +189,10 @@ async def analyze_xhs(file: UploadFile = File(...)):
     }
 
     return {
-        "ingested":       {"updated": updated, "skipped_unknown": skipped},
-        "ranked_types":   [{"post_type": pt, "weight": w} for pt, w in ranked],
+        "ingested":        {"updated": updated, "skipped_unknown": skipped},
+        "ranked_types":    [{"post_type": pt, "weight": w} for pt, w in ranked],
         "content_weights": content_weights,
-        "top_posts":      top_posts,
-        "flags":          flags,
-        "computed_at":    datetime.utcnow().isoformat() + "Z",
-    }
-
-
-# ---------------------------------------------------------------------------
-# POST /tune/xhs
-# ---------------------------------------------------------------------------
-
-class TuneRequest(BaseModel):
-    post_type:      str
-    top_posts:      list[dict]
-    current_prompt: str
-
-
-@app.post("/tune/xhs")
-async def tune_xhs(req: TuneRequest):
-    if not ANTHROPIC_API_KEY:
-        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
-
-    client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-
-    posts_text = "\n\n".join([
-        f"Post {i + 1}:\nTitle: {p.get('title', '')}\n"
-        f"Content: {p.get('hook', p.get('content', ''))}"
-        for i, p in enumerate(req.top_posts[:3])
-    ])
-
-    msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2000,
-        messages=[{
-            "role": "user",
-            "content": (
-                f"You are a content strategist for a Chinese running account focused on Japanese marathons.\n\n"
-                f"Analyze the top-performing posts below for post type '{req.post_type}'. "
-                f"Identify patterns in structure, tone, framing, and hooks that make them succeed. "
-                f"Then rewrite the current prompt to better capture those patterns.\n\n"
-                f"Top performing posts:\n{posts_text}\n\n"
-                f"Current prompt:\n{req.current_prompt}\n\n"
-                f"Return ONLY the updated prompt text. No explanation, no preamble."
-            ),
-        }],
-    )
-    updated_prompt = msg.content[0].text.strip()
-
-    # Archive current prompt
-    archive_dir = Path(XHS_PROMPT_ARCHIVE_DIR) / date.today().isoformat()
-    archive_dir.mkdir(parents=True, exist_ok=True)
-    (archive_dir / f"{req.post_type}.txt").write_text(req.current_prompt, encoding="utf-8")
-
-    # Write updated prompt to prompts.json
-    prompts_path = Path(XHS_PROMPTS_PATH)
-    written = False
-    if prompts_path.exists():
-        with open(prompts_path, encoding="utf-8") as f:
-            prompts = json.load(f)
-        key = PROMPT_KEY_MAP.get(req.post_type)
-        if key and key in prompts.get("postTypes", {}):
-            prompts["postTypes"][key] = updated_prompt
-            with open(prompts_path, "w", encoding="utf-8") as f:
-                json.dump(prompts, f, ensure_ascii=False, indent="\t")
-            written = True
-
-    return {
-        "post_type":       req.post_type,
-        "updated_prompt":  updated_prompt,
-        "archived_to":     str(archive_dir / f"{req.post_type}.txt"),
-        "prompts_updated": written,
+        "top_posts":       top_posts,
+        "flags":           flags,
+        "computed_at":     datetime.utcnow().isoformat() + "Z",
     }

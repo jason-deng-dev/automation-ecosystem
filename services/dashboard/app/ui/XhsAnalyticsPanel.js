@@ -43,8 +43,6 @@ export default function XhsAnalyticsPanel({ dict }) {
 	const [loading, setLoading] = useState(false);
 	const [result,  setResult]  = useState(null);
 	const [error,   setError]   = useState(null);
-	const [tuning,  setTuning]  = useState({});
-	const [tuned,   setTuned]   = useState({});
 
 	async function handleCalibrate() {
 		const file = fileRef.current?.files?.[0];
@@ -64,39 +62,15 @@ export default function XhsAnalyticsPanel({ dict }) {
 		}
 	}
 
-	async function handleTune(postType) {
-		if (!result) return;
-		const topPosts = result.top_posts?.[postType] ?? [];
-		setTuning(t => ({ ...t, [postType]: 'loading' }));
-		try {
-			const res  = await fetch('/api/analytics/tune', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ post_type: postType, top_posts: topPosts, current_prompt: '' }),
-			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.detail ?? 'Tune failed');
-			setTuned(t => ({ ...t, [postType]: data }));
-			setTuning(t => ({ ...t, [postType]: 'done' }));
-		} catch (e) {
-			setTuning(t => ({ ...t, [postType]: e.message }));
-		}
-	}
-
 	const topType      = result?.ranked_types?.[0]?.post_type;
 	const topTypeLabel = topType ? (dict.postTypeLabel?.[topType] ?? topType) : '';
 
 	return (
 		<div style={{ border: '1px solid #2A2A2A' }}>
-			<div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #2A2A2A' }}>
+			<div className="px-6 py-4" style={{ borderBottom: '1px solid #2A2A2A' }}>
 				<span className="text-sm font-semibold tracking-wide uppercase" style={{ color: '#EDEDED' }}>
 					{dict.analyticsTitle}
 				</span>
-				{result && (
-					<span className="text-xs" style={{ color: '#555555' }}>
-						{new Date(result.computed_at).toLocaleString('en-CA', { timeZone: 'Asia/Shanghai', hour12: false })}
-					</span>
-				)}
 			</div>
 
 			<div className="px-6 py-5 flex flex-col gap-5">
@@ -131,7 +105,9 @@ export default function XhsAnalyticsPanel({ dict }) {
 					<>
 						{/* Summary */}
 						<div className="text-sm" style={{ color: '#888888' }}>
-							{result.ingested?.updated} {dict.analyticsSummaryMatched} · <span style={{ color: '#EDEDED', fontWeight: 600 }}>{topTypeLabel}</span> {dict.analyticsSummaryBest}
+							{result.ingested?.updated} {dict.analyticsSummaryMatched} ·{' '}
+							<span style={{ color: '#EDEDED', fontWeight: 600 }}>{topTypeLabel}</span>{' '}
+							{dict.analyticsSummaryBest}
 						</div>
 
 						{/* Flags */}
@@ -179,28 +155,7 @@ export default function XhsAnalyticsPanel({ dict }) {
 											<span className="text-sm" style={{ color: '#888888' }}>
 												{dict.postTypeLabel?.[post_type] ?? post_type}
 											</span>
-											<div className="flex items-center gap-3">
-												{tuning[post_type] === 'done' && (
-													<span className="text-xs" style={{ color: '#3ECF8E' }}>{dict.analyticsTuned}</span>
-												)}
-												{tuning[post_type] === 'loading' && (
-													<span className="text-xs" style={{ color: '#555555' }}>{dict.analyticsTuning}</span>
-												)}
-												<button
-													onClick={e => { e.preventDefault(); handleTune(post_type); }}
-													disabled={tuning[post_type] === 'loading'}
-													className="text-xs px-3 py-1"
-													style={{
-														border: '1px solid #2A2A2A',
-														color: '#888888',
-														backgroundColor: '#111111',
-														cursor: tuning[post_type] === 'loading' ? 'not-allowed' : 'pointer',
-													}}
-												>
-													{dict.analyticsAutoTune}
-												</button>
-												<span style={{ color: '#444444', fontSize: '10px' }}>▼</span>
-											</div>
+											<span style={{ color: '#444444', fontSize: '10px' }}>▼</span>
 										</summary>
 										<div className="flex flex-col gap-2 pb-3">
 											{posts.map((p, i) => (
@@ -212,16 +167,6 @@ export default function XhsAnalyticsPanel({ dict }) {
 													</span>
 												</div>
 											))}
-											{tuned[post_type] && (
-												<div className="mt-2 p-3 ml-4" style={{ backgroundColor: '#0D0D0D', border: '1px solid #2A2A2A' }}>
-													<span className="text-xs tracking-wide uppercase block mb-2" style={{ color: '#555555' }}>
-														{dict.analyticsUpdatedPrompt}
-													</span>
-													<pre className="text-xs whitespace-pre-wrap" style={{ color: '#AAAAAA', fontFamily: 'inherit' }}>
-														{tuned[post_type].updated_prompt}
-													</pre>
-												</div>
-											)}
 										</div>
 									</details>
 								);
