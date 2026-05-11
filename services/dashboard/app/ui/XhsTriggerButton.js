@@ -96,16 +96,14 @@ export default function XhsTriggerButton({ dict }) {
 					))}
 				</select>
 
-				{postType === 'custom' && (
-					<textarea
-						value={customPrompt}
-						onChange={e => setCustomPrompt(e.target.value)}
-						placeholder={dict.customPromptPlaceholder}
-						rows={4}
-						className="w-full text-sm px-3 py-2 bg-transparent border outline-none resize-none"
-						style={{ borderColor: '#2A2A2A', color: '#EDEDED' }}
-					/>
-				)}
+				<textarea
+					value={customPrompt}
+					onChange={e => setCustomPrompt(e.target.value)}
+					placeholder={dict.customPromptPlaceholder}
+					rows={3}
+					className="w-full text-sm px-3 py-2 bg-transparent border outline-none resize-none"
+					style={{ borderColor: '#2A2A2A', color: '#EDEDED' }}
+				/>
 
 				<button
 					onClick={status !== 'idle' ? () => setModalOpen(true) : handleTrigger}
