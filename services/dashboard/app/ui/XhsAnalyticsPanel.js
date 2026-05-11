@@ -79,18 +79,27 @@ export default function XhsAnalyticsPanel({ dict }) {
 
 			<div className="px-6 py-5 flex flex-col gap-5">
 				{/* Upload */}
-				<div className="flex items-center gap-3">
-					<input
-						ref={fileRef}
-						type="file"
-						accept=".xlsx,.xls"
-						className="text-sm"
-						style={{ color: '#888888', flex: 1 }}
-					/>
+				<div className="flex flex-col gap-2">
+					<label
+						className="flex items-center gap-2 text-sm px-3 py-2 cursor-pointer"
+						style={{ border: '1px solid #2A2A2A', color: '#888888' }}
+					>
+						<span style={{ color: '#555555', flexShrink: 0 }}>📎</span>
+						<span className="truncate" style={{ color: fileRef.current?.files?.[0] ? '#EDEDED' : '#555555' }}>
+							{fileRef.current?.files?.[0]?.name ?? dict.analyticsSelectFile}
+						</span>
+						<input
+							ref={fileRef}
+							type="file"
+							accept=".xlsx,.xls"
+							className="hidden"
+							onChange={() => setError(null)}
+						/>
+					</label>
 					<button
 						onClick={handleCalibrate}
 						disabled={loading}
-						className="text-sm px-4 py-2 font-medium"
+						className="w-full text-sm px-4 py-2 font-medium"
 						style={{
 							backgroundColor: '#111111',
 							border: '1px solid #2A2A2A',
@@ -171,6 +180,7 @@ export default function XhsAnalyticsPanel({ dict }) {
 														<span style={{ color: '#EDEDED' }} className="truncate">{p.title}</span>
 													</div>
 													<div className="flex gap-3 text-xs pl-4" style={{ color: '#555555' }}>
+														{p.published_at && <span>{p.published_at}</span>}
 														<span>{p.views.toLocaleString()} {dict.analyticsViews}</span>
 														<span>{p.saves} {dict.analyticsSaves}</span>
 														<span>CTR {(p.ctr * 100).toFixed(1)}%</span>

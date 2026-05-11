@@ -243,13 +243,15 @@ async def analyze_xhs(file: Optional[UploadFile] = File(default=None)):
     # Top 5 posts per type — sorted by EWMA score (recency-weighted)
     score_data: dict[str, list] = {}
     for i, pt in enumerate(post_types):
+        pub = pub_times[i]
         score_data.setdefault(pt, []).append({
-            "title":      titles_list[i],
-            "ewma_score": round(float(ewma_per_post[i])),
-            "score":      round(float(raw_scores[i])),
-            "views":      int(metric_rows[i][0]),
-            "saves":      int(metric_rows[i][1] / 100),
-            "ctr":        round(metric_rows[i][2] / 1000, 4),
+            "title":        titles_list[i],
+            "ewma_score":   round(float(ewma_per_post[i])),
+            "score":        round(float(raw_scores[i])),
+            "views":        int(metric_rows[i][0]),
+            "saves":        int(metric_rows[i][1] / 100),
+            "ctr":          round(metric_rows[i][2] / 1000, 4),
+            "published_at": pub.strftime("%Y-%m-%d") if pub else None,
         })
     top_posts = {
         pt: sorted(posts, key=lambda p: p["ewma_score"], reverse=True)[:5]
