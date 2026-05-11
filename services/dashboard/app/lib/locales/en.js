@@ -132,6 +132,11 @@ export default {
 	postCardCopy: "Copy",
 	postCardCopied: "✓ Copied",
 
+	// Race post history
+	raceHistoryTitle: "Race Cooldown",
+	raceHistoryEmpty: "No races in cooldown",
+	raceHistoryReset: "Reset",
+
 	// Analytics calibration panel
 	analyticsTitle: "Content Calibration",
 	analyticsAnalyze: "Analyze",

@@ -118,6 +118,11 @@ export default {
 	postCardCopy: "复制",
 	postCardCopied: "✓ 已复制",
 
+	// Race post history
+	raceHistoryTitle: "赛事冷却",
+	raceHistoryEmpty: "无冷却赛事",
+	raceHistoryReset: "重置",
+
 	// Analytics calibration panel
 	analyticsTitle: "内容校准",
 	analyticsAnalyze: "分析",

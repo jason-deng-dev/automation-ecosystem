@@ -42,6 +42,10 @@
   - [x] Post archive viewer
     - [x] `GET /api/xhs/post-archive` — query `xhs_post_archive` table (inline in page.js)
     - [x] List: title, post type, publish timestamp — expandable to show full post content
+  - [x] Race cooldown manager
+    - [x] `DELETE /api/xhs/post-history` — remove race from `xhs_post_history` to make it eligible again
+    - [x] `XhsRaceHistory` client component — lists races in cooldown (last 7 days), reset button per race removes from DB + updates local state
+    - [x] Wired into XHS page left column (below analytics panel, above schedule editor)
 ---
 
 - [x] Scraper section (detail page)

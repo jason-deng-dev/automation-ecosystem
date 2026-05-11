@@ -4,12 +4,13 @@ import XhsTriggerButton from '@/app/ui/XhsTriggerButton';
 import XhsScheduleEditor from '@/app/ui/XhsScheduleEditor';
 import XhsPostCard from '@/app/ui/XhsPostCard';
 import XhsAnalyticsPanel from '@/app/ui/XhsAnalyticsPanel';
+import XhsRaceHistory from '@/app/ui/XhsRaceHistory';
 import { getDict } from '@/app/lib/dict';
 
 export default async function XhsPage() {
 	const { dict } = await getDict();
 
-	const [scheduleRes, runLogsRes, pendingRes, archiveRes] = await Promise.all([
+	const [scheduleRes, runLogsRes, pendingRes, archiveRes, raceHistoryRes] = await Promise.all([
 		ecosystemPool.query(`SELECT id, day, time, post_type FROM xhs_schedule ORDER BY day, time`),
 		ecosystemPool.query(
 			`SELECT published_at, post_type, outcome, error_stage, error_msg, input_tokens, output_tokens
@@ -23,12 +24,16 @@ export default async function XhsPage() {
 			`SELECT id, published_at, post_type, race_name, title, hook, contents, cta, description, hashtags, comments
 			 FROM xhs_post_archive WHERE published = true ORDER BY published_at DESC LIMIT 30`
 		),
+		ecosystemPool.query(
+			`SELECT race_name FROM xhs_post_history WHERE posted_at > NOW() - INTERVAL '7 days' ORDER BY posted_at DESC`
+		),
 	]);
 
 	const slots = scheduleRes.rows;
 	const runs = runLogsRes.rows;
 	const pending = pendingRes.rows;
 	const archive = archiveRes.rows;
+	const postedRaces = raceHistoryRes.rows.map((r) => r.race_name);
 
 	const now = new Date();
 	const OVERDUE_MS = 4 * 60 * 60 * 1000; // 4 hours
@@ -48,6 +53,7 @@ export default async function XhsPage() {
 				<div className="flex flex-col gap-6 min-w-0">
 					<XhsTriggerButton dict={dict} />
 					<XhsAnalyticsPanel dict={dict} />
+					<XhsRaceHistory initialRaces={postedRaces} dict={dict} />
 					<XhsScheduleEditor slots={slots} dict={dict} />
 				</div>
 
