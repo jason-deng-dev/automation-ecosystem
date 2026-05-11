@@ -41,6 +41,7 @@ export default {
 		nutritionSupplement: "营养补剂",
 		wearable: "装备",
 	},
+	customPromptPlaceholder: "描述内容方向，Claude 会按小红书格式生成…",
 
 	// Error stage labels
 	errorStage: {

@@ -11,10 +11,12 @@ function broadcastGenerate(line) {
 	for (const sub of generateSubscribers) sub(line);
 }
 
-export function runGenerate(type) {
+export function runGenerate(type, customPrompt = null) {
 	if (generateProc) return;
 	generateBuffer = [];
-	generateProc = spawn('docker', ['exec', 'xhs', 'node', 'scripts/run-preview.js', type], {
+	const args = ['exec', 'xhs', 'node', 'scripts/run-preview.js', type];
+	if (customPrompt) args.push(JSON.stringify(customPrompt));
+	generateProc = spawn('docker', args, {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
 	let buf = '';

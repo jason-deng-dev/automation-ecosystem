@@ -7,8 +7,8 @@ export async function GET() {
 }
 
 export async function POST(request) {
-	const { postType } = await request.json().catch(() => ({}));
-	runGenerate(postType || 'race');
+	const { postType, customPrompt } = await request.json().catch(() => ({}));
+	runGenerate(postType || 'race', customPrompt || null);
 	return NextResponse.json({ ok: true });
 }
 

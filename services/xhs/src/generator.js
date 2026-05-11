@@ -18,6 +18,7 @@ async function generatePost(
 		client = defaultClient,
 		prompts = defaultPrompts,
 		writeHistory = null,
+		customPrompt = null,
 	} = {},
 ) {
 	if (!races) races = await getRaces();
@@ -29,6 +30,7 @@ async function generatePost(
 		postedRaces,
 		client,
 		prompts,
+		customPrompt,
 	});
 
 	let message;
@@ -66,7 +68,7 @@ async function generatePost(
 
 async function getContextPrompts(
 	type,
-	{ races = null, postedRaces = null, client = defaultClient, prompts = defaultPrompts } = {},
+	{ races = null, postedRaces = null, client = defaultClient, prompts = defaultPrompts, customPrompt = null } = {},
 ) {
 	if (!races) races = await getRaces();
 	if (!postedRaces) postedRaces = await getPostedRaces();
@@ -77,7 +79,7 @@ async function getContextPrompts(
 		({raceName, input_tokens, output_tokens} = await chooseRace({ races, postedRaces, client, prompts }));
 	}
 
-	const { contextToUse, comments } = buildContext(type, prompts, races, raceName);
+	const { contextToUse, comments } = buildContext(type, prompts, races, raceName, customPrompt);
 
 	return { comments, contextToUse, raceName, input_tokens, output_tokens};
 }
@@ -191,7 +193,7 @@ function getHashtags(type) {
 	}
 }
 
-function buildContext(type, prompts, races, raceName) {
+function buildContext(type, prompts, races, raceName, customPrompt = null) {
 	let contextToUse;
 	let comments;
 	let ctaDescription;
@@ -261,6 +263,8 @@ function buildContext(type, prompts, races, raceName) {
 		default:
 			throw new Error('Incorrect type used');
 	}
+
+	if (customPrompt) contextToUse = customPrompt;
 
 	contextToUse += `\n\nCTA: Direct readers to ${ctaDescription}. Tell them the link is in the comments.`;
 

@@ -5,6 +5,7 @@ const POST_TYPES = ['race', 'training', 'nutritionSupplement', 'wearable'];
 
 export default function XhsTriggerButton({ dict }) {
 	const [postType, setPostType] = useState('race');
+	const [customPrompt, setCustomPrompt] = useState('');
 	const [status, setStatus] = useState('idle');
 	const [logs, setLogs] = useState([]);
 	const [modalOpen, setModalOpen] = useState(false);
@@ -53,7 +54,10 @@ export default function XhsTriggerButton({ dict }) {
 			const res = await fetch('/api/xhs/trigger', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ postType }),
+				body: JSON.stringify({
+					postType,
+					...(postType === 'custom' ? { customPrompt } : {}),
+				}),
 			});
 			if (!res.ok) throw new Error();
 			connect();
@@ -91,6 +95,17 @@ export default function XhsTriggerButton({ dict }) {
 						<option key={t} value={t} style={{ backgroundColor: '#111111' }}>{dict.postType[t]}</option>
 					))}
 				</select>
+
+				{postType === 'custom' && (
+					<textarea
+						value={customPrompt}
+						onChange={e => setCustomPrompt(e.target.value)}
+						placeholder={dict.customPromptPlaceholder}
+						rows={4}
+						className="w-full text-sm px-3 py-2 bg-transparent border outline-none resize-none"
+						style={{ borderColor: '#2A2A2A', color: '#EDEDED' }}
+					/>
+				)}
 
 				<button
 					onClick={status !== 'idle' ? () => setModalOpen(true) : handleTrigger}

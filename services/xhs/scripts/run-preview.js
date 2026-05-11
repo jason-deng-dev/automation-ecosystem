@@ -2,8 +2,9 @@ import { generatePost } from "../src/generator.js";
 import { insertPostArchive } from "../src/db/queries.js";
 
 const type = process.argv[2] ? process.argv[2] : 'race';
+const customPrompt = process.argv[3] ? JSON.parse(process.argv[3]) : null;
 
-const post = await generatePost(type);
+const post = await generatePost(type, { customPrompt });
 
 await insertPostArchive({
 	postType: post.post_type,
