@@ -131,7 +131,7 @@ export default function XhsAnalyticsPanel({ dict }) {
 					<>
 						{/* Summary */}
 						<div className="text-sm" style={{ color: '#888888' }}>
-							{dict.analyticsSummary(topTypeLabel, result.ingested?.updated)}
+							{result.ingested?.updated} {dict.analyticsSummaryMatched} · <span style={{ color: '#EDEDED', fontWeight: 600 }}>{topTypeLabel}</span> {dict.analyticsSummaryBest}
 						</div>
 
 						{/* Flags */}
