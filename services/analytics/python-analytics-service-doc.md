@@ -6,7 +6,7 @@
 
 **Date:** April 2026
 
-**Status:** Complete (May 2026) — pending docker-compose deployment
+**Status:** Complete and deployed (May 2026)
 
 ---
 
@@ -44,12 +44,15 @@ XHS Creator Studio → manual Excel export
 Dashboard → POST /api/analytics/calibrate → POST /analyze/xhs (FastAPI)
                             ↓
                   pd.read_excel → DataFrame
-                  match titles to xhs_post_archive → backfill views/saves/CTR
+                  match titles to xhs_post_archive by title → backfill views/saves/CTR
                             ↓
-                  C++ scoring core (pybind11)
-                    compute_scores()     — views×0.4 + saves×0.35 + CTR×0.25
-                    ewma_scores()        — recency weighting (λ=0.94)
-                    monte_carlo_optimize() — 10k bootstrap sims, 4 threads
+                  compute_scores()       — views×0.4 + saves×0.35 + CTR×0.25  [C++]
+                  ewma_scores()          — recency weighting (λ=0.94)          [C++]
+                  undersampling boost    — <15 posts + above median → ×1.3     [Python]
+                  fit_ols_prior()        — regression prior per type            [Python/numpy]
+                  blend EWMA + OLS 50/50 per post                              [Python]
+                  monte_carlo_optimize() — 10k bootstrap sims, 4 threads       [C++]
+                  markowitz_weights()    — mean/variance Sharpe optimization    [C++]
                             ↓
                   JSON response: ranked_types + content_weights + top_posts
                             ↓
@@ -79,7 +82,7 @@ Prevents burying a high-signal category just because we haven't posted in it muc
 
 **Step 4 — OLS prior (numpy lstsq)**
 Fits a linear regression over all posts:
-- Features: post_type one-hot (5 cols) + month + recency_days
+- Features: post_type one-hot (4 cols: race, training, nutritionSupplement, wearable) + month + recency_days
 - Target: EWMA-smoothed composite score
 
 Predicts the expected score for each post type at median month and zero recency (i.e. a fresh post of that type today). This OLS prediction becomes the prior — blended 50/50 with the EWMA score before Monte Carlo runs:
@@ -119,12 +122,14 @@ Normalizes sharpe ratios to final content weights. Favors consistent performers 
 {
   "ingested": { "updated": 90, "skipped_unknown": 25 },
   "ranked_types": [
-    { "post_type": "race_guide", "weight": 0.42 },
-    { "post_type": "training",   "weight": 0.28 }
+    { "post_type": "race",               "weight": 0.42 },
+    { "post_type": "training",           "weight": 0.31 },
+    { "post_type": "nutritionSupplement","weight": 0.19 },
+    { "post_type": "wearable",           "weight": 0.08 }
   ],
-  "content_weights": { "race_guide": 0.42, "training": 0.28, ... },
-  "top_posts": { "race_guide": [...], ... },
-  "flags": ["nutrition_supplement has only 8 posts but strong performance — weight boosted"],
+  "content_weights": { "race": 0.42, "training": 0.31, ... },
+  "top_posts": { "race": [...], "training": [...], ... },
+  "flags": ["wearable has only 3 posts but strong performance — weight boosted"],
   "computed_at": "2026-05-11T10:00:00Z"
 }
 ```
@@ -165,7 +170,7 @@ Normalizes sharpe ratios to final content weights. Favors consistent performers 
 
 Runs in its own container. Dashboard proxies to it via `/api/analytics/calibrate`.
 
-**Remaining:** wire into docker-compose alongside existing xhs-automation container.
+Deployed via GitHub Actions CI/CD — push to `services/analytics/**` builds image, pushes to Docker Hub, SSHes to Lightsail and runs container with `--network host`. Env file at `~/analytics/.env` on VPS.
 
 **Monthly ops process:**
 1. Download Excel from XHS Creator Studio → 笔记数据 → 导出数据
