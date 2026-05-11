@@ -3,6 +3,7 @@ import { ecosystemPool } from '@/app/lib/db/pool';
 import XhsTriggerButton from '@/app/ui/XhsTriggerButton';
 import XhsScheduleEditor from '@/app/ui/XhsScheduleEditor';
 import XhsPostCard from '@/app/ui/XhsPostCard';
+import XhsAnalyticsPanel from '@/app/ui/XhsAnalyticsPanel';
 import { getDict } from '@/app/lib/dict';
 
 export default async function XhsPage() {
@@ -118,6 +119,9 @@ export default async function XhsPage() {
 							)}
 						</details>
 					</div>
+
+					{/* Analytics Calibration */}
+					<XhsAnalyticsPanel />
 
 					{/* Run History */}
 					<div style={{ border: '1px solid #2A2A2A' }}>
