@@ -27,11 +27,14 @@ ranked post types + recommended weights for posting schedule.
   - [x] Composite score per post: views×0.4 + saves×100×0.35 + CTR×1000×0.25
   - [x] EWMA smoothing per type (λ=0.94) — recent posts weighted more heavily
   - [x] Undersampling correction (< 15 posts + score > median → ×1.3)
-  - [x] Monte Carlo bootstrap (10k sims, 4 C++ threads) → optimal weights per type
+  - [x] OLS prior (numpy lstsq) — fit regression (type + month + recency → score), predict per-type score
+  - [x] Blend EWMA + OLS prediction (50/50) → Monte Carlo input
+  - [x] Monte Carlo bootstrap (10k sims, 4 C++ threads) → mean + variance per type
+  - [x] Markowitz weights (mean/variance Sharpe-style) → final content weights
   - [x] Return: ranked_types, content_weights, top_posts, flags
 
 - [x] C++ scoring engine (pybind11)
-  - [x] `scoring_core.cpp` — compute_scores, normalize_weights, ewma_scores, monte_carlo_optimize, cosine_similarity
+  - [x] `scoring_core.cpp` — compute_scores, normalize_weights, ewma_scores, monte_carlo_optimize, markowitz_weights, cosine_similarity
   - [x] `CMakeLists.txt` — pybind11_add_module, -O3 -march=native
   - [x] Dockerfile compiles .so at build time
   - [x] `scoring.py` — tries C++ .so, falls back to numpy

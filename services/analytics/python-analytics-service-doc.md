@@ -77,12 +77,28 @@ Recent posts count more. Last EWMA value = type's smoothed score.
 If a type has <15 posts AND its EWMA score is above the global median → ×1.3 boost.
 Prevents burying a high-signal category just because we haven't posted in it much.
 
-**Step 4 — Monte Carlo bootstrap (C++, 4 threads, N=10,000)**
-- Resample each type's posts with replacement per simulation
-- Compute mean score per type, normalize to weight vector
-- Average 10k weight vectors → stable optimal weights
+**Step 4 — OLS prior (numpy lstsq)**
+Fits a linear regression over all posts:
+- Features: post_type one-hot (5 cols) + month + recency_days
+- Target: EWMA-smoothed composite score
 
-The Monte Carlo step accounts for sample variance — types with few posts get appropriately uncertain weights rather than overconfident estimates from a small sample.
+Predicts the expected score for each post type at median month and zero recency (i.e. a fresh post of that type today). This OLS prediction becomes the prior — blended 50/50 with the EWMA score before Monte Carlo runs:
+```
+blended[i] = 0.5 × ewma[i] + 0.5 × ols_predicted[type_of_post_i]
+```
+Biases simulations toward predicted performance, not just raw historical averages. Helps when a type has few posts but OLS sees a strong trend.
+
+**Step 5 — Monte Carlo bootstrap (C++, 4 threads, N=10,000)**
+- Bootstraps over blended (EWMA + OLS) per-post scores
+- Each simulation: resample per type with replacement, compute mean, normalize to weight vector
+- Average 10k weight vectors → mean weight + variance per type
+
+**Step 6 — Markowitz optimization**
+Takes MC output (mean + variance per type). Computes Sharpe-style ratio:
+```
+sharpe[t] = mean[t] / std[t]
+```
+Normalizes sharpe ratios to final content weights. Favors consistent performers over high-variance types — a type averaging 400 reliably beats one averaging 500 with wild swings.
 
 ---
 
@@ -130,6 +146,7 @@ The Monte Carlo step accounts for sample variance — types with few posts get a
 | `ewma_scores(scores, λ=0.94)` | Exponentially weighted moving average |
 | `monte_carlo_optimize(scores, indices, n_types)` | 10k bootstrap simulations, 4 std::async threads |
 | `cosine_similarity(a, b)` | Cosine similarity — reserved for Phase 2 RAG dedup |
+| `markowitz_weights(means, variances)` | Sharpe-style mean/variance optimization → final weights |
 
 ---
 

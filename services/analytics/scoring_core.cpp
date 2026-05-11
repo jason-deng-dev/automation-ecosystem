@@ -147,6 +147,24 @@ monte_carlo_optimize(
     return {means, ci_low, ci_high};
 }
 
+std::vector<double> markowitz_weights(
+    const std::vector<double>& means,
+    const std::vector<double>& variances
+) {
+    size_t n = means.size();
+    std::vector<double> sharpe(n);
+    for (size_t i = 0; i < n; i++) {
+        double std_dev = std::sqrt(std::max(variances[i], 1e-10));
+        sharpe[i] = means[i] / std_dev;
+    }
+    double total = 0.0;
+    for (double s : sharpe) total += s;
+    std::vector<double> out(n);
+    for (size_t i = 0; i < n; i++)
+        out[i] = (total > 0.0) ? sharpe[i] / total : 1.0 / n;
+    return out;
+}
+
 PYBIND11_MODULE(xhs_analytics_core, m) {
     m.def("compute_scores",       &compute_scores,       "Weighted composite score per post");
     m.def("normalize_weights",    &normalize_weights,    "Normalize type scores to weights summing to 1");
@@ -158,4 +176,6 @@ PYBIND11_MODULE(xhs_analytics_core, m) {
           py::arg("post_scores"), py::arg("type_indices"), py::arg("n_types"),
           py::arg("n_simulations") = 10000, py::arg("n_threads") = 4,
           "Bootstrap Monte Carlo weight optimization over EWMA-smoothed post scores");
+    m.def("markowitz_weights", &markowitz_weights,
+          "Sharpe-style mean/variance optimization over MC output → final weights");
 }

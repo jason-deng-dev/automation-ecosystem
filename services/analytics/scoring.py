@@ -79,6 +79,29 @@ def monte_carlo_optimize(
     }
 
 
+def markowitz_weights(means: list[float], variances: list[float]) -> list[float]:
+    """Sharpe-style mean/variance optimization. Favors consistent types over high-variance ones."""
+    if _USE_CPP:
+        return list(_core.markowitz_weights(means, variances))
+    stds = [np.sqrt(max(v, 1e-10)) for v in variances]
+    sharpe = [m / s for m, s in zip(means, stds)]
+    total = sum(sharpe)
+    return [s / total for s in sharpe] if total > 0 else [1 / len(means)] * len(means)
+
+
+def fit_ols_prior(
+    scores: np.ndarray,
+    post_type_onehot: np.ndarray,
+    months: np.ndarray,
+    recency_days: np.ndarray,
+) -> np.ndarray:
+    """OLS regression: predict score from type + month + recency. Returns coefficients."""
+    X = np.column_stack([post_type_onehot, months.reshape(-1, 1), recency_days.reshape(-1, 1)])
+    X = np.hstack([np.ones((len(X), 1)), X])
+    coeffs, _, _, _ = np.linalg.lstsq(X, scores.astype(np.float64), rcond=None)
+    return coeffs
+
+
 def ewma_scores(scores: np.ndarray, lambda_decay: float = 0.94) -> np.ndarray:
     """Weight recent posts more heavily than older ones."""
     if _USE_CPP:

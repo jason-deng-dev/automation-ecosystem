@@ -9,7 +9,10 @@ import psycopg2
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
-from scoring import METRIC_WEIGHTS, compute_scores, ewma_scores, monte_carlo_optimize, normalize_weights
+from scoring import (
+    METRIC_WEIGHTS, compute_scores, ewma_scores,
+    fit_ols_prior, markowitz_weights, monte_carlo_optimize, normalize_weights,
+)
 
 load_dotenv()
 
@@ -159,18 +162,56 @@ async def analyze_xhs(file: UploadFile = File(...)):
                 f"{pt} has only {count} posts but strong performance — weight boosted to encourage more posts of this type"
             )
 
-    # Monte Carlo: bootstrap over EWMA-smoothed (+ undersampling-corrected) post scores
-    # 10k simulations, 4 threads — returns optimal weight per type
+    # OLS prior — fit regression (type one-hot + month + recency → EWMA score)
+    # Predict expected score per type at median month, zero recency (fresh post today)
+    now_ts = datetime.utcnow().timestamp()
+    months_arr    = np.array([p.month if p else 0 for p in pub_times], dtype=np.float64)
+    recency_arr   = np.array([(now_ts - p.timestamp()) / 86400 if p else 0 for p in pub_times], dtype=np.float64)
+    type_onehot   = np.zeros((len(post_types), len(POST_TYPES)), dtype=np.float64)
+    for i, idx in enumerate(type_idx_list):
+        if idx >= 0:
+            type_onehot[i, idx] = 1.0
+
+    ols_coeffs = fit_ols_prior(ewma_per_post, type_onehot, months_arr, recency_arr)
+
+    # Predict per type: intercept + type_coeff + median_month_coeff + 0*recency
+    median_month = float(np.median(months_arr[months_arr > 0])) if months_arr.any() else 6.0
+    n_features   = 1 + len(POST_TYPES) + 2  # intercept + onehot + month + recency
+    ols_predicted = np.zeros(len(POST_TYPES), dtype=np.float64)
+    for t in range(len(POST_TYPES)):
+        if len(ols_coeffs) >= n_features:
+            ols_predicted[t] = (
+                ols_coeffs[0]              # intercept
+                + ols_coeffs[1 + t]        # type coefficient
+                + ols_coeffs[1 + len(POST_TYPES)] * median_month  # month coefficient
+                # recency = 0 (fresh post)
+            )
+
+    # Blend EWMA + OLS prediction (50/50) per post — biases MC toward predicted performance
+    ols_pred_per_post = np.array([
+        ols_predicted[idx] if idx >= 0 else 0.0
+        for idx in type_idx_list
+    ], dtype=np.float64)
+    blended_scores = 0.5 * ewma_per_post + 0.5 * ols_pred_per_post
+
+    # Monte Carlo: bootstrap over blended scores, 10k sims, 4 C++ threads
+    # Returns mean + variance per type for Markowitz step
     valid = type_idx_array >= 0
     mc = monte_carlo_optimize(
-        ewma_per_post[valid],
+        blended_scores[valid],
         type_idx_array[valid],
         len(POST_TYPES),
         n_simulations=10000,
     )
 
-    mc_means = mc["means"]
-    content_weights = {POST_TYPES[i]: round(mc_means[i], 3) for i in range(len(POST_TYPES))}
+    # Markowitz: mean/variance → Sharpe-style weights (consistent > high-variance)
+    mc_means     = mc["means"]
+    mc_variances = [
+        ((mc["ci_high"][i] - mc["ci_low"][i]) / 3.92) ** 2
+        for i in range(len(POST_TYPES))
+    ]
+    mw = markowitz_weights(mc_means, mc_variances)
+    content_weights = {POST_TYPES[i]: round(mw[i], 3) for i in range(len(POST_TYPES))}
     ranked = sorted(content_weights.items(), key=lambda x: x[1], reverse=True)
 
     # Top 3 posts per type by raw composite score
