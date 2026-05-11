@@ -55,8 +55,8 @@ async function generatePost(
 	output_tokens += message.usage.output_tokens;
 	const { title, hook, contents, cta, description } = messageParsed;
 
-	// if message is successful add the race to post_history
-	if (type == 'race') {
+	// only track history when a single race was selected (not custom multi-race prompts)
+	if (type == 'race' && raceName && !customPrompt) {
 		postedRaces.push(raceName);
 		writeHistory(postedRaces);
 	}
@@ -75,7 +75,7 @@ async function getContextPrompts(
 	let raceName = '';
 	let input_tokens = 0;
 	let output_tokens = 0;
-	if (type == 'race') {
+	if (type == 'race' && !customPrompt) {
 		({raceName, input_tokens, output_tokens} = await chooseRace({ races, postedRaces, client, prompts }));
 	}
 
@@ -264,7 +264,16 @@ function buildContext(type, prompts, races, raceName, customPrompt = null) {
 			throw new Error('Incorrect type used');
 	}
 
-	if (customPrompt) contextToUse = customPrompt;
+	if (customPrompt) {
+		if (type === 'race') {
+			const raceList = races.races
+				.map(r => `- ${r.name}（${r.date || '日期待定'}，${r.location || ''}）`)
+				.join('\n');
+			contextToUse = `${customPrompt}\n\n可参考的赛事列表：\n${raceList}`;
+		} else {
+			contextToUse = customPrompt;
+		}
+	}
 
 	contextToUse += `\n\nCTA: Direct readers to ${ctaDescription}. Tell them the link is in the comments.`;
 
