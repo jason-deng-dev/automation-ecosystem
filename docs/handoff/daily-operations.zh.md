@@ -28,7 +28,9 @@
 
 如果看到"**已逾期**"标签，说明昨天的帖子还没发，优先处理。
 
-→ 详细说明：[控制台操作手册 — 小红书模块](dashboard-manual.zh.md#小红书模块)
+**想发一篇特定主题的帖子？** 选好类型后，在输入框写清楚方向（中文），再点击生成。适合想围绕特定比赛、装备或季节写内容的情况。
+
+→ 详细说明：[控制台操作手册 — 小红书模块](dashboard-manual.zh.md#小红书模块) · [自定义帖子内容](dashboard-manual.zh.md#自定义帖子内容)
 
 ---
 
@@ -136,10 +138,11 @@
 |---|---|---|
 | 检查系统是否正常运行 | [控制台首页](dashboard-manual.zh.md) | 每天 |
 | 发布今日小红书帖子 | [控制台 → 小红书 → 待发布](dashboard-manual.zh.md#小红书模块) | 每天 |
+| 发一篇特定主题的帖子 | [控制台 → 小红书 → 自定义帖子内容](dashboard-manual.zh.md#自定义帖子内容) | 按需 |
 | 处理新订单 | [WordPress → WooCommerce → 订单](wordpress-manual.zh.md#更新订单状态) | 每天 |
 | 回复社区成员 | [社区](community-manual.zh.md) | 每天 |
 | 删除不相关商品 | [WordPress → 商品](handoff-runbook.zh.md) | 每周 |
 | 检查商品翻译 | [WordPress → 商品页面](wordpress-manual.zh.md#如何修改翻译) | 每周 |
-| 内容校准分析 | [控制台 → 小红书 → 内容校准](dashboard-manual.zh.md#内容校准) | 每月 |
+| 内容校准分析（可不上传文件） | [控制台 → 小红书 → 内容校准](dashboard-manual.zh.md#内容校准) | 每月 |
 | 更新汇率 | [控制台 → 乐天 → 定价配置](dashboard-manual.zh.md#修改定价配置) | 每月 |
 | 对账收款 | Stripe 后台 | 每月 |

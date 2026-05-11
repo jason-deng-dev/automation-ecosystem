@@ -199,33 +199,35 @@ function buildContext(type, prompts, races, raceName, customPrompt = null) {
 	let ctaDescription;
 	switch (type) {
 		case 'race': {
-			let raceContext = prompts.postTypes.raceGuide;
-			const race = races.races.find((item) => cleanName(item.name) === cleanName(raceName));
-			const fields = [
-				'name',
-				'date',
-				'location',
-				'entryStart',
-				'entryEnd',
-				'registrationOpen',
-				'registrationUrl',
-				'website',
-				'description',
-			];
-			for (const field of fields) {
-				if (race[field] == null) {
-					raceContext = raceContext.replaceAll(`race.${field}`, 'missing from the website');
-				} else {
-					raceContext = raceContext.replaceAll(`race.${field}`, race[field]);
-				}
-			}
-			contextToUse = raceContext;
 			ctaDescription =
 				'our marathon hub where readers can find full race details, registration timelines, and sign-up links for Japanese marathons';
 			comments = [
 				'想了解更多关于这场比赛的详细信息和报名攻略？👇 https://running.moximoxi.net/racehub/',
 				'加入我们的跑步社区，和其他计划去日本跑马的小伙伴一起交流👇 https://running.moximoxi.net/community/',
 			];
+			if (!customPrompt) {
+				let raceContext = prompts.postTypes.raceGuide;
+				const race = races.races.find((item) => cleanName(item.name) === cleanName(raceName));
+				const fields = [
+					'name',
+					'date',
+					'location',
+					'entryStart',
+					'entryEnd',
+					'registrationOpen',
+					'registrationUrl',
+					'website',
+					'description',
+				];
+				for (const field of fields) {
+					if (race[field] == null) {
+						raceContext = raceContext.replaceAll(`race.${field}`, 'missing from the website');
+					} else {
+						raceContext = raceContext.replaceAll(`race.${field}`, race[field]);
+					}
+				}
+				contextToUse = raceContext;
+			}
 			break;
 		}
 		case 'training': {
