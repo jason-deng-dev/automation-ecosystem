@@ -153,6 +153,8 @@ export default {
 	analyticsTuned: "Tuned ✓",
 	analyticsUpdatedPrompt: "Updated Prompt",
 	analyticsViews: "views",
+	analyticsSaves: "saves",
+	analyticsScore: "score",
 
 	// Post type labels (analytics)
 	postTypeLabel: {

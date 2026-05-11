@@ -164,12 +164,19 @@ export default function XhsAnalyticsPanel({ dict }) {
 										</summary>
 										<div className="flex flex-col gap-2 pb-3">
 											{posts.map((p, i) => (
-												<div key={i} className="flex items-baseline gap-3 text-sm pl-4">
-													<span style={{ color: '#555555', flexShrink: 0 }}>{i + 1}.</span>
-													<span style={{ color: '#EDEDED' }} className="truncate">{p.title}</span>
-													<span className="text-xs whitespace-nowrap" style={{ color: '#555555', marginLeft: 'auto' }}>
-														{p.views.toLocaleString()} {dict.analyticsViews}
-													</span>
+												<div key={i} className="flex flex-col gap-0.5 pl-4 pr-2">
+													<div className="flex items-baseline gap-2 text-sm">
+														<span style={{ color: '#555555', flexShrink: 0 }}>{i + 1}.</span>
+														<span style={{ color: '#EDEDED' }} className="truncate">{p.title}</span>
+													</div>
+													<div className="flex gap-3 text-xs pl-4" style={{ color: '#555555' }}>
+														<span>{p.views.toLocaleString()} {dict.analyticsViews}</span>
+														<span>{p.saves} {dict.analyticsSaves}</span>
+														<span>CTR {(p.ctr * 100).toFixed(1)}%</span>
+														<span style={{ color: '#3ECF8E', marginLeft: 'auto' }}>
+															{dict.analyticsScore} {p.ewma_score.toLocaleString()}
+														</span>
+													</div>
 												</div>
 											))}
 										</div>

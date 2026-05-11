@@ -232,18 +232,19 @@ async def analyze_xhs(file: UploadFile = File(...)):
     content_weights = {POST_TYPES[i]: round(mw[i], 3) for i in range(len(POST_TYPES))}
     ranked = sorted(content_weights.items(), key=lambda x: x[1], reverse=True)
 
-    # Top 3 posts per type by raw composite score
+    # Top 5 posts per type — sorted by EWMA score (recency-weighted)
     score_data: dict[str, list] = {}
     for i, pt in enumerate(post_types):
         score_data.setdefault(pt, []).append({
-            "title": titles_list[i],
-            "score": round(float(raw_scores[i])),
-            "views": int(metric_rows[i][0]),
-            "saves": int(metric_rows[i][1] / 100),
-            "ctr":   round(metric_rows[i][2] / 1000, 4),
+            "title":      titles_list[i],
+            "ewma_score": round(float(ewma_per_post[i])),
+            "score":      round(float(raw_scores[i])),
+            "views":      int(metric_rows[i][0]),
+            "saves":      int(metric_rows[i][1] / 100),
+            "ctr":        round(metric_rows[i][2] / 1000, 4),
         })
     top_posts = {
-        pt: sorted(posts, key=lambda p: p["score"], reverse=True)[:3]
+        pt: sorted(posts, key=lambda p: p["ewma_score"], reverse=True)[:5]
         for pt, posts in score_data.items()
     }
 

@@ -139,6 +139,8 @@ export default {
 	analyticsTuned: "已优化 ✓",
 	analyticsUpdatedPrompt: "更新后提示词",
 	analyticsViews: "次观看",
+	analyticsSaves: "收藏",
+	analyticsScore: "评分",
 
 	// Post type labels (analytics)
 	postTypeLabel: {
