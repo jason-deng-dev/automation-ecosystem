@@ -267,13 +267,19 @@ function buildContext(type, prompts, races, raceName, customPrompt = null) {
 	}
 
 	if (customPrompt) {
+		const postTypeDirective = {
+			race:                'Post type: Race Guide',
+			training:            'Post type: Training Science',
+			nutritionSupplement: 'Post type: Nutrition / Supplement',
+			wearable:            'Post type: Wearables / Equipment',
+		}[type];
 		if (type === 'race') {
 			const raceList = races.races
 				.map(r => `- ${r.name}（${r.date || '日期待定'}，${r.location || ''}）`)
 				.join('\n');
-			contextToUse = `${customPrompt}\n\n可参考的赛事列表：\n${raceList}`;
+			contextToUse = `${postTypeDirective}\n\n${customPrompt}\n\n可参考的赛事列表：\n${raceList}`;
 		} else {
-			contextToUse = customPrompt;
+			contextToUse = `${postTypeDirective}\n\n${customPrompt}`;
 		}
 	}
 
