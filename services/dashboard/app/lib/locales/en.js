@@ -142,7 +142,7 @@ export default {
 	analyticsTitle: "Content Calibration",
 	analyticsAnalyze: "Analyze",
 	analyticsAnalyzing: "Analyzing…",
-	analyticsSelectFile: "Select Excel file (.xlsx)",
+	analyticsSelectFile: "Click to select Excel file",
 	analyticsSummaryMatched: "posts matched",
 	analyticsSummaryBest: "is your best performer — prioritize in posting schedule",
 	analyticsRanking: "Post Type Performance Ranking",

@@ -128,7 +128,7 @@ export default {
 	analyticsTitle: "内容校准",
 	analyticsAnalyze: "分析",
 	analyticsAnalyzing: "分析中…",
-	analyticsSelectFile: "选择 Excel 文件（.xlsx）",
+	analyticsSelectFile: "点击选择 Excel 文件",
 	analyticsSummaryMatched: "条帖子已匹配",
 	analyticsSummaryBest: "表现最佳 — 优先安排此类型发布",
 	analyticsRanking: "帖子类型表现排名",
