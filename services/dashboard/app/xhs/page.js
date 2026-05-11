@@ -53,8 +53,8 @@ export default async function XhsPage() {
 				<div className="flex flex-col gap-6 min-w-0">
 					<XhsTriggerButton dict={dict} />
 					<XhsAnalyticsPanel dict={dict} />
-					<XhsRaceHistory initialRaces={postedRaces} dict={dict} />
 					<XhsScheduleEditor slots={slots} dict={dict} />
+					<XhsRaceHistory initialRaces={postedRaces} dict={dict} />
 				</div>
 
 				{/* Right — content */}
