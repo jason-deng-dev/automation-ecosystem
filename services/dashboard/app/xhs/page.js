@@ -47,6 +47,7 @@ export default async function XhsPage() {
 				{/* Left — controls */}
 				<div className="flex flex-col gap-6 min-w-0">
 					<XhsTriggerButton dict={dict} />
+					<XhsAnalyticsPanel dict={dict} />
 					<XhsScheduleEditor slots={slots} dict={dict} />
 				</div>
 
@@ -119,9 +120,6 @@ export default async function XhsPage() {
 							)}
 						</details>
 					</div>
-
-					{/* Analytics Calibration */}
-					<XhsAnalyticsPanel dict={dict} />
 
 					{/* Run History */}
 					<div style={{ border: '1px solid #2A2A2A' }}>
