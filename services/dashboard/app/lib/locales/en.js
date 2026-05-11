@@ -150,11 +150,10 @@ export default {
 
 	// Post type labels (analytics)
 	postTypeLabel: {
-		race_guide:           'Race Guide',
-		training:             'Training Science',
-		nutrition_supplement: 'Nutrition',
-		wearables:            'Gear Review',
-		health_recovery:      'Health & Recovery',
+		race:                'Race Guide',
+		training:            'Training Science',
+		nutritionSupplement: 'Nutrition',
+		wearable:            'Gear Review',
 	},
 
 	// Rakuten detail page

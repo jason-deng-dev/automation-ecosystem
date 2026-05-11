@@ -136,11 +136,10 @@ export default {
 
 	// Post type labels (analytics)
 	postTypeLabel: {
-		race_guide:           '赛事攻略',
-		training:             '训练科学',
-		nutrition_supplement: '营养补剂',
-		wearables:            '装备测评',
-		health_recovery:      '健康恢复',
+		race:                '赛事攻略',
+		training:            '训练科学',
+		nutritionSupplement: '营养补剂',
+		wearable:            '装备测评',
 	},
 
 	// Rakuten detail page

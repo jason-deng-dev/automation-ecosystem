@@ -20,8 +20,8 @@ DATABASE_URL          = os.getenv("DATABASE_URL")
 UNDERSAMPLE_THRESHOLD = 15
 UNDERSAMPLE_BOOST     = 1.3
 
-# Ordered — integer index used in Monte Carlo type grouping
-POST_TYPES = ["race_guide", "training", "nutrition_supplement", "wearables", "health_recovery"]
+# Ordered — integer index used in Monte Carlo type grouping. Must match DB post_type values.
+POST_TYPES = ["race", "training", "nutritionSupplement", "wearable"]
 
 app = FastAPI()
 
