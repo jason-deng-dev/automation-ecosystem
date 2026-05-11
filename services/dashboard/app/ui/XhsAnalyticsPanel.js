@@ -2,37 +2,35 @@
 
 import { useRef, useState } from 'react';
 
-const POST_TYPE_LABELS = {
-	race_guide:           '赛事攻略',
-	training:             '训练科学',
-	nutrition_supplement: '营养补剂',
-	wearables:            '装备测评',
-	health_recovery:      '健康恢复',
-};
-
-function WeightBar({ label, weight, ci, markowitz }) {
-	const pct = Math.round((weight ?? 0) * 100);
-	const ciLow  = ci ? Math.round(ci.low  * 100) : null;
-	const ciHigh = ci ? Math.round(ci.high * 100) : null;
-	const mwPct  = markowitz ? Math.round(markowitz * 100) : null;
+function TypeRankRow({ label, weight, isTop, postMoreLabel }) {
+	const pct = Math.round(weight * 100);
 	return (
 		<div className="flex flex-col gap-1">
 			<div className="flex items-center justify-between text-sm">
-				<span style={{ color: '#AAAAAA' }}>{label}</span>
-				<div className="flex items-center gap-3">
-					{mwPct !== null && (
-						<span className="text-xs" style={{ color: '#555555' }}>MV: {mwPct}%</span>
+				<div className="flex items-center gap-2">
+					<span style={{ color: isTop ? '#EDEDED' : '#888888', fontWeight: isTop ? 600 : 400 }}>
+						{label}
+					</span>
+					{isTop && (
+						<span className="text-xs px-2 py-0.5" style={{
+							backgroundColor: 'rgba(62,207,142,0.1)',
+							color: '#3ECF8E',
+							border: '1px solid rgba(62,207,142,0.2)',
+						}}>
+							{postMoreLabel}
+						</span>
 					)}
-					{ciLow !== null && (
-						<span className="text-xs" style={{ color: '#555555' }}>[{ciLow}–{ciHigh}%]</span>
-					)}
-					<span className="font-medium" style={{ color: '#EDEDED' }}>{pct}%</span>
 				</div>
+				<span className="font-medium text-sm" style={{ color: isTop ? '#3ECF8E' : '#AAAAAA' }}>
+					{pct}%
+				</span>
 			</div>
 			<div style={{ height: '4px', backgroundColor: '#1A1A1A', borderRadius: '2px' }}>
 				<div style={{
-					height: '100%', width: `${pct}%`,
-					backgroundColor: '#3ECF8E', borderRadius: '2px',
+					height: '100%',
+					width: `${pct}%`,
+					backgroundColor: isTop ? '#3ECF8E' : '#2A2A2A',
+					borderRadius: '2px',
 					transition: 'width 0.4s ease',
 				}} />
 			</div>
@@ -40,22 +38,22 @@ function WeightBar({ label, weight, ci, markowitz }) {
 	);
 }
 
-export default function XhsAnalyticsPanel() {
-	const fileRef   = useRef(null);
-	const [loading, setLoading]   = useState(false);
-	const [result,  setResult]    = useState(null);
-	const [error,   setError]     = useState(null);
-	const [tuning,  setTuning]    = useState({});   // { post_type: 'loading' | 'done' | error }
-	const [tuned,   setTuned]     = useState({});   // { post_type: { updated_prompt } }
+export default function XhsAnalyticsPanel({ dict }) {
+	const fileRef = useRef(null);
+	const [loading, setLoading] = useState(false);
+	const [result,  setResult]  = useState(null);
+	const [error,   setError]   = useState(null);
+	const [tuning,  setTuning]  = useState({});
+	const [tuned,   setTuned]   = useState({});
 
 	async function handleCalibrate() {
 		const file = fileRef.current?.files?.[0];
-		if (!file) { setError('Select an Excel file first.'); return; }
+		if (!file) { setError(dict.analyticsSelectFile); return; }
 		setLoading(true); setError(null); setResult(null);
 		try {
 			const fd = new FormData();
 			fd.append('file', file);
-			const res = await fetch('/api/analytics/calibrate', { method: 'POST', body: fd });
+			const res  = await fetch('/api/analytics/calibrate', { method: 'POST', body: fd });
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.detail ?? 'Calibration failed');
 			setResult(data);
@@ -71,14 +69,10 @@ export default function XhsAnalyticsPanel() {
 		const topPosts = result.top_posts?.[postType] ?? [];
 		setTuning(t => ({ ...t, [postType]: 'loading' }));
 		try {
-			const res = await fetch('/api/analytics/tune', {
+			const res  = await fetch('/api/analytics/tune', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					post_type: postType,
-					top_posts: topPosts,
-					current_prompt: '',
-				}),
+				body: JSON.stringify({ post_type: postType, top_posts: topPosts, current_prompt: '' }),
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.detail ?? 'Tune failed');
@@ -89,12 +83,14 @@ export default function XhsAnalyticsPanel() {
 		}
 	}
 
+	const topType      = result?.ranked_types?.[0]?.post_type;
+	const topTypeLabel = topType ? (dict.postTypeLabel?.[topType] ?? topType) : '';
+
 	return (
 		<div style={{ border: '1px solid #2A2A2A' }}>
-			{/* Header */}
 			<div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #2A2A2A' }}>
 				<span className="text-sm font-semibold tracking-wide uppercase" style={{ color: '#EDEDED' }}>
-					Content Calibration
+					{dict.analyticsTitle}
 				</span>
 				{result && (
 					<span className="text-xs" style={{ color: '#555555' }}>
@@ -104,7 +100,7 @@ export default function XhsAnalyticsPanel() {
 			</div>
 
 			<div className="px-6 py-5 flex flex-col gap-5">
-				{/* Upload + trigger */}
+				{/* Upload */}
 				<div className="flex items-center gap-3">
 					<input
 						ref={fileRef}
@@ -118,115 +114,118 @@ export default function XhsAnalyticsPanel() {
 						disabled={loading}
 						className="text-sm px-4 py-2 font-medium"
 						style={{
-							backgroundColor: loading ? '#1A1A1A' : '#111111',
+							backgroundColor: '#111111',
 							border: '1px solid #2A2A2A',
 							color: loading ? '#555555' : '#EDEDED',
 							cursor: loading ? 'not-allowed' : 'pointer',
 							whiteSpace: 'nowrap',
 						}}
 					>
-						{loading ? 'Running…' : 'Calibrate'}
+						{loading ? dict.analyticsAnalyzing : dict.analyticsAnalyze}
 					</button>
 				</div>
 
-				{error && (
-					<span className="text-sm" style={{ color: '#C8102E' }}>{error}</span>
-				)}
+				{error && <span className="text-sm" style={{ color: '#C8102E' }}>{error}</span>}
 
 				{result && (
 					<>
-						{/* Ingestion summary */}
-						<div className="flex gap-6 text-sm" style={{ color: '#555555' }}>
-							<span>Updated: <span style={{ color: '#EDEDED' }}>{result.ingested?.updated}</span></span>
-							<span>Skipped: <span style={{ color: '#EDEDED' }}>{result.ingested?.skipped_unknown}</span></span>
-							<span>Best type: <span style={{ color: '#3ECF8E' }}>{POST_TYPE_LABELS[result.best_post_type] ?? result.best_post_type}</span></span>
+						{/* Summary */}
+						<div className="text-sm" style={{ color: '#888888' }}>
+							{dict.analyticsSummary(topTypeLabel, result.ingested?.updated)}
 						</div>
 
 						{/* Flags */}
 						{result.flags?.length > 0 && (
 							<div className="flex flex-col gap-1">
 								{result.flags.map((f, i) => (
-									<span key={i} className="text-xs px-3 py-1.5" style={{ backgroundColor: 'rgba(245,166,35,0.08)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.2)' }}>
-										⚠ {f}
+									<span key={i} className="text-xs px-3 py-2" style={{
+										backgroundColor: 'rgba(245,166,35,0.06)',
+										color: '#F5A623',
+										border: '1px solid rgba(245,166,35,0.15)',
+									}}>
+										{f}
 									</span>
 								))}
 							</div>
 						)}
 
-						{/* Weight bars */}
+						{/* Ranked types */}
 						<div className="flex flex-col gap-3">
 							<span className="text-xs tracking-wide uppercase" style={{ color: '#555555' }}>
-								Content Weights — EWMA · Monte Carlo [5th–95th%] · Mean-Variance
+								{dict.analyticsRanking}
 							</span>
-							{Object.entries(result.content_weights ?? {}).map(([type, weight]) => (
-								<WeightBar
-									key={type}
-									label={POST_TYPE_LABELS[type] ?? type}
+							{result.ranked_types?.map(({ post_type, weight }, i) => (
+								<TypeRankRow
+									key={post_type}
+									label={dict.postTypeLabel?.[post_type] ?? post_type}
 									weight={weight}
-									ci={result.monte_carlo_ci?.[type]}
-									markowitz={result.markowitz_weights?.[type]}
+									isTop={i === 0}
+									postMoreLabel={dict.analyticsPostMore}
 								/>
 							))}
 						</div>
 
-						{/* Top posts per type + tune buttons */}
-						<div className="flex flex-col gap-4">
-							<span className="text-xs tracking-wide uppercase" style={{ color: '#555555' }}>
-								Top Posts per Type
+						{/* Top posts per type */}
+						<div className="flex flex-col" style={{ borderTop: '1px solid #1A1A1A' }}>
+							<span className="text-xs tracking-wide uppercase pt-4 pb-3" style={{ color: '#555555' }}>
+								{dict.analyticsTopPosts}
 							</span>
-							{Object.entries(result.top_posts ?? {}).map(([type, posts]) => (
-								<details key={type} style={{ borderTop: '1px solid #1A1A1A' }}>
-									<summary className="py-3 cursor-pointer select-none flex items-center justify-between list-none">
-										<span className="text-sm" style={{ color: '#AAAAAA' }}>
-											{POST_TYPE_LABELS[type] ?? type}
-										</span>
-										<div className="flex items-center gap-3">
-											{tuning[type] === 'done' && (
-												<span className="text-xs" style={{ color: '#3ECF8E' }}>tuned ✓</span>
+							{result.ranked_types?.map(({ post_type }) => {
+								const posts = result.top_posts?.[post_type] ?? [];
+								if (!posts.length) return null;
+								return (
+									<details key={post_type} style={{ borderTop: '1px solid #1A1A1A' }}>
+										<summary className="py-3 cursor-pointer select-none flex items-center justify-between list-none">
+											<span className="text-sm" style={{ color: '#888888' }}>
+												{dict.postTypeLabel?.[post_type] ?? post_type}
+											</span>
+											<div className="flex items-center gap-3">
+												{tuning[post_type] === 'done' && (
+													<span className="text-xs" style={{ color: '#3ECF8E' }}>{dict.analyticsTuned}</span>
+												)}
+												{tuning[post_type] === 'loading' && (
+													<span className="text-xs" style={{ color: '#555555' }}>{dict.analyticsTuning}</span>
+												)}
+												<button
+													onClick={e => { e.preventDefault(); handleTune(post_type); }}
+													disabled={tuning[post_type] === 'loading'}
+													className="text-xs px-3 py-1"
+													style={{
+														border: '1px solid #2A2A2A',
+														color: '#888888',
+														backgroundColor: '#111111',
+														cursor: tuning[post_type] === 'loading' ? 'not-allowed' : 'pointer',
+													}}
+												>
+													{dict.analyticsAutoTune}
+												</button>
+												<span style={{ color: '#444444', fontSize: '10px' }}>▼</span>
+											</div>
+										</summary>
+										<div className="flex flex-col gap-2 pb-3">
+											{posts.map((p, i) => (
+												<div key={i} className="flex items-baseline gap-3 text-sm pl-4">
+													<span style={{ color: '#555555', flexShrink: 0 }}>{i + 1}.</span>
+													<span style={{ color: '#EDEDED' }} className="truncate">{p.title}</span>
+													<span className="text-xs whitespace-nowrap" style={{ color: '#555555', marginLeft: 'auto' }}>
+														{p.views.toLocaleString()} {dict.analyticsViews}
+													</span>
+												</div>
+											))}
+											{tuned[post_type] && (
+												<div className="mt-2 p-3 ml-4" style={{ backgroundColor: '#0D0D0D', border: '1px solid #2A2A2A' }}>
+													<span className="text-xs tracking-wide uppercase block mb-2" style={{ color: '#555555' }}>
+														{dict.analyticsUpdatedPrompt}
+													</span>
+													<pre className="text-xs whitespace-pre-wrap" style={{ color: '#AAAAAA', fontFamily: 'inherit' }}>
+														{tuned[post_type].updated_prompt}
+													</pre>
+												</div>
 											)}
-											{tuning[type] === 'loading' && (
-												<span className="text-xs" style={{ color: '#555555' }}>tuning…</span>
-											)}
-											{tuning[type] && tuning[type] !== 'loading' && tuning[type] !== 'done' && (
-												<span className="text-xs" style={{ color: '#C8102E' }}>{tuning[type]}</span>
-											)}
-											<button
-												onClick={e => { e.preventDefault(); handleTune(type); }}
-												disabled={tuning[type] === 'loading'}
-												className="text-xs px-3 py-1"
-												style={{
-													border: '1px solid #2A2A2A',
-													color: '#888888',
-													backgroundColor: '#111111',
-													cursor: tuning[type] === 'loading' ? 'not-allowed' : 'pointer',
-												}}
-											>
-												Auto-tune prompt
-											</button>
-											<span className="text-xs" style={{ color: '#444444' }}>▼</span>
 										</div>
-									</summary>
-									<div className="flex flex-col gap-2 pb-3">
-										{posts.map((p, i) => (
-											<div key={i} className="flex items-baseline gap-3 text-sm pl-2">
-												<span style={{ color: '#555555', flexShrink: 0 }}>{i + 1}.</span>
-												<span style={{ color: '#EDEDED' }} className="truncate">{p.title}</span>
-												<span className="text-xs whitespace-nowrap" style={{ color: '#555555', marginLeft: 'auto' }}>
-													{Math.round(p.score)} pts
-												</span>
-											</div>
-										))}
-										{tuned[type] && (
-											<div className="mt-2 p-3" style={{ backgroundColor: '#0D0D0D', border: '1px solid #2A2A2A' }}>
-												<span className="text-xs tracking-wide uppercase block mb-2" style={{ color: '#555555' }}>Updated Prompt</span>
-												<pre className="text-xs whitespace-pre-wrap" style={{ color: '#AAAAAA', fontFamily: 'inherit' }}>
-													{tuned[type].updated_prompt}
-												</pre>
-											</div>
-										)}
-									</div>
-								</details>
-							))}
+									</details>
+								);
+							})}
 						</div>
 					</>
 				)}

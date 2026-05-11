@@ -118,6 +118,30 @@ export default {
 	postCardCopy: "复制",
 	postCardCopied: "✓ 已复制",
 
+	// Analytics calibration panel
+	analyticsTitle: "内容校准",
+	analyticsAnalyze: "分析",
+	analyticsAnalyzing: "分析中…",
+	analyticsSelectFile: "选择 Excel 文件（.xlsx）",
+	analyticsSummary: (best, count) => `${count} 条帖子已匹配 · ${best} 表现最佳 — 优先安排此类型发布`,
+	analyticsRanking: "帖子类型表现排名",
+	analyticsPostMore: "多发此类",
+	analyticsTopPosts: "各类型最佳帖子",
+	analyticsAutoTune: "自动优化提示词",
+	analyticsTuning: "优化中…",
+	analyticsTuned: "已优化 ✓",
+	analyticsUpdatedPrompt: "更新后提示词",
+	analyticsViews: "次观看",
+
+	// Post type labels (analytics)
+	postTypeLabel: {
+		race_guide:           '赛事攻略',
+		training:             '训练科学',
+		nutrition_supplement: '营养补剂',
+		wearables:            '装备测评',
+		health_recovery:      '健康恢复',
+	},
+
 	// Rakuten detail page
 	runLog: "运行日志",
 	importLog: "导入日志",

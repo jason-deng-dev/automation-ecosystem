@@ -132,6 +132,30 @@ export default {
 	postCardCopy: "Copy",
 	postCardCopied: "✓ Copied",
 
+	// Analytics calibration panel
+	analyticsTitle: "Content Calibration",
+	analyticsAnalyze: "Analyze",
+	analyticsAnalyzing: "Analyzing…",
+	analyticsSelectFile: "Select Excel file (.xlsx)",
+	analyticsSummary: (best, count) => `${count} posts matched · ${best} is your best performer — prioritize in posting schedule`,
+	analyticsRanking: "Post Type Performance Ranking",
+	analyticsPostMore: "post more",
+	analyticsTopPosts: "Top Posts per Type",
+	analyticsAutoTune: "Auto-tune prompt",
+	analyticsTuning: "Tuning…",
+	analyticsTuned: "Tuned ✓",
+	analyticsUpdatedPrompt: "Updated Prompt",
+	analyticsViews: "views",
+
+	// Post type labels (analytics)
+	postTypeLabel: {
+		race_guide:           'Race Guide',
+		training:             'Training Science',
+		nutrition_supplement: 'Nutrition',
+		wearables:            'Gear Review',
+		health_recovery:      'Health & Recovery',
+	},
+
 	// Rakuten detail page
 	runLog: "Run Log",
 	importLog: "Import Log",

@@ -121,7 +121,7 @@ export default async function XhsPage() {
 					</div>
 
 					{/* Analytics Calibration */}
-					<XhsAnalyticsPanel />
+					<XhsAnalyticsPanel dict={dict} />
 
 					{/* Run History */}
 					<div style={{ border: '1px solid #2A2A2A' }}>
