@@ -31,8 +31,8 @@ export const getPostedRaces = async () => {
 
 export const insertPostedRace = async (raceName) => {
 	await pool.query(
-		`INSERT INTO xhs_post_history (race_name) VALUES ($1)`,
-		[raceName],
+		`INSERT INTO xhs_post_history (race_name, month) VALUES ($1, $2)`,
+		[raceName, new Date().getMonth() + 1],
 	);
 };
 
