@@ -11,11 +11,25 @@ export async function POST(request) {
 	const upstream = new FormData();
 	upstream.append('file', file, file.name);
 
-	const res = await fetch(`${ANALYTICS_URL}/analyze/xhs`, {
-		method: 'POST',
-		body: upstream,
-	});
+	let res;
+	try {
+		res = await fetch(`${ANALYTICS_URL}/analyze/xhs`, {
+			method: 'POST',
+			body: upstream,
+		});
+	} catch (err) {
+		return NextResponse.json({ error: `Analytics service unreachable: ${err.message}` }, { status: 502 });
+	}
 
-	const data = await res.json();
+	const text = await res.text();
+	let data;
+	try {
+		data = JSON.parse(text);
+	} catch {
+		return NextResponse.json(
+			{ error: `Analytics service returned non-JSON (status ${res.status})`, detail: text.slice(0, 500) },
+			{ status: 502 },
+		);
+	}
 	return NextResponse.json(data, { status: res.status });
 }

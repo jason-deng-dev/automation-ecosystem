@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -8,6 +9,9 @@ import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
 
 from scoring import (
     METRIC_WEIGHTS, compute_scores, ewma_scores,
@@ -50,7 +54,13 @@ async def analyze_xhs(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="File must be .xlsx or .xls")
 
     contents = await file.read()
-    df = pd.read_excel(io.BytesIO(contents), header=1)
+    try:
+        df = pd.read_excel(io.BytesIO(contents), header=1)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse Excel: {e}")
+
+    log.info("Excel columns found: %s", list(df.columns))
+
     df = df.rename(columns={
         "笔记标题":   "title",
         "首次发布时间": "published_at",
@@ -64,6 +74,14 @@ async def analyze_xhs(file: UploadFile = File(...)):
         "分享":      "shares",
         "人均观看时长": "avg_watch_time",
     })
+
+    required = {"title", "views", "saves", "ctr"}
+    missing = required - set(df.columns)
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Missing expected columns after rename: {missing}. Got: {list(df.columns)}"
+        )
 
     # DB backfill
     conn = _get_db()
