@@ -42,11 +42,23 @@ async function generatePost(
 			messages: [{ role: 'user', content: contextToUse }],
 			model: 'claude-sonnet-4-6',
 		});
-		const rawText = message.content[0].text
-			.trim()
-			.replace(/^```json\s*/, '')
-			.replace(/```\s*$/, '');
-		messageParsed = JSON.parse(rawText);
+		const parseRaw = (text) => JSON.parse(
+			text.trim().replace(/^```json\s*/, '').replace(/```\s*$/, '')
+		);
+		try {
+			messageParsed = parseRaw(message.content[0].text);
+		} catch {
+			// Claude occasionally emits invalid JSON — retry once
+			const retry = await client.messages.create({
+				max_tokens: 4096,
+				system: systemPrompt,
+				messages: [{ role: 'user', content: contextToUse }],
+				model: 'claude-sonnet-4-6',
+			});
+			input_tokens += retry.usage.input_tokens;
+			output_tokens += retry.usage.output_tokens;
+			messageParsed = parseRaw(retry.content[0].text);
+		}
 	} catch (err) {
 		throw new Error(`Post generation failed: ${err.message}`);
 	}

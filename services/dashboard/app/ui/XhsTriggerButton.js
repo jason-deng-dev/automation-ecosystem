@@ -56,7 +56,7 @@ export default function XhsTriggerButton({ dict }) {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					postType,
-					...(postType === 'custom' ? { customPrompt } : {}),
+					customPrompt: customPrompt.trim() || null,
 				}),
 			});
 			if (!res.ok) throw new Error();
