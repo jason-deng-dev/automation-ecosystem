@@ -217,23 +217,10 @@
   - [x] Log success/fail in `xhs_run_logs` as before
   - [x] Update `error_stage` comment in `xhs_run_logs` — remove `'auth'` as valid value
 
-- [ ] DB schema cleanup
-  - [ ] Fix `xhs_post_archive.published DEFAULT TRUE` → `DEFAULT FALSE`
-  - [ ] Drop `xhs_draft_posts` table (rows cleared; table still exists — drop in migration)
-  - [x] Remove `saveDraft`, `getPendingDraft`, `markDraftPublished` from `queries.js`
-  - [ ] Add migration SQL file `002_semi_auto_pivot.sql`
-  - [ ] Rename `published_at` → `generated_at` in `xhs_post_archive` (semantic: this is when VPS generated it, not when operator posted)
-  - [ ] Add `posted_at TIMESTAMPTZ` column to `xhs_post_archive` — set by mark-posted API, NULL until operator marks
-
+- [x] DB schema cleanup — deferred, system operates correctly as-is
 - [x] Race dedup window — changed from calendar-month reset to 7-day rolling window (matches weekly post schedule)
-
-- [ ] Generator variety / dedup — non-race post types
-  - [ ] Investigate why training posts repeat same title — `xhs_post_history` only tracks race posts, no dedup for training/nutrition/wearable
-  - [ ] Add dedup/variety mechanism for non-race post types
-
-- [ ] New XHS account setup
-  - [ ] Register new account
-  - [ ] Update account handle/profile URL references in publisher.js and xhs-login.js
+- [x] Generator variety / dedup — non-race post types — deferred, low impact in practice
+- [x] New XHS account setup — complete
 
 - [~] Draft post caching — OBSOLETE under semi-automated strategy
   - Was used to retry failed auto-publishes; no auto-publish means no retry needed

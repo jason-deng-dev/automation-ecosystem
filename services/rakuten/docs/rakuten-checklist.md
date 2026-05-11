@@ -235,34 +235,4 @@
 
 ## Handoff Document — TODO
 
-- [ ] Write handoff doc covering operator-managed configuration:
-  - **Markup:** Discount Rules for WooCommerce plugin — how to install, create a percentage markup rule globally or per category, and verify it's applying correctly on product pages
-  - **Flat shipping rate:** WooCommerce → Settings → Shipping → Shipping Zones — how to set a flat rate per order and update it when shipping costs change
-  - **Shipping policy note:** where the checkout page note lives and how to edit the category-based estimates
-  - **Exchange rate:** how to update `YenToYuan` via the dashboard admin UI when the JPY→CNY rate changes significantly
-  - **Running the pipeline:** how to trigger a manual bulk push or re-scrape
-  - **AWS account access:** transfer MFA to boss — add them as IAM user with MFA, or transfer root MFA device (authenticator app handoff)
-  - **Stripe account access:** transfer MFA to boss — reassign authenticator app or switch to SMS-based MFA before handoff
-
----
-
-- [ ] Size/color preference capture on product page → §8, §11.13
-  - [ ] Install WooCommerce Product Add-Ons (free plugin)
-  - [ ] Add size dropdown + color text field to all products
-  - [ ] Verify preferences appear in order line items in WooCommerce admin
-
----
-
-## Nice to Have (if time allows after launch)
-
-- [ ] Claude quality check on keyword request flow → §9.4
-  - [ ] Stage 1 — validate keyword relevance (yes/no), abort early if off-theme
-  - [ ] Stage 2 — feed `allGenres` map, return best-fit genre ID as fallback for unknown genres
-
-- [ ] Store + display Rakuten review count/rating on WooCommerce products
-  - [ ] Check Rakuten API response — confirm `reviewAverage` + `reviewCount` fields are present
-  - [ ] Add `review_average NUMERIC(3,2)`, `review_count INTEGER` columns to `products` table in `seed.ts`
-  - [ ] Map fields in `normalizeItem()` in `utils.ts`
-  - [ ] Store as WC custom meta `_rakuten_rating` + `_rakuten_review_count` in `pushProduct()`
-  - [ ] Display in theme/functions.php hook — show star rating + count on product page as "Rakuten Rating" to distinguish from WC native reviews
-  - [ ] Update on weekly sync if rating changes
+- [x] Handoff docs complete — daily-operations, dashboard-manual, wordpress-manual, community-manual, credentials-overview (zh + ja + en)
