@@ -52,8 +52,13 @@ export default function XhsAnalyticsPanel({ dict }) {
 			const fd = new FormData();
 			fd.append('file', file);
 			const res  = await fetch('/api/analytics/calibrate', { method: 'POST', body: fd });
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.detail ?? 'Calibration failed');
+			let data;
+			try {
+				data = await res.json();
+			} catch {
+				throw new Error(`Server returned non-JSON (${res.status})`);
+			}
+			if (!res.ok) throw new Error(data.error ?? data.detail ?? 'Calibration failed');
 			setResult(data);
 		} catch (e) {
 			setError(e.message);
