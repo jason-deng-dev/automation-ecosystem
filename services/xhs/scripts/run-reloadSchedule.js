@@ -1,6 +1,10 @@
-import 'dotenv/config';
-import { setupAllDailyCrons } from '../src/scheduler.js';
+import { readFileSync } from 'fs';
 
-await setupAllDailyCrons();
-console.log('Schedule reloaded from xhs_schedule.');
-process.exit(0);
+try {
+	const pid = parseInt(readFileSync('/tmp/scheduler.pid', 'utf8').trim(), 10);
+	process.kill(pid, 'SIGUSR2');
+	console.log(`Sent SIGUSR2 to scheduler (PID ${pid})`);
+} catch (err) {
+	console.error(`Failed to signal scheduler: ${err.message}`);
+	process.exit(1);
+}
