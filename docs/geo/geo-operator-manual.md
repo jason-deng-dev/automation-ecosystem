@@ -101,7 +101,6 @@ Add 5–8 questions at the bottom of every article. These are the questions Chin
 
 Write the answers in the same fact-dense style — short, direct, specific numbers where possible.
 
-**In WordPress:** After writing the FAQ, toggle on the Rank Math FAQ Schema block (in the Rank Math panel on the right) — this marks the FAQ as structured data so AI tools can read it directly.
 
 ---
 
@@ -119,11 +118,7 @@ Write the answers in the same fact-dense style — short, direct, specific numbe
 
    ![Editor with content](image-2.png)
 
-4. In the Rank Math panel (right sidebar):
-   - Set focus keyword (e.g. 东京马拉松外国人报名)
-   - Enable FAQ Schema if the article has a FAQ section
-
-5. Click **发布**
+4. Click **发布**
 
    ![发布 button](image-3.png)
 
