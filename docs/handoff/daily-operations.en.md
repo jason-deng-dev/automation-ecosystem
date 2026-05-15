@@ -93,9 +93,20 @@ Check each group for new members and any posts that need a reply. If a Japanese 
 
 ---
 
+### 8. GEO Content — Write a WordPress Article
+
+Once a week, check whether anything is worth expanding into a WordPress article. Two triggers:
+
+- **High-performing XHS post** — open Dashboard → XHS → Post Archive, scan the past week. If a post has noticeably more views or saves than usual, expand it into a WordPress article.
+- **Major race registration opening** — if Tokyo, Osaka, Kyoto, Hokkaido, or Nagano marathon has registration opening within 8 weeks, write a full race guide.
+
+→ How to write and publish: [GEO Content Manual](../geo/geo-operator-manual.md)
+
+---
+
 ## Monthly Tasks
 
-### 8. Update the JPY Exchange Rate
+### 9. Update the JPY Exchange Rate
 
 Product prices are calculated from the JPY → CNY rate. A large drift affects margins.
 
@@ -107,7 +118,7 @@ Product prices are calculated from the JPY → CNY rate. A large drift affects m
 
 ---
 
-### 9. Content Calibration Analysis
+### 10. Content Calibration Analysis
 
 Once a month, export data from XHS Creator Studio, upload it to the dashboard, and adjust the posting strategy based on the results. You can also run the analysis without uploading a file — the system will use existing data from the database.
 
@@ -120,7 +131,7 @@ Once a month, export data from XHS Creator Studio, upload it to the dashboard, a
 
 ---
 
-### 10. Stripe Reconciliation
+### 11. Stripe Reconciliation
 
 Confirm last month's payments arrived and check for any refunds or disputes.
 
@@ -143,6 +154,7 @@ Confirm last month's payments arrived and check for any refunds or disputes.
 | Reply to community members | [Community](community-manual.en.md) | Daily |
 | Delete irrelevant products | [WordPress → Products](handoff-runbook.md) | Weekly |
 | Check product translations | [WordPress → product pages](wordpress-manual.en.md#how-to-edit-translations) | Weekly |
+| Write a GEO WordPress article | [GEO Content Manual](../geo/geo-operator-manual.md) | Weekly |
 | Content calibration analysis (file optional) | [Dashboard → XHS → Content Calibration](dashboard-manual.en.md#content-calibration) | Monthly |
 | Update exchange rate | [Dashboard → Rakuten → Pricing Config](dashboard-manual.en.md#edit-pricing-config) | Monthly |
 | Reconcile payments | Stripe dashboard | Monthly |

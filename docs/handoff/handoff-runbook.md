@@ -175,6 +175,8 @@ If all three look like the table above, everything is working.
 
 - Check the Rakuten card — confirm the weekend sync ran and product count looks normal
 - Glance at XHS run history — confirm posts are generating daily
+- **GEO content check** — scan the XHS post archive (Dashboard → XHS → Post Archive) for any post from the past week with noticeably high views or saves. If one stands out, expand it into a WordPress article. See [GEO Content Manual](../geo/geo-operator-manual.md).
+- **Upcoming race check** — if a major race (Tokyo, Osaka, Kyoto, Nagano, Hokkaido) has registration opening within the next 8 weeks, write a full race guide on WordPress. See [GEO Content Manual](../geo/geo-operator-manual.md).
 
 ### Monthly (1st of the month)
 
